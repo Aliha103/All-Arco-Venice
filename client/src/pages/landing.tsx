@@ -259,38 +259,47 @@ export default function Landing() {
           onMouseLeave={() => setHoveredDate(null)}
           disabled={isDisabled}
           className={`
-            h-10 w-10 rounded-lg text-sm font-medium transition-all duration-200 relative
+            h-10 w-10 rounded-lg text-sm font-medium transition-all duration-300 relative group
+            transform hover:scale-105 active:scale-95
             ${isDisabled 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+              ? 'text-gray-300 cursor-not-allowed opacity-50' 
+              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm cursor-pointer'
             }
             ${isSelected 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-md hover:from-blue-600 hover:to-blue-700' 
               : ''
             }
             ${isInRange && !isSelected 
-              ? 'bg-blue-100 text-blue-700' 
+              ? 'bg-gradient-to-b from-blue-100 to-blue-200 text-blue-700 border border-blue-300' 
               : ''
             }
             ${isInHoverRange && !isSelected && !isInRange
-              ? 'bg-blue-50 text-blue-600' 
+              ? 'bg-blue-50 text-blue-600 border border-blue-200' 
               : ''
             }
             ${isToday && !isSelected 
-              ? 'ring-2 ring-blue-300' 
+              ? 'ring-2 ring-blue-400 ring-opacity-50' 
               : ''
             }
             ${isBooked 
-              ? 'bg-red-100 text-red-400 line-through' 
+              ? 'bg-red-50 text-red-400 line-through border border-red-200' 
               : ''
             }
           `}
         >
           {day}
           {isBooked && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+            <div className="absolute bottom-1 right-1">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
             </div>
+          )}
+          {isSelected && (
+            <div className="absolute top-0.5 right-0.5">
+              <CheckCircle className="w-3 h-3 text-white opacity-80" />
+            </div>
+          )}
+          {!isDisabled && !isSelected && (
+            <div className="absolute inset-0 rounded-lg bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           )}
         </button>
       );
@@ -621,98 +630,149 @@ export default function Landing() {
             <div className="block md:hidden space-y-6">
               {/* Advanced Calendar Section */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                    Select Your Dates
-                    {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
-                  </h3>
-                  <button
-                    onClick={() => {setCheckIn(""); setCheckOut("");}}
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-
-                {/* Selected Dates Display */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Check-in</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        }) : 'Select date'}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Check-out</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        }) : 'Select date'}
-                      </div>
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                      Select Your Dates
+                      {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
+                    </h3>
+                    <button
+                      onClick={() => {setCheckIn(""); setCheckOut("");}}
+                      className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Clear
+                    </button>
                   </div>
-                  {checkIn && checkOut && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex items-center text-green-600">
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        <span className="text-sm font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
-                      </div>
+                  
+                  {/* Interactive Guide */}
+                  {!checkIn && !checkOut && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 animate-in fade-in duration-500">
+                      <p className="text-sm text-blue-700 flex items-center">
+                        <Clock className="w-4 h-4 mr-2" />
+                        Click any available date below to start your booking
+                      </p>
+                    </div>
+                  )}
+                  
+                  {checkIn && !checkOut && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 animate-in slide-in-from-top duration-300">
+                      <p className="text-sm text-amber-700 flex items-center">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Great! Now select your check-out date
+                      </p>
                     </div>
                   )}
                 </div>
 
+                {/* Selected Dates Display */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 transition-all duration-300">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                          <span className="text-sm font-medium text-gray-700">Check-in</span>
+                        </div>
+                        <div className="text-blue-600 font-semibold text-sm">
+                          {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Tap calendar'}
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                          <span className="text-sm font-medium text-gray-700">Check-out</span>
+                        </div>
+                        <div className="text-blue-600 font-semibold text-sm">
+                          {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Tap calendar'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Indicator */}
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-600">Booking Progress</span>
+                        <span className="text-xs text-gray-500">
+                          {checkIn && checkOut ? 'Complete' : checkIn ? '50%' : '0%'}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500 ${
+                            checkIn && checkOut ? 'w-full' : checkIn ? 'w-1/2' : 'w-0'
+                          }`}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    {checkIn && checkOut && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center justify-center text-green-700">
+                          <CheckCircle className="w-4 h-4 mr-2 animate-pulse" />
+                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''} selected</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Calendar Navigation */}
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <button
                       onClick={() => navigateMonth('prev')}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all duration-200 group"
                     >
-                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transform group-hover:scale-110 transition-all duration-200" />
                     </button>
-                    <h4 className="text-lg font-semibold text-gray-900">
+                    <h4 className="text-lg font-semibold text-gray-900 animate-in fade-in duration-300">
                       {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                     </h4>
                     <button
                       onClick={() => navigateMonth('next')}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all duration-200 group"
                     >
-                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                      <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transform group-hover:scale-110 transition-all duration-200" />
                     </button>
                   </div>
 
                   {/* Days of week header */}
-                  <div className="grid grid-cols-7 mb-2">
+                  <div className="grid grid-cols-7 mb-3">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+                      <div key={day} className="h-8 flex items-center justify-center text-xs font-semibold text-gray-500 bg-gray-50 rounded">
                         {day}
                       </div>
                     ))}
                   </div>
 
                   {/* Calendar Grid */}
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid grid-cols-7 gap-1 mb-4">
                     {renderCalendar()}
                   </div>
 
                   {/* Legend */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
-                        <span className="text-gray-600">Selected</span>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="flex items-center justify-center">
+                        <div className="w-3 h-3 bg-blue-600 rounded-full mr-1.5 shadow-sm"></div>
+                        <span className="text-gray-700 font-medium">Selected</span>
                       </div>
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
-                        <span className="text-gray-600">Unavailable</span>
+                      <div className="flex items-center justify-center">
+                        <div className="w-3 h-3 bg-blue-100 rounded-full mr-1.5"></div>
+                        <span className="text-gray-700 font-medium">In Range</span>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <div className="w-3 h-3 bg-red-100 rounded-full mr-1.5"></div>
+                        <span className="text-gray-700 font-medium">Booked</span>
                       </div>
                     </div>
                   </div>
@@ -949,33 +1009,41 @@ export default function Landing() {
                 </div>
 
                 {/* Selected Dates Display */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Check-in</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        }) : 'Select check-in date'}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 transition-all duration-300">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                          <span className="text-sm font-medium text-gray-700">Check-in</span>
+                        </div>
+                        <div className="text-blue-600 font-semibold text-sm">
+                          {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Tap calendar'}
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Check-out</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        }) : 'Select check-out date'}
+                      <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                          <span className="text-sm font-medium text-gray-700">Check-out</span>
+                        </div>
+                        <div className="text-blue-600 font-semibold text-sm">
+                          {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Tap calendar'}
+                        </div>
                       </div>
                     </div>
                     {checkIn && checkOut && (
-                      <div className="pt-3 border-t border-gray-200">
-                        <div className="flex items-center text-green-600">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center justify-center text-green-700">
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
+                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''} selected</span>
                         </div>
                       </div>
                     )}
@@ -1054,89 +1122,143 @@ export default function Landing() {
                   <h3 className="text-xl font-semibold text-gray-900">Preferences</h3>
                   
                   {/* Guests */}
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-gray-500 mr-3" />
-                      <span className="text-gray-700">Guests</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => setGuests(Math.max(1, guests - 1))}
-                        disabled={guests <= 1}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
-                      <button
-                        onClick={() => setGuests(Math.min(5, guests + 1))}
-                        disabled={guests >= 5}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="bg-blue-50 p-2 rounded-lg mr-3">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <span className="text-gray-900 font-medium">Guests</span>
+                          <p className="text-xs text-gray-500">Maximum 5 guests</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => setGuests(Math.max(1, guests - 1))}
+                          disabled={guests <= 1}
+                          className="w-9 h-9 rounded-full border-2 border-blue-200 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                        >
+                          <Minus className="w-4 h-4 text-blue-600" />
+                        </button>
+                        <div className="bg-blue-50 rounded-lg px-3 py-1 min-w-[3rem] text-center">
+                          <span className="text-lg font-bold text-blue-700">{guests}</span>
+                        </div>
+                        <button
+                          onClick={() => setGuests(Math.min(5, guests + 1))}
+                          disabled={guests >= 5}
+                          className="w-9 h-9 rounded-full border-2 border-blue-200 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                        >
+                          <Plus className="w-4 h-4 text-blue-600" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* Pets */}
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                    <div className="flex items-center">
-                      <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
-                      <span className="text-gray-700">Pets</span>
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="bg-orange-50 p-2 rounded-lg mr-3">
+                          <PawPrint className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <span className="text-gray-900 font-medium">Bringing pets?</span>
+                          <p className="text-xs text-gray-500">Pet-friendly accommodation</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={hasPet}
+                          onChange={(e) => setHasPet(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 group-hover:shadow-md transition-all duration-200"></div>
+                      </label>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasPet}
-                        onChange={(e) => setHasPet(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                    {hasPet && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 animate-in slide-in-from-top-2 duration-300">
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                          <p className="text-sm text-orange-700 font-medium flex items-center">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Additional €20 pet fee applies
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {hasPet && (
-                    <p className="text-sm text-gray-500 ml-2">Additional €20 pet fee will be added</p>
-                  )}
                 </div>
 
                 {/* Price Summary */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900">€{basePrice.toFixed(2)}</div>
-                    <div className="text-sm text-gray-600">per night</div>
-                  </div>
-
-                  <div className="space-y-2 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                      <span>€{subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Cleaning fee</span>
-                      <span>€{cleaningFee.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Service fee</span>
-                      <span>€{serviceFee.toFixed(2)}</span>
-                    </div>
-                    {hasPet && (
-                      <div className="flex justify-between text-sm">
-                        <span>Pet fee</span>
-                        <span>€{petFee.toFixed(2)}</span>
+                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-2xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="text-center mb-6">
+                    <div className="bg-white rounded-lg p-3 shadow-sm">
+                      <div className="text-3xl font-bold text-gray-900 animate-in zoom-in duration-300">
+                        €{discountedPrice.toFixed(2)}
                       </div>
-                    )}
-                    <hr className="border-gray-300" />
-                    <div className="flex justify-between font-bold text-base">
-                      <span>Total</span>
-                      <span>€{total.toFixed(2)}</span>
+                      <div className="text-sm text-gray-600">per night</div>
+                      {hasDiscount && (
+                        <div className="mt-1">
+                          <span className="text-xs text-gray-400 line-through">€{basePrice.toFixed(2)}</span>
+                          <span className="ml-2 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                            {nights >= 7 ? '10% OFF' : '5% OFF'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all" asChild>
-                    <a href="/api/login">Reserve Now</a>
+                  <div className="space-y-3 mb-6">
+                    <div className="bg-white rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>€{discountedPrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                        <span className="font-medium">€{(discountedPrice * nights).toFixed(2)}</span>
+                      </div>
+                      {hasDiscount && (
+                        <div className="flex justify-between text-sm text-green-600 animate-in slide-in-from-right duration-300">
+                          <span>Discount savings</span>
+                          <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Cleaning fee</span>
+                        <span className="font-medium">€{cleaningFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Service fee</span>
+                        <span className="font-medium">€{serviceFee.toFixed(2)}</span>
+                      </div>
+                      {hasPet && (
+                        <div className="flex justify-between text-sm text-orange-600 animate-in slide-in-from-right duration-300">
+                          <span className="flex items-center">
+                            <PawPrint className="w-3 h-3 mr-1" />
+                            Pet fee
+                          </span>
+                          <span className="font-medium">€{petFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex justify-between font-bold text-lg text-green-800">
+                        <span>Total</span>
+                        <span className="animate-in zoom-in duration-300">€{total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95" asChild>
+                    <a href="/api/login" className="flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Reserve Now
+                    </a>
                   </Button>
                   
-                  <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                  <p className="text-xs text-gray-500 text-center mt-3 flex items-center justify-center">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Secure booking - You won't be charged yet
+                  </p>
                 </div>
               </div>
             </div>
