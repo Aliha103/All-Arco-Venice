@@ -30,17 +30,120 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative">
-        <div className="h-64 sm:h-80 md:h-96 bg-gradient-to-r from-primary/10 to-secondary/10 flex items-center justify-center px-4">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Welcome to All'arco
+      <section className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Title and Rating */}
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
+              All'Arco Apartment - Heart of Venice
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-              Experience luxury and comfort in the heart of the city. Your perfect home away from home.
-            </p>
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center space-x-1">
+                <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                <span className="font-medium">4.89</span>
+                <span>·</span>
+                <span>127 reviews</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <MapPin className="w-4 h-4" />
+                <span>Venice, Italy</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Images Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
+            {/* Main Image */}
+            <div className="relative group cursor-pointer">
+              <div className="w-full h-full bg-gray-200 rounded-l-xl lg:rounded-l-xl lg:rounded-r-none overflow-hidden">
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-300 flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-400 rounded-lg flex items-center justify-center">
+                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium">Main Bedroom</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Smaller Images Grid */}
+            <div className="grid grid-cols-2 gap-2 h-full">
+              {/* Top Right */}
+              <div className="relative group cursor-pointer">
+                <div className="w-full h-full bg-gray-200 rounded-tr-xl overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                    <div className="text-center text-gray-600">
+                      <div className="w-10 h-10 mx-auto mb-1 bg-blue-400 rounded flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <p className="text-xs">Terrace View</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Right */}
+              <div className="relative group cursor-pointer">
+                <div className="w-full h-full bg-gray-200 overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                    <div className="text-center text-gray-600">
+                      <div className="w-10 h-10 mx-auto mb-1 bg-green-400 rounded flex items-center justify-center">
+                        <Utensils className="w-5 h-5 text-white" />
+                      </div>
+                      <p className="text-xs">Kitchen</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Left */}
+              <div className="relative group cursor-pointer">
+                <div className="w-full h-full bg-gray-200 rounded-bl-xl overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                    <div className="text-center text-gray-600">
+                      <div className="w-10 h-10 mx-auto mb-1 bg-purple-400 rounded flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.75 2.524z" />
+                        </svg>
+                      </div>
+                      <p className="text-xs">Living Room</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Right with +3 photos overlay */}
+              <div className="relative group cursor-pointer">
+                <div className="w-full h-full bg-gray-200 rounded-br-xl overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-300 flex items-center justify-center">
+                    <div className="text-center text-gray-600">
+                      <div className="w-10 h-10 mx-auto mb-1 bg-gray-400 rounded flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <p className="text-xs">Bedroom</p>
+                    </div>
+                  </div>
+                  {/* +3 photos overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">+3 photos</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <div className="mt-6 sm:mt-8 text-center">
             <Button size="lg" className="text-sm sm:text-base" asChild>
-              <a href="/api/login">Start Booking</a>
+              <a href="/api/login">Book Your Stay</a>
             </Button>
           </div>
         </div>
