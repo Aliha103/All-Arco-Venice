@@ -618,14 +618,14 @@ export default function Landing() {
       </section>
 
       {/* Booking Section */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Book Your Stay</h2>
-          <p className="text-gray-600">Choose your dates and start planning your perfect getaway</p>
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-12 lg:mb-16">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Book Your Stay</h2>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">Choose your dates and start planning your perfect getaway</p>
         </div>
 
         <Card className="overflow-hidden shadow-lg">
-          <CardContent className="p-6 sm:p-8">
+          <CardContent className="p-8 sm:p-12 lg:p-16">
             {/* Mobile Layout - Vertical */}
             <div className="block md:hidden space-y-6">
               {/* Advanced Calendar Section */}
