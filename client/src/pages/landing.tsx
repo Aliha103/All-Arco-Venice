@@ -1592,7 +1592,14 @@ export default function Landing() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Left: Property Details */}
           <div className="space-y-8">
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border border-orange-100">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border-2 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              {/* Security watermark */}
+              <div className="absolute top-3 right-3">
+                <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                  <Shield className="w-3 h-3" />
+                  <span>Verified</span>
+                </div>
+              </div>
               <div className="flex items-center mb-4">
                 <Building className="w-6 h-6 text-orange-600 mr-3" />
                 <div>
@@ -1609,6 +1616,18 @@ export default function Landing() {
                 <p className="text-gray-700 leading-relaxed">
                   Featuring authentic Venetian architecture, a fully equipped gourmet kitchen, and an enchanting private balcony with canal views, this apartment offers an unparalleled Venice experience. Perfectly positioned for cultural immersion, with world-renowned museums, acclaimed restaurants, and historic landmarks all within a leisurely stroll.
                 </p>
+                
+                {/* Security Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-orange-200">
+                  <div className="flex items-center space-x-2 text-xs text-orange-700">
+                    <Shield className="w-3 h-3" />
+                    <span>Licensed & Insured Property</span>
+                  </div>
+                  <div className="flex items-center space-x-1 text-xs text-green-600">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>ID Verified</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1634,7 +1653,14 @@ export default function Landing() {
 
           {/* Right: Premium Amenities */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+              {/* Security watermark */}
+              <div className="absolute top-3 right-3">
+                <div className="flex items-center space-x-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                  <Shield className="w-3 h-3" />
+                  <span>Premium</span>
+                </div>
+              </div>
               <div className="flex items-center mb-6">
                 <Sparkles className="w-6 h-6 text-purple-600 mr-3" />
                 <h3 className="text-xl font-bold text-gray-900">Premium Amenities</h3>
@@ -1692,6 +1718,18 @@ export default function Landing() {
                     </div>
                     <div className="text-sm font-semibold text-gray-900">Seamless Check-in</div>
                     <div className="text-xs text-gray-600">Self-service convenience</div>
+                  </div>
+                </div>
+                
+                {/* Security Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-purple-200">
+                  <div className="flex items-center space-x-2 text-xs text-purple-700">
+                    <Shield className="w-3 h-3" />
+                    <span>Quality Assured Amenities</span>
+                  </div>
+                  <div className="flex items-center space-x-1 text-xs text-blue-600">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>Premium Certified</span>
                   </div>
                 </div>
               </div>
