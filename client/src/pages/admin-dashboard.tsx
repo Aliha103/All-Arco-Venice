@@ -227,7 +227,7 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Response Time</span>
-                  <span className="font-semibold text-success">< 1 hour</span>
+                  <span className="font-semibold text-success">&lt; 1 hour</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Response Rate</span>

@@ -11,7 +11,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2025-05-28.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -47,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate payment method based on user role
       const userRole = req.isAuthenticated() ? 
-        (await storage.getUser(req.user?.claims?.sub))?.role || 'guest' : 'guest';
+        (await storage.getUser((req.user as any)?.claims?.sub))?.role || 'guest' : 'guest';
       
       const guestPaymentMethods = ['online', 'at_property_card_auth'];
       const adminPaymentMethods = ['admin_manual_card', 'admin_pay_at_property', 'admin_city_tax_only'];

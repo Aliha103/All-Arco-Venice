@@ -119,15 +119,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]> {
-    let query = db.select().from(bookings);
+    let conditions = [];
     
     if (filters?.status) {
-      query = query.where(eq(bookings.status, filters.status));
+      conditions.push(eq(bookings.status, filters.status as any));
     }
     
     if (filters?.userId) {
-      query = query.where(eq(bookings.userId, filters.userId));
+      conditions.push(eq(bookings.userId, filters.userId));
     }
+    
+    const query = conditions.length > 0 
+      ? db.select().from(bookings).where(and(...conditions))
+      : db.select().from(bookings);
     
     return await query.orderBy(desc(bookings.createdAt));
   }
@@ -140,42 +144,41 @@ export class DatabaseStorage implements IStorage {
   async updateBookingStatus(id: number, status: string): Promise<void> {
     await db
       .update(bookings)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(bookings.id, id));
   }
 
   async checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean> {
-    let query = db
-      .select({ count: count() })
-      .from(bookings)
-      .where(
+    const conditions = [
+      or(
+        eq(bookings.status, "confirmed" as any),
+        eq(bookings.status, "checked_in" as any)
+      ),
+      or(
         and(
-          or(
-            eq(bookings.status, "confirmed"),
-            eq(bookings.status, "checked_in")
-          ),
-          or(
-            and(
-              gte(bookings.checkInDate, checkIn),
-              lte(bookings.checkInDate, checkOut)
-            ),
-            and(
-              gte(bookings.checkOutDate, checkIn),
-              lte(bookings.checkOutDate, checkOut)
-            ),
-            and(
-              lte(bookings.checkInDate, checkIn),
-              gte(bookings.checkOutDate, checkOut)
-            )
-          )
+          gte(bookings.checkInDate, checkIn),
+          lte(bookings.checkInDate, checkOut)
+        ),
+        and(
+          gte(bookings.checkOutDate, checkIn),
+          lte(bookings.checkOutDate, checkOut)
+        ),
+        and(
+          lte(bookings.checkInDate, checkIn),
+          gte(bookings.checkOutDate, checkOut)
         )
-      );
+      )
+    ];
 
     if (excludeBookingId) {
-      query = query.where(sql`${bookings.id} != ${excludeBookingId}`);
+      conditions.push(sql`${bookings.id} != ${excludeBookingId}` as any);
     }
 
-    const result = await query;
+    const result = await db
+      .select({ count: count() })
+      .from(bookings)
+      .where(and(...conditions));
+
     return result[0].count === 0;
   }
 
@@ -296,11 +299,9 @@ export class DatabaseStorage implements IStorage {
 
   // Messages operations
   async getMessages(isFromAdmin?: boolean): Promise<Message[]> {
-    let query = db.select().from(messages);
-    
-    if (typeof isFromAdmin === 'boolean') {
-      query = query.where(eq(messages.isFromAdmin, isFromAdmin));
-    }
+    const query = typeof isFromAdmin === 'boolean'
+      ? db.select().from(messages).where(eq(messages.isFromAdmin, isFromAdmin))
+      : db.select().from(messages);
     
     return await query.orderBy(desc(messages.createdAt));
   }
