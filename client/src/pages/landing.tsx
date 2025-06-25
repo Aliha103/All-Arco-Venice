@@ -1263,218 +1263,222 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Desktop Layout - 3 Equal Columns */}
-            <div className="hidden lg:grid grid-cols-3 gap-8">
-              {/* Column 1: Advanced Calendar Section */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                    Select Dates
-                  </h3>
-                  <button
-                    onClick={() => {setCheckIn(""); setCheckOut("");}}
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
+            {/* Desktop Layout - 80% Width, 50% Calendar, 25% Guests/Pets, 25% Price */}
+            <div className="hidden lg:block">
+              <div className="w-4/5 mx-auto">
+                <div className="grid gap-8" style={{ gridTemplateColumns: '50% 25% 25%' }}>
+                  {/* Column 1: Advanced Calendar Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                        <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                        Select Dates
+                      </h3>
+                      <button
+                        onClick={() => {setCheckIn(""); setCheckOut("");}}
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
 
-                {/* Selected Dates Display */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Check-in</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'Select date'}
+                    {/* Selected Dates Display */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Check-in</span>
+                          <div className="mt-1 text-blue-600 font-semibold">
+                            {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'Select date'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Check-out</span>
+                          <div className="mt-1 text-blue-600 font-semibold">
+                            {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'Select date'}
+                          </div>
+                        </div>
+                        {checkIn && checkOut && (
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Check-out</span>
-                      <div className="mt-1 text-blue-600 font-semibold">
-                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'Select date'}
+
+                    {/* Compact Calendar */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          onClick={() => navigateMonth('prev')}
+                          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <ChevronLeft className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <h4 className="text-base font-semibold text-gray-900">
+                          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                        </h4>
+                        <button
+                          onClick={() => navigateMonth('next')}
+                          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <ChevronRight className="w-4 h-4 text-gray-600" />
+                        </button>
+                      </div>
+
+                      {/* Days of week header */}
+                      <div className="grid grid-cols-7 mb-1">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                          <div key={index} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Calendar Grid */}
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {renderCalendar().map((day, index) => (
+                          <div key={index} className="flex justify-center">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Compact Legend */}
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex justify-center space-x-4 text-xs">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-blue-600 rounded mr-1"></div>
+                            <span className="text-gray-600">Selected</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-red-100 rounded mr-1"></div>
+                            <span className="text-gray-600">Booked</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    {checkIn && checkOut && (
-                      <div className="pt-3 border-t border-gray-200">
-                        <div className="flex items-center text-green-600">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''}</span>
+
+                    {(validationErrors.checkIn || validationErrors.checkOut) && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-start text-red-800">
+                          <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">
+                            {validationErrors.checkIn || validationErrors.checkOut}
+                          </span>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* Compact Calendar */}
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <button
-                      onClick={() => navigateMonth('prev')}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <h4 className="text-base font-semibold text-gray-900">
-                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                    </h4>
-                    <button
-                      onClick={() => navigateMonth('next')}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <ChevronRight className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-
-                  {/* Days of week header */}
-                  <div className="grid grid-cols-7 mb-1">
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                      <div key={index} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Calendar Grid */}
-                  <div className="grid grid-cols-7 gap-0.5">
-                    {renderCalendar().map((day, index) => (
-                      <div key={index} className="flex justify-center">
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Compact Legend */}
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="flex justify-center space-x-4 text-xs">
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 bg-blue-600 rounded mr-1"></div>
-                        <span className="text-gray-600">Selected</span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 bg-red-100 rounded mr-1"></div>
-                        <span className="text-gray-600">Booked</span>
+                  {/* Column 2: Guests & Pets Section */}
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
+                    
+                    {/* Guests */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Number of guests</label>
+                      <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
+                        <div className="flex items-center">
+                          <Users className="w-5 h-5 text-gray-500 mr-3" />
+                          <span className="text-gray-700">Guests</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => setGuests(Math.max(1, guests - 1))}
+                            disabled={guests <= 1}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
+                          <button
+                            onClick={() => setGuests(Math.min(5, guests + 1))}
+                            disabled={guests >= 5}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {(validationErrors.checkIn || validationErrors.checkOut) && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="flex items-start text-red-800">
-                      <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">
-                        {validationErrors.checkIn || validationErrors.checkOut}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Column 2: Guests & Pets Section */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
-                
-                {/* Guests */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Number of guests</label>
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-gray-500 mr-3" />
-                      <span className="text-gray-700">Guests</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => setGuests(Math.max(1, guests - 1))}
-                        disabled={guests <= 1}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
-                      <button
-                        onClick={() => setGuests(Math.min(5, guests + 1))}
-                        disabled={guests >= 5}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pets */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pet preference</label>
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                    <div className="flex items-center">
-                      <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
-                      <span className="text-gray-700">Bringing pets?</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasPet}
-                        onChange={(e) => setHasPet(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  {hasPet && (
-                    <p className="text-sm text-gray-500 mt-2">Additional €20 pet fee will be added</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Column 3: Price Breakdown */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-                  <div className="text-center mb-4">
-                    <div className="text-3xl font-bold text-gray-900">€{basePrice.toFixed(2)}</div>
-                    <div className="text-sm text-gray-600">per night</div>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                      <span>€{subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Cleaning fee</span>
-                      <span>€{cleaningFee.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Service fee</span>
-                      <span>€{serviceFee.toFixed(2)}</span>
-                    </div>
-                    {hasPet && (
-                      <div className="flex justify-between text-sm">
-                        <span>Pet fee</span>
-                        <span>€{petFee.toFixed(2)}</span>
+                    {/* Pets */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Pet preference</label>
+                      <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
+                        <div className="flex items-center">
+                          <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
+                          <span className="text-gray-700">Bringing pets?</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasPet}
+                            onChange={(e) => setHasPet(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                       </div>
-                    )}
-                    <hr className="border-gray-300" />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>€{total.toFixed(2)}</span>
+                      {hasPet && (
+                        <p className="text-sm text-gray-500 mt-2">Additional €20 pet fee will be added</p>
+                      )}
                     </div>
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-105" asChild>
-                    <a href="/api/login">Reserve Now</a>
-                  </Button>
-                  
-                  <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                  {/* Column 3: Price Breakdown */}
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                      <div className="text-center mb-4">
+                        <div className="text-3xl font-bold text-gray-900">€{basePrice.toFixed(2)}</div>
+                        <div className="text-sm text-gray-600">per night</div>
+                      </div>
+
+                      <div className="space-y-3 mb-6">
+                        <div className="flex justify-between text-sm">
+                          <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                          <span>€{subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Cleaning fee</span>
+                          <span>€{cleaningFee.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Service fee</span>
+                          <span>€{serviceFee.toFixed(2)}</span>
+                        </div>
+                        {hasPet && (
+                          <div className="flex justify-between text-sm">
+                            <span>Pet fee</span>
+                            <span>€{petFee.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <hr className="border-gray-300" />
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total</span>
+                          <span>€{total.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-105" asChild>
+                        <a href="/api/login">Reserve Now</a>
+                      </Button>
+                      
+                      <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
