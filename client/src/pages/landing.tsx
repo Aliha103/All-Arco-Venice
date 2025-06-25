@@ -1263,16 +1263,15 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Desktop Layout - 80% Width, 50% Calendar, 25% Guests/Pets, 25% Price */}
-            <div className="hidden lg:block">
-              <div className="w-4/5 mx-auto">
-                <div className="grid gap-8" style={{ gridTemplateColumns: '50% 25% 25%' }}>
-                  {/* Column 1: Advanced Calendar Section */}
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
+            {/* Desktop Layout - 100% Width, 50% Calendar, 25% Guests/Pets, 25% Price */}
+            <div className="hidden lg:grid lg:grid-cols-12 gap-8">
+              {/* Column 1: Advanced Calendar Section (50% = 6 cols) */}
+              <div className="col-span-6 space-y-6">
+                <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold text-gray-900 flex items-center">
                         <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                         Select Dates
+                        {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
                       </h3>
                       <button
                         onClick={() => {setCheckIn(""); setCheckOut("");}}
@@ -1283,87 +1282,95 @@ export default function Landing() {
                     </div>
 
                     {/* Selected Dates Display */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <span className="font-medium text-gray-700">Check-in</span>
-                          <div className="mt-1 text-blue-600 font-semibold">
-                            {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            }) : 'Select date'}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 transition-all duration-300">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                            <div className="flex items-center mb-2">
+                              <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                              <span className="text-sm font-medium text-gray-700">Check-in</span>
+                            </div>
+                            <div className="text-blue-600 font-semibold text-sm">
+                              {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              }) : 'Select date'}
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-700">Check-out</span>
-                          <div className="mt-1 text-blue-600 font-semibold">
-                            {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            }) : 'Select date'}
+                          <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
+                            <div className="flex items-center mb-2">
+                              <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+                              <span className="text-sm font-medium text-gray-700">Check-out</span>
+                            </div>
+                            <div className="text-blue-600 font-semibold text-sm">
+                              {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              }) : 'Select date'}
+                            </div>
                           </div>
                         </div>
                         {checkIn && checkOut && (
-                          <div className="pt-3 border-t border-gray-200">
-                            <div className="flex items-center text-green-600">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 animate-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center justify-center text-green-700">
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''}</span>
+                              <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''} selected</span>
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Compact Calendar */}
+                    {/* Calendar Navigation */}
                     <div className="bg-white border border-gray-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-4">
                         <button
                           onClick={() => navigateMonth('prev')}
-                          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                          <ChevronLeft className="w-4 h-4 text-gray-600" />
+                          <ChevronLeft className="w-5 h-5 text-gray-600" />
                         </button>
-                        <h4 className="text-base font-semibold text-gray-900">
+                        <h4 className="text-lg font-semibold text-gray-900">
                           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                         </h4>
                         <button
                           onClick={() => navigateMonth('next')}
-                          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                          <ChevronRight className="w-4 h-4 text-gray-600" />
+                          <ChevronRight className="w-5 h-5 text-gray-600" />
                         </button>
                       </div>
 
                       {/* Days of week header */}
-                      <div className="grid grid-cols-7 mb-1">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                          <div key={index} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
+                      <div className="grid grid-cols-7 mb-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                          <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
                             {day}
                           </div>
                         ))}
                       </div>
 
                       {/* Calendar Grid */}
-                      <div className="grid grid-cols-7 gap-0.5">
-                        {renderCalendar().map((day, index) => (
-                          <div key={index} className="flex justify-center">
-                            {day}
-                          </div>
-                        ))}
+                      <div className="grid grid-cols-7 gap-1">
+                        {renderCalendar()}
                       </div>
 
-                      {/* Compact Legend */}
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex justify-center space-x-4 text-xs">
+                      {/* Legend */}
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex justify-between text-xs">
                           <div className="flex items-center">
-                            <div className="w-2 h-2 bg-blue-600 rounded mr-1"></div>
+                            <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
                             <span className="text-gray-600">Selected</span>
                           </div>
                           <div className="flex items-center">
-                            <div className="w-2 h-2 bg-red-100 rounded mr-1"></div>
-                            <span className="text-gray-600">Booked</span>
+                            <div className="w-3 h-3 bg-blue-100 rounded mr-2"></div>
+                            <span className="text-gray-600">In Range</span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
+                            <span className="text-gray-600">Unavailable</span>
                           </div>
                         </div>
                       </div>
@@ -1371,8 +1378,8 @@ export default function Landing() {
 
                     {(validationErrors.checkIn || validationErrors.checkOut) && (
                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                        <div className="flex items-start text-red-800">
-                          <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                        <div className="flex items-center text-red-800">
+                          <AlertCircle className="w-4 h-4 mr-2" />
                           <span className="text-sm">
                             {validationErrors.checkIn || validationErrors.checkOut}
                           </span>
@@ -1381,76 +1388,122 @@ export default function Landing() {
                     )}
                   </div>
 
-                  {/* Column 2: Guests & Pets Section */}
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
-                    
-                    {/* Guests */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Number of guests</label>
-                      <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                        <div className="flex items-center">
-                          <Users className="w-5 h-5 text-gray-500 mr-3" />
-                          <span className="text-gray-700">Guests</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => setGuests(Math.max(1, guests - 1))}
-                            disabled={guests <= 1}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
-                          <button
-                            onClick={() => setGuests(Math.min(5, guests + 1))}
-                            disabled={guests >= 5}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+              {/* Column 2: Guests & Pets Section (25% = 3 cols) */}
+              <div className="col-span-3 space-y-6">
+                <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
+                
+                {/* Guests */}
+                <div className="space-y-4">
+                  <div className="border border-gray-300 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center">
+                        <Users className="w-5 h-5 text-gray-500 mr-3" />
+                        <div>
+                          <span className="text-gray-700 font-medium">Guests</span>
+                          <p className="text-xs text-gray-500">Max 5</p>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Pets */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Pet preference</label>
-                      <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                        <div className="flex items-center">
-                          <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
-                          <span className="text-gray-700">Bringing pets?</span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleGuestChange(-1)}
+                          disabled={guests <= 1}
+                          className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:border-blue-400 transition-all duration-200"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <div className="min-w-[2rem] text-center">
+                          <span className="text-lg font-bold text-gray-900">{guests}</span>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={hasPet}
-                            onChange={(e) => setHasPet(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
+                        <button
+                          onClick={() => handleGuestChange(1)}
+                          disabled={guests >= 5}
+                          className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:border-blue-400 transition-all duration-200"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
                       </div>
-                      {hasPet && (
-                        <p className="text-sm text-gray-500 mt-2">Additional €20 pet fee will be added</p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Column 3: Price Breakdown */}
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold text-gray-900">€{basePrice.toFixed(2)}</div>
-                        <div className="text-sm text-gray-600">per night</div>
+                  {/* Pets */}
+                  <div className="border border-gray-300 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center">
+                        <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
+                        <div>
+                          <span className="text-gray-700 font-medium">Pets</span>
+                          <p className="text-xs text-gray-500">€20 fee</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasPet}
+                          onChange={(e) => setHasPet(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                      </label>
+                    </div>
+                    {hasPet && (
+                      <div className="px-4 pb-4">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
+                          <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                          <p className="text-green-800 text-sm">Pet fee included</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 3: Price Breakdown (25% = 3 cols) */}
+              <div className="col-span-3 space-y-6">
+                <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
+                      {/* Security Badge */}
+                      <div className="absolute top-4 right-4">
+                        <div className="flex items-center space-x-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                          <Shield className="w-3 h-3" />
+                          <span>Secure</span>
+                        </div>
                       </div>
 
-                      <div className="space-y-3 mb-6">
-                        <div className="flex justify-between text-sm">
-                          <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                          <span>€{subtotal.toFixed(2)}</span>
+                      <div className="text-center mb-4 mt-2">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="text-2xl font-bold text-gray-900">
+                            €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)}
+                          </div>
+                          {hasDiscount && (
+                            <div className="text-lg text-gray-500 line-through">
+                              €{basePrice.toFixed(2)}
+                            </div>
+                          )}
                         </div>
+                        <div className="text-sm text-gray-600">per night</div>
+                        {hasDiscount && (
+                          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium mt-2 inline-block">
+                            {nights >= 7 ? '10% weekly discount' : '5% multi-night discount'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 mb-6">
+                        <div className="flex justify-between text-sm">
+                          <span>
+                            €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}
+                            {hasDiscount && <span className="text-green-600 ml-1">(discounted)</span>}
+                          </span>
+                          <span>€{(hasDiscount ? discountedPrice * nights : subtotal).toFixed(2)}</span>
+                        </div>
+                        
+                        {hasDiscount && (
+                          <div className="flex justify-between text-sm text-green-600">
+                            <span>Discount savings</span>
+                            <span>-€{discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between text-sm">
                           <span>Cleaning fee</span>
                           <span>€{cleaningFee.toFixed(2)}</span>
@@ -1466,17 +1519,65 @@ export default function Landing() {
                           </div>
                         )}
                         <hr className="border-gray-300" />
-                        <div className="flex justify-between font-bold text-lg">
+                        <div className="flex justify-between font-bold text-base">
                           <span>Total</span>
-                          <span>€{total.toFixed(2)}</span>
+                          <span className="text-lg">€{(hasDiscount ? (discountedPrice * nights) + cleaningFee + petFee + serviceFee : total).toFixed(2)}</span>
                         </div>
+                        
+                        {hasDiscount && (
+                          <div className="text-center">
+                            <span className="text-xs text-green-600 font-medium">
+                              You saved €{discountAmount.toFixed(2)}!
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-105" asChild>
-                        <a href="/api/login">Reserve Now</a>
-                      </Button>
+                      {/* Availability Status */}
+                      {checkIn && checkOut && Object.keys(validationErrors).length === 0 && (
+                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center text-green-800">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-medium">Available for your dates</span>
+                          </div>
+                          {isCheckingAvailability && (
+                            <div className="flex items-center text-blue-600 mt-1">
+                              <Clock className="w-3 h-3 mr-1 animate-spin" />
+                              <span className="text-xs">Checking real-time availability...</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {Object.keys(validationErrors).length === 0 && checkIn && checkOut ? (
+                        <Button 
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-[1.02]" 
+                          asChild={true}
+                        >
+                          <a href="/api/login" className="flex items-center justify-center">
+                            <Lock className="w-4 h-4 mr-2" />
+                            Reserve Securely
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button 
+                          className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold cursor-not-allowed" 
+                          disabled
+                        >
+                          <span className="flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            {!checkIn || !checkOut ? 'Select dates to continue' : 'Please fix errors above'}
+                          </span>
+                        </Button>
+                      )}
                       
-                      <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                      <div className="text-center mt-3 space-y-1">
+                        <p className="text-xs text-gray-500">You won't be charged yet</p>
+                        <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                          <Shield className="w-3 h-3" />
+                          <span>SSL encrypted • Secure payment</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
