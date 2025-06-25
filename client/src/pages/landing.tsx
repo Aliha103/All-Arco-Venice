@@ -1,9 +1,31 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus } from "lucide-react";
+import { useState } from "react";
 
 export default function Landing() {
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests, setGuests] = useState(2);
+  const [hasPet, setHasPet] = useState(false);
+
+  const basePrice = 110.50;
+  const cleaningFee = 25.00;
+  const petFee = hasPet ? 20.00 : 0;
+  const serviceFee = 15.00;
+  
+  const calculateNights = () => {
+    if (!checkIn || !checkOut) return 1;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return nights > 0 ? nights : 1;
+  };
+
+  const nights = calculateNights();
+  const subtotal = basePrice * nights;
+  const total = subtotal + cleaningFee + petFee + serviceFee;
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -310,6 +332,173 @@ export default function Landing() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Booking Section */}
+      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Book Your Stay</h2>
+          <p className="text-sm sm:text-base text-gray-600">Select your dates and preferences</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Booking Form */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardContent className="p-6 sm:p-8">
+                {/* Calendar Section */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-primary" />
+                    Select Dates
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
+                      <input
+                        type="date"
+                        value={checkIn}
+                        onChange={(e) => setCheckIn(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
+                      <input
+                        type="date"
+                        value={checkOut}
+                        onChange={(e) => setCheckOut(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        min={checkIn || new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Guests Section */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Users className="w-5 h-5 mr-2 text-primary" />
+                    Guests
+                  </h3>
+                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
+                    <span className="text-gray-700">Number of guests (max 5)</span>
+                    <div className="flex items-center space-x-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        disabled={guests <= 1}
+                        className="w-8 h-8 p-0"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setGuests(Math.min(5, guests + 1))}
+                        disabled={guests >= 5}
+                        className="w-8 h-8 p-0"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pet Section */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <PawPrint className="w-5 h-5 mr-2 text-primary" />
+                    Pets
+                  </h3>
+                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
+                    <div>
+                      <span className="text-gray-700">Are you coming with a pet?</span>
+                      {hasPet && <p className="text-sm text-gray-500 mt-1">Additional €20.00 pet fee applies</p>}
+                    </div>
+                    <div className="flex space-x-3">
+                      <Button
+                        size="sm"
+                        variant={!hasPet ? "default" : "outline"}
+                        onClick={() => setHasPet(false)}
+                        className="min-w-[60px]"
+                      >
+                        No
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={hasPet ? "default" : "outline"}
+                        onClick={() => setHasPet(true)}
+                        className="min-w-[60px]"
+                      >
+                        Yes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Price Breakdown */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                    <span>€{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Cleaning fee</span>
+                    <span>€{cleaningFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Service fee</span>
+                    <span>€{serviceFee.toFixed(2)}</span>
+                  </div>
+                  {hasPet && (
+                    <div className="flex justify-between text-sm">
+                      <span>Pet fee</span>
+                      <span>€{petFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <hr className="my-3" />
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span>€{total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <Button className="w-full bg-primary hover:bg-primary/90 text-white py-3" asChild>
+                  <a href="/api/login">Reserve Now</a>
+                </Button>
+                
+                <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                
+                {/* Booking Summary */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Booking Summary</h4>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div>Guests: {guests}</div>
+                    {checkIn && checkOut && (
+                      <div>
+                        {new Date(checkIn).toLocaleDateString()} - {new Date(checkOut).toLocaleDateString()}
+                      </div>
+                    )}
+                    <div>Duration: {nights} night{nights !== 1 ? 's' : ''}</div>
+                    {hasPet && <div>Pet-friendly accommodation</div>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
