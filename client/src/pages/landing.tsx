@@ -990,8 +990,8 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Tablet Layout - 2 Columns */}
-            <div className="hidden md:grid lg:hidden grid-cols-2 gap-8">
+            {/* Tablet Layout - 2 Columns: 70% Calendar, 30% Preferences */}
+            <div className="hidden md:grid lg:hidden gap-8" style={{ gridTemplateColumns: '70% 30%' }}>
               {/* Left: Advanced Calendar Section */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
