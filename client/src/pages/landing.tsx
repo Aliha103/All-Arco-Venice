@@ -149,6 +149,72 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Apartment Details Section */}
+      <section className="bg-gray-50 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm border border-gray-100">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              {/* Left side - Apartment details */}
+              <div className="flex-1">
+                <div className="flex items-start space-x-4">
+                  {/* Host icon */}
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  
+                  {/* Apartment info */}
+                  <div className="flex-1">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
+                      Entire apartment hosted by Fatima
+                    </h2>
+                    
+                    {/* Apartment specs */}
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm sm:text-base text-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                        </svg>
+                        <span>5 guests</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.75 2.524z" />
+                        </svg>
+                        <span>2 bedrooms</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8 1a1 1 0 00-1 1v1H6a1 1 0 000 2h1v1a1 1 0 002 0V5h1a1 1 0 100-2H9V2a1 1 0 00-1-1zM6 7a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2zm-8 4a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+                        </svg>
+                        <span>1 bathroom</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right side - Pricing and availability */}
+              <div className="lg:text-right">
+                <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-2">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    €110.50
+                    <span className="text-base sm:text-lg font-normal text-gray-600 ml-1">/night</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-600">Available</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Preview */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12">
