@@ -299,41 +299,15 @@ export default function Landing() {
                   </div>
                 </div>
                 
-                {/* Right side - Enhanced Pricing and availability */}
-                <div className="flex-shrink-0">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 lg:p-8 rounded-2xl border border-blue-100 shadow-sm min-w-[280px]">
-                    <div className="text-center">
-                      <div className="flex items-baseline justify-center mb-3">
-                        <span className="text-3xl lg:text-4xl font-bold text-gray-900">€110.50</span>
-                        <span className="text-lg text-gray-600 ml-2">/night</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-center space-x-2 mb-4">
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium text-green-600">Available Now</span>
-                      </div>
-                      
-                      <div className="space-y-2 text-xs text-gray-600 mb-6">
-                        <div className="flex justify-between">
-                          <span>€110.50 × 1 night</span>
-                          <span>€110.50</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Cleaning fee</span>
-                          <span>€25.00</span>
-                        </div>
-                        <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-gray-900">
-                          <span>Total</span>
-                          <span>€135.50</span>
-                        </div>
-                      </div>
-                      
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105" asChild>
-                        <a href="/api/login">Reserve Now</a>
-                      </Button>
-                      
-                      <p className="text-xs text-gray-500 mt-3">You won't be charged yet</p>
-                    </div>
+                {/* Right side - Pricing and availability */}
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-gray-900">
+                    €110.50
+                    <span className="text-lg font-normal text-gray-600 ml-1">/night</span>
+                  </div>
+                  <div className="flex items-center justify-end space-x-2 mt-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-600">Available</span>
                   </div>
                 </div>
               </div>
