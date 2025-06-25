@@ -145,63 +145,195 @@ export default function Landing() {
       </section>
 
       {/* Apartment Details Section */}
-      <section className="bg-gray-50 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <section className="bg-gradient-to-b from-gray-50 to-white px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              {/* Left side - Apartment details */}
-              <div className="flex-1">
-                <div className="flex items-start space-x-4">
-                  {/* Host icon */}
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 lg:p-10 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            {/* Mobile Layout (Vertical) */}
+            <div className="block md:hidden">
+              <div className="space-y-6">
+                {/* Host Section */}
+                <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
+                    <svg className="w-7 h-7 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  
-                  {/* Apartment info */}
                   <div className="flex-1">
-                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-1">
                       Entire apartment hosted by Fatima
                     </h2>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-amber-400 fill-current" />
+                        <span className="text-sm font-medium text-gray-700 ml-1">Superhost</span>
+                      </div>
+                      <span className="text-gray-300">•</span>
+                      <span className="text-sm text-gray-600">5+ years hosting</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Apartment Specs */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-xl">
+                    <div className="w-8 h-8 mx-auto mb-2 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                      </svg>
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">5</div>
+                    <div className="text-xs text-gray-600">guests</div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-gray-50 rounded-xl">
+                    <div className="w-8 h-8 mx-auto mb-2 bg-green-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z" />
+                      </svg>
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">2</div>
+                    <div className="text-xs text-gray-600">bedrooms</div>
+                  </div>
+                  
+                  <div className="text-center p-3 bg-gray-50 rounded-xl">
+                    <div className="w-8 h-8 mx-auto mb-2 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                      </svg>
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">1</div>
+                    <div className="text-xs text-gray-600">bathroom</div>
+                  </div>
+                </div>
+
+                {/* Pricing Section */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-baseline">
+                        <span className="text-2xl font-bold text-gray-900">€110.50</span>
+                        <span className="text-base text-gray-600 ml-1">/night</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium text-green-600">Available Now</span>
+                      </div>
+                    </div>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                      Book Now
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tablet & Desktop Layout (Horizontal) */}
+            <div className="hidden md:block">
+              <div className="flex items-center justify-between gap-8">
+                {/* Left side - Apartment details */}
+                <div className="flex-1">
+                  <div className="flex items-start space-x-6">
+                    {/* Enhanced Host icon */}
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0 border-2 border-white">
+                      <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                     
-                    {/* Apartment specs */}
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm sm:text-base text-gray-600">
-                      <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                        </svg>
-                        <span>5 guests</span>
+                    {/* Enhanced Apartment info */}
+                    <div className="flex-1">
+                      <h2 className="text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
+                        Entire apartment hosted by Fatima
+                      </h2>
+                      
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-amber-400 fill-current" />
+                          <span className="text-sm font-medium text-gray-700">Superhost</span>
+                        </div>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-sm text-gray-600">5+ years hosting</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-sm text-gray-600">100+ reviews</span>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.75 2.524z" />
-                        </svg>
-                        <span>2 bedrooms</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8 1a1 1 0 00-1 1v1H6a1 1 0 000 2h1v1a1 1 0 002 0V5h1a1 1 0 100-2H9V2a1 1 0 00-1-1zM6 7a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2zm-8 4a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
-                        </svg>
-                        <span>1 bathroom</span>
+                      {/* Enhanced Apartment specs */}
+                      <div className="flex items-center gap-6 lg:gap-8">
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">5 guests</div>
+                            <div className="text-xs text-gray-600">Maximum capacity</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">2 bedrooms</div>
+                            <div className="text-xs text-gray-600">Private spaces</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">1 bathroom</div>
+                            <div className="text-xs text-gray-600">Full bathroom</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Right side - Pricing and availability */}
-              <div className="lg:text-right">
-                <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-2">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    €110.50
-                    <span className="text-base sm:text-lg font-normal text-gray-600 ml-1">/night</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-green-600">Available</span>
+                
+                {/* Right side - Enhanced Pricing and availability */}
+                <div className="flex-shrink-0">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 lg:p-8 rounded-2xl border border-blue-100 shadow-sm min-w-[280px]">
+                    <div className="text-center">
+                      <div className="flex items-baseline justify-center mb-3">
+                        <span className="text-3xl lg:text-4xl font-bold text-gray-900">€110.50</span>
+                        <span className="text-lg text-gray-600 ml-2">/night</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-center space-x-2 mb-4">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium text-green-600">Available Now</span>
+                      </div>
+                      
+                      <div className="space-y-2 text-xs text-gray-600 mb-6">
+                        <div className="flex justify-between">
+                          <span>€110.50 × 1 night</span>
+                          <span>€110.50</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Cleaning fee</span>
+                          <span>€25.00</span>
+                        </div>
+                        <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-gray-900">
+                          <span>Total</span>
+                          <span>€135.50</span>
+                        </div>
+                      </div>
+                      
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105" asChild>
+                        <a href="/api/login">Reserve Now</a>
+                      </Button>
+                      
+                      <p className="text-xs text-gray-500 mt-3">You won't be charged yet</p>
+                    </div>
                   </div>
                 </div>
               </div>
