@@ -337,170 +337,154 @@ export default function Landing() {
       </section>
 
       {/* Booking Section */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Book Your Stay</h2>
-          <p className="text-sm sm:text-base text-gray-600">Select your dates and preferences</p>
-        </div>
+      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Book Your Stay</h2>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600">€{basePrice.toFixed(2)}</div>
+                <div className="text-sm text-gray-500">per night</div>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Booking Form */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="p-6 sm:p-8">
-                {/* Calendar Section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-primary" />
-                    Select Dates
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                      <input
-                        type="date"
-                        value={checkIn}
-                        onChange={(e) => setCheckIn(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        min={new Date().toISOString().split('T')[0]}
-                      />
+            <div className="flex flex-col lg:flex-row">
+              {/* Calendar Section */}
+              <div className="flex-1 p-6 border-r border-gray-200">
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <h3 className="text-lg font-medium text-gray-900">June 2025</h3>
+                    <button className="p-1 hover:bg-gray-100 rounded">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-600 mb-4">Jun 26 - Jun 27</div>
+                  
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1 text-center text-sm">
+                    {/* Day headers */}
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="p-2 text-gray-500 font-medium">{day}</div>
+                    ))}
+                    
+                    {/* Calendar days */}
+                    {Array.from({ length: 35 }, (_, i) => {
+                      const dayNumber = i - 2; // Start from Sunday before 1st
+                      const isCurrentMonth = dayNumber >= 1 && dayNumber <= 30;
+                      const isSelected = dayNumber === 26 || dayNumber === 27;
+                      const isInRange = dayNumber >= 26 && dayNumber <= 27;
+                      
+                      return (
+                        <button
+                          key={i}
+                          className={`
+                            p-2 w-8 h-8 rounded text-sm font-medium transition-colors
+                            ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}
+                            ${isSelected ? 'bg-blue-600 text-white' : ''}
+                            ${isInRange && !isSelected ? 'bg-blue-100 text-blue-600' : ''}
+                          `}
+                        >
+                          {isCurrentMonth ? dayNumber : i > 30 ? dayNumber + 30 : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side - Preferences */}
+              <div className="w-full lg:w-80 p-6 space-y-6">
+                {/* Guests */}
+                <div>
+                  <div className="flex items-center mb-3">
+                    <Users className="w-4 h-4 text-gray-500 mr-2" />
+                    <span className="text-sm font-medium text-gray-700">Guests (max 5)</span>
+                  </div>
+                  <div className="relative">
+                    <select 
+                      value={guests}
+                      onChange={(e) => setGuests(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                    >
+                      {[1, 2, 3, 4, 5].map(num => (
+                        <option key={num} value={num}>{num} guest{num !== 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                    <svg className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Pets */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PawPrint className="w-4 h-4 text-gray-500 mr-2" />
+                      <span className="text-sm font-medium text-gray-700">Pets</span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                      <input
-                        type="date"
-                        value={checkOut}
-                        onChange={(e) => setCheckOut(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        min={checkIn || new Date().toISOString().split('T')[0]}
-                      />
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-600 mr-3">Bringing pets?</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasPet}
+                          onChange={(e) => setHasPet(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                      </label>
                     </div>
                   </div>
                 </div>
 
-                {/* Guests Section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-primary" />
-                    Guests
-                  </h3>
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
-                    <span className="text-gray-700">Number of guests (max 5)</span>
-                    <div className="flex items-center space-x-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setGuests(Math.max(1, guests - 1))}
-                        disabled={guests <= 1}
-                        className="w-8 h-8 p-0"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setGuests(Math.min(5, guests + 1))}
-                        disabled={guests >= 5}
-                        className="w-8 h-8 p-0"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                {/* Price Summary */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                      <span>€{subtotal.toFixed(2)}</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Pet Section */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <PawPrint className="w-5 h-5 mr-2 text-primary" />
-                    Pets
-                  </h3>
-                  <div className="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
-                    <div>
-                      <span className="text-gray-700">Are you coming with a pet?</span>
-                      {hasPet && <p className="text-sm text-gray-500 mt-1">Additional €20.00 pet fee applies</p>}
+                    <div className="flex justify-between">
+                      <span>Cleaning fee</span>
+                      <span>€{cleaningFee.toFixed(2)}</span>
                     </div>
-                    <div className="flex space-x-3">
-                      <Button
-                        size="sm"
-                        variant={!hasPet ? "default" : "outline"}
-                        onClick={() => setHasPet(false)}
-                        className="min-w-[60px]"
-                      >
-                        No
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={hasPet ? "default" : "outline"}
-                        onClick={() => setHasPet(true)}
-                        className="min-w-[60px]"
-                      >
-                        Yes
-                      </Button>
+                    <div className="flex justify-between">
+                      <span>Service fee</span>
+                      <span>€{serviceFee.toFixed(2)}</span>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Price Breakdown */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                    <span>€{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Cleaning fee</span>
-                    <span>€{cleaningFee.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Service fee</span>
-                    <span>€{serviceFee.toFixed(2)}</span>
-                  </div>
-                  {hasPet && (
-                    <div className="flex justify-between text-sm">
-                      <span>Pet fee</span>
-                      <span>€{petFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <hr className="my-3" />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <span>€{total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white py-3" asChild>
-                  <a href="/api/login">Reserve Now</a>
-                </Button>
-                
-                <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
-                
-                {/* Booking Summary */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Booking Summary</h4>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <div>Guests: {guests}</div>
-                    {checkIn && checkOut && (
-                      <div>
-                        {new Date(checkIn).toLocaleDateString()} - {new Date(checkOut).toLocaleDateString()}
+                    {hasPet && (
+                      <div className="flex justify-between">
+                        <span>Pet fee</span>
+                        <span>€{petFee.toFixed(2)}</span>
                       </div>
                     )}
-                    <div>Duration: {nights} night{nights !== 1 ? 's' : ''}</div>
-                    {hasPet && <div>Pet-friendly accommodation</div>}
+                    <hr className="my-3" />
+                    <div className="flex justify-between font-semibold text-base">
+                      <span>Total</span>
+                      <span>€{total.toFixed(2)}</span>
+                    </div>
                   </div>
+
+                  <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-3" asChild>
+                    <a href="/api/login">Reserve</a>
+                  </Button>
+                  
+                  <p className="text-xs text-gray-500 text-center mt-2">You won't be charged yet</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Features Preview */}
