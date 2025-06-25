@@ -140,12 +140,7 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Call to Action */}
-          <div className="mt-6 sm:mt-8 text-center">
-            <Button size="lg" className="text-sm sm:text-base" asChild>
-              <a href="/api/login">Book Your Stay</a>
-            </Button>
-          </div>
+
         </div>
       </section>
 
