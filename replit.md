@@ -1,0 +1,107 @@
+# All'arco Luxury Apartment Booking System
+
+## Overview
+
+This is a full-stack web application for managing bookings at All'arco luxury apartment. The system provides a modern React frontend with an Express.js backend, featuring real-time updates, payment processing via Stripe, and comprehensive admin management capabilities.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for client-side routing
+- **State Management**: TanStack Query (React Query) for server state
+- **UI Components**: Radix UI primitives with shadcn/ui components
+- **Styling**: Tailwind CSS with CSS variables for theming
+- **Build Tool**: Vite for development and production builds
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **Authentication**: Replit Auth with OpenID Connect
+- **Session Management**: Express sessions with PostgreSQL storage
+- **Real-time Updates**: WebSocket implementation for live calendar updates
+
+### Data Storage Solutions
+- **Database**: PostgreSQL via Neon serverless
+- **ORM**: Drizzle ORM with TypeScript schema definitions
+- **Session Store**: PostgreSQL-backed session storage using connect-pg-simple
+- **Schema Management**: Drizzle Kit for migrations and schema management
+
+## Key Components
+
+### Authentication and Authorization
+- **Provider**: Replit Auth with OIDC integration
+- **Session Handling**: Secure session management with PostgreSQL backing
+- **Role-based Access**: Guest and admin user roles with different permissions
+- **Middleware**: Authentication middleware for protected routes
+
+### Booking System
+- **Calendar Integration**: Real-time availability checking with 100ms refresh rate
+- **Payment Processing**: Stripe integration with multiple payment methods
+- **Guest Information**: Comprehensive guest data collection
+- **Booking Validation**: Availability verification and conflict prevention
+
+### Content Management
+- **Property Images**: Upload, delete, and order management for property photos
+- **Amenities**: Dynamic amenity management with icon support
+- **About Content**: Editable content sections with icon selection
+- **Reviews**: Display system for guest reviews and ratings
+
+### Real-time Features
+- **WebSocket Connection**: Live updates for bookings and calendar changes
+- **Message System**: Real-time notifications for new bookings and messages
+- **Calendar Sync**: 100ms refresh rate for instant availability updates
+
+## Data Flow
+
+1. **Authentication Flow**: User authentication via Replit Auth → Session creation → Role-based access control
+2. **Booking Flow**: Date selection → Availability check → Guest information → Payment processing → Confirmation
+3. **Admin Flow**: Dashboard access → Content management → Booking oversight → Analytics viewing
+4. **Real-time Flow**: WebSocket connection → Event broadcasting → Client state updates → UI refresh
+
+## External Dependencies
+
+### Core Dependencies
+- **@neondatabase/serverless**: PostgreSQL connection via Neon
+- **@stripe/stripe-js** & **@stripe/react-stripe-js**: Payment processing
+- **@tanstack/react-query**: Server state management
+- **drizzle-orm**: Type-safe database operations
+- **express**: Web server framework
+
+### UI/UX Dependencies
+- **@radix-ui/***: Accessible UI primitives
+- **tailwindcss**: Utility-first CSS framework
+- **class-variance-authority**: Component variant management
+- **date-fns**: Date manipulation utilities
+
+### Authentication Dependencies
+- **openid-client**: OIDC authentication
+- **passport**: Authentication middleware
+- **express-session**: Session management
+- **connect-pg-simple**: PostgreSQL session store
+
+## Deployment Strategy
+
+### Development Environment
+- **Runtime**: Replit with Node.js 20
+- **Database**: PostgreSQL 16 module
+- **Build**: Vite development server with HMR
+- **Port Configuration**: 5000 (local) → 80 (external)
+
+### Production Build
+- **Frontend**: Vite build to `dist/public`
+- **Backend**: ESBuild bundling to `dist/index.js`
+- **Static Serving**: Express serves built frontend assets
+- **Deployment Target**: Replit Autoscale
+
+### Environment Configuration
+- **Database**: Requires `DATABASE_URL` environment variable
+- **Authentication**: Requires `SESSION_SECRET` and Replit Auth configuration
+- **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
+
+## Changelog
+- June 25, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.

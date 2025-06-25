@@ -1,0 +1,384 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(351, 83%, 61%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(207, 90%, 54%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  --success: hsl(142, 76%, 36%);
+  --warning: hsl(45, 93%, 47%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(351, 83%, 61%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(207, 90%, 54%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+  --success: hsl(142, 76%, 36%);
+  --warning: hsl(45, 93%, 47%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(60, 4.8%, 95.9%);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(25, 5.3%, 44.7%);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(20, 14.3%, 4.1%);
+  }
+}
+
+@layer components {
+  /* Calendar custom styles */
+  .rdp {
+    --rdp-cell-size: 40px;
+    --rdp-accent-color: hsl(351, 83%, 61%);
+    --rdp-background-color: hsl(0, 0%, 100%);
+    margin: 0;
+  }
+
+  .rdp-months {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rdp-month {
+    margin: 0 0 1rem 0;
+  }
+
+  .rdp-table {
+    width: 100%;
+    max-width: none;
+  }
+
+  .rdp-head_cell {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: hsl(25, 5.3%, 44.7%);
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+  .rdp-cell {
+    text-align: center;
+    position: relative;
+    padding: 0;
+  }
+
+  .rdp-button {
+    width: var(--rdp-cell-size);
+    height: var(--rdp-cell-size);
+    border: none;
+    background: transparent;
+    color: hsl(20, 14.3%, 4.1%);
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rdp-button:hover {
+    background-color: hsl(60, 4.8%, 95.9%);
+  }
+
+  .rdp-button_reset {
+    all: unset;
+  }
+
+  .rdp-day_today {
+    font-weight: 600;
+    color: hsl(351, 83%, 61%);
+  }
+
+  .rdp-day_selected {
+    background-color: hsl(351, 83%, 61%) !important;
+    color: hsl(0, 0%, 100%) !important;
+    font-weight: 600;
+  }
+
+  .rdp-day_selected:hover {
+    background-color: hsl(351, 83%, 55%) !important;
+  }
+
+  .rdp-day_disabled {
+    color: hsl(25, 5.3%, 44.7%);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .rdp-day_disabled:hover {
+    background-color: transparent;
+  }
+
+  .rdp-day_outside {
+    color: hsl(25, 5.3%, 44.7%);
+    opacity: 0.5;
+  }
+
+  .rdp-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .rdp-nav_button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    color: hsl(20, 14.3%, 4.1%);
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .rdp-nav_button:hover {
+    background-color: hsl(60, 4.8%, 95.9%);
+  }
+
+  .rdp-nav_button_previous,
+  .rdp-nav_button_next {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rdp-caption_label {
+    font-weight: 600;
+    font-size: 1rem;
+    color: hsl(20, 14.3%, 4.1%);
+  }
+
+  /* Button variants matching design */
+  .btn-primary {
+    background-color: hsl(351, 83%, 61%);
+    color: hsl(0, 0%, 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background-color: hsl(351, 83%, 55%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsla(351, 83%, 61%, 0.4);
+  }
+
+  .btn-secondary {
+    background-color: hsl(207, 90%, 54%);
+    color: hsl(0, 0%, 100%);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    background-color: hsl(207, 90%, 48%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsla(207, 90%, 54%, 0.4);
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    transition: all 0.3s ease-in-out;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px hsla(20, 14.3%, 4.1%, 0.1);
+  }
+
+  /* Image gallery hover effects */
+  .image-gallery-item {
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+  }
+
+  .image-gallery-item:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px hsla(20, 14.3%, 4.1%, 0.15);
+  }
+
+  .image-gallery-item img {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .image-gallery-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Loading animations */
+  .loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Notification badge */
+  .notification-badge {
+    background-color: hsl(351, 83%, 61%);
+    color: hsl(0, 0%, 100%);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+  }
+
+  /* Form focus states */
+  .form-input:focus {
+    outline: none;
+    border-color: hsl(351, 83%, 61%);
+    box-shadow: 0 0 0 3px hsla(351, 83%, 61%, 0.1);
+  }
+
+  /* Rating stars */
+  .rating-star {
+    color: hsl(45, 93%, 47%);
+    fill: currentColor;
+  }
+
+  .rating-star-empty {
+    color: hsl(25, 5.3%, 44.7%);
+  }
+
+  /* Progress bars */
+  .progress-bar {
+    background-color: hsl(142, 76%, 36%);
+    height: 0.5rem;
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  /* Admin controls styling */
+  .admin-control {
+    background-color: hsla(207, 90%, 54%, 0.1);
+    border: 1px solid hsl(207, 90%, 54%);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .admin-control h3 {
+    color: hsl(207, 90%, 30%);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Success/Error states */
+  .success-state {
+    color: hsl(142, 76%, 36%);
+    background-color: hsla(142, 76%, 36%, 0.1);
+    border: 1px solid hsl(142, 76%, 36%);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+  }
+
+  .error-state {
+    color: hsl(0, 84.2%, 60.2%);
+    background-color: hsla(0, 84.2%, 60.2%, 0.1);
+    border: 1px solid hsl(0, 84.2%, 60.2%);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+  }
+
+  /* Responsive image grid */
+  .image-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  @media (min-width: 1024px) {
+    .image-grid {
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .image-grid .main-image {
+      grid-row: 1 / -1;
+    }
+
+    .image-grid .secondary-images {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+  }
+}
