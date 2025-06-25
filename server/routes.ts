@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const booking = await storage.createBooking({
         ...bookingData,
-        userId: req.isAuthenticated() ? req.user?.claims?.sub : null,
+        userId: req.isAuthenticated() ? (req.user as any)?.claims?.sub : null,
       });
 
       // Broadcast new booking via WebSocket
@@ -278,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messageData = insertMessageSchema.parse(req.body);
       const message = await storage.addMessage({
         ...messageData,
-        userId: req.isAuthenticated() ? req.user?.claims?.sub : null,
+        userId: req.isAuthenticated() ? (req.user as any)?.claims?.sub : null,
       });
 
       // Broadcast new message via WebSocket
