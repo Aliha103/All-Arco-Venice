@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight, Info, Building, Building2, Sparkles, Tv, Thermometer, Key } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -1575,6 +1575,129 @@ export default function Landing() {
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      {/* About This Space Section */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-6">
+            <Info className="w-5 h-5 mr-2" />
+            <span className="font-semibold">About This Space</span>
+          </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Experience authentic Venetian luxury in the heart of the floating city
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          {/* Left: Property Details */}
+          <div className="space-y-8">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border border-orange-100">
+              <div className="flex items-center mb-4">
+                <Building className="w-6 h-6 text-orange-600 mr-3" />
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">All'Arco Apartment</h3>
+                  <p className="text-orange-600 font-medium">Historic Venice Center</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <p className="text-gray-700 leading-relaxed">
+                  Welcome to All'Arco Apartment, a meticulously restored 2-bedroom sanctuary that captures the timeless elegance of Venice. Nestled just steps from the iconic St. Mark's Square, this exquisite retreat seamlessly blends centuries-old Venetian charm with contemporary luxury.
+                </p>
+                
+                <p className="text-gray-700 leading-relaxed">
+                  Featuring authentic Venetian architecture, a fully equipped gourmet kitchen, and an enchanting private balcony with canal views, this apartment offers an unparalleled Venice experience. Perfectly positioned for cultural immersion, with world-renowned museums, acclaimed restaurants, and historic landmarks all within a leisurely stroll.
+                </p>
+              </div>
+            </div>
+
+            {/* Property Features */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex items-center mb-2">
+                  <Bed className="w-5 h-5 text-blue-600 mr-2" />
+                  <span className="font-semibold text-gray-900">2 Bedrooms</span>
+                </div>
+                <p className="text-sm text-gray-600">Sleeps up to 5 guests</p>
+              </div>
+              
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                <div className="flex items-center mb-2">
+                  <Building2 className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="font-semibold text-gray-900">3rd Floor</span>
+                </div>
+                <p className="text-sm text-gray-600">Historic building charm</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Premium Amenities */}
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+              <div className="flex items-center mb-6">
+                <Sparkles className="w-6 h-6 text-purple-600 mr-3" />
+                <h3 className="text-xl font-bold text-gray-900">Premium Amenities</h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {/* Row 1 */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Wifi className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">High-Speed WiFi</div>
+                    <div className="text-xs text-gray-600">Complimentary throughout</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Utensils className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">Gourmet Kitchen</div>
+                    <div className="text-xs text-gray-600">Fully equipped for cooking</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Tv className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">Smart Entertainment</div>
+                    <div className="text-xs text-gray-600">Premium streaming access</div>
+                  </div>
+                </div>
+
+                {/* Row 2 */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Thermometer className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">Climate Control</div>
+                    <div className="text-xs text-gray-600">Air conditioning & heating</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Car className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">Parking Available</div>
+                    <div className="text-xs text-gray-600">Nearby secured options</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Key className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">Seamless Check-in</div>
+                    <div className="text-xs text-gray-600">Self-service convenience</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Preview */}
