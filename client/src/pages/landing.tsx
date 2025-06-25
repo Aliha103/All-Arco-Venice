@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -273,9 +273,7 @@ export default function Landing() {
                         
                         <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                           <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z" />
-                            </svg>
+                            <Bed className="w-4 h-4 text-green-600" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold text-gray-900">2 bedrooms</div>
