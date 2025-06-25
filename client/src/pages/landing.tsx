@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,6 +14,8 @@ export default function Landing() {
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState<number>(0);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
 
   const basePrice = 110.50;
   const cleaningFee = 25.00;
@@ -22,6 +24,12 @@ export default function Landing() {
 
   // Rate limiting for availability checks (max 1 per 2 seconds)
   const RATE_LIMIT_MS = 2000;
+
+  // Mock booked dates (in real app, this would come from API)
+  const bookedDates = [
+    "2025-06-15", "2025-06-16", "2025-06-22", "2025-06-23", "2025-06-24",
+    "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-10", "2025-07-11"
+  ];
   // Advanced validation functions
   const validateDates = () => {
     const errors: Record<string, string> = {};
@@ -132,6 +140,164 @@ export default function Landing() {
   const discountedPrice = getDiscountedPrice();
   const hasDiscount = discountedPrice < basePrice;
   const discountAmount = hasDiscount ? (basePrice - discountedPrice) * nights : 0;
+
+  // Calendar helper functions
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const formatDateString = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const parseDate = (dateString: string) => {
+    return new Date(dateString + 'T00:00:00');
+  };
+
+  const isDateBooked = (dateString: string) => {
+    return bookedDates.includes(dateString);
+  };
+
+  const isDateInRange = (dateString: string) => {
+    if (!checkIn || !checkOut) return false;
+    const date = parseDate(dateString);
+    const start = parseDate(checkIn);
+    const end = parseDate(checkOut);
+    return date >= start && date <= end;
+  };
+
+  const isDateSelected = (dateString: string) => {
+    return dateString === checkIn || dateString === checkOut;
+  };
+
+  const isDateInHoverRange = (dateString: string) => {
+    if (!checkIn || !hoveredDate) return false;
+    if (checkOut) return false; // Don't show hover range if both dates are selected
+    
+    const date = parseDate(dateString);
+    const start = parseDate(checkIn);
+    const end = parseDate(hoveredDate);
+    
+    if (end < start) return false;
+    return date >= start && date <= end;
+  };
+
+  const handleDateClick = (dateString: string) => {
+    if (isDateBooked(dateString)) return;
+    
+    const clickedDate = parseDate(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (clickedDate < today) return;
+
+    if (!checkIn || (checkIn && checkOut)) {
+      // Start new selection
+      setCheckIn(dateString);
+      setCheckOut("");
+    } else {
+      // Complete the range
+      const startDate = parseDate(checkIn);
+      if (clickedDate <= startDate) {
+        // If clicked date is before or same as check-in, make it the new check-in
+        setCheckIn(dateString);
+        setCheckOut("");
+      } else {
+        // Set as check-out date
+        setCheckOut(dateString);
+      }
+    }
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(newMonth.getMonth() + (direction === 'next' ? 1 : -1));
+      return newMonth;
+    });
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const days = [];
+    
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-10"></div>);
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      const dateString = formatDateString(date);
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today;
+      const isBooked = isDateBooked(dateString);
+      const isSelected = isDateSelected(dateString);
+      const isInRange = isDateInRange(dateString);
+      const isInHoverRange = isDateInHoverRange(dateString);
+      const isDisabled = isPast || isBooked;
+      
+      days.push(
+        <button
+          key={day}
+          onClick={() => handleDateClick(dateString)}
+          onMouseEnter={() => setHoveredDate(dateString)}
+          onMouseLeave={() => setHoveredDate(null)}
+          disabled={isDisabled}
+          className={`
+            h-10 w-10 rounded-lg text-sm font-medium transition-all duration-200 relative
+            ${isDisabled 
+              ? 'text-gray-300 cursor-not-allowed' 
+              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+            }
+            ${isSelected 
+              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              : ''
+            }
+            ${isInRange && !isSelected 
+              ? 'bg-blue-100 text-blue-700' 
+              : ''
+            }
+            ${isInHoverRange && !isSelected && !isInRange
+              ? 'bg-blue-50 text-blue-600' 
+              : ''
+            }
+            ${isToday && !isSelected 
+              ? 'ring-2 ring-blue-300' 
+              : ''
+            }
+            ${isBooked 
+              ? 'bg-red-100 text-red-400 line-through' 
+              : ''
+            }
+          `}
+        >
+          {day}
+          {isBooked && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+            </div>
+          )}
+        </button>
+      );
+    }
+    
+    return days;
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -453,76 +619,122 @@ export default function Landing() {
           <CardContent className="p-6 sm:p-8">
             {/* Mobile Layout - Vertical */}
             <div className="block md:hidden space-y-6">
-              {/* Calendar Section */}
+              {/* Advanced Calendar Section */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Select Dates</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Check-in
-                      {isCheckingAvailability && <Clock className="inline w-3 h-3 ml-1 animate-spin" />}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={checkIn}
-                        onChange={(e) => handleCheckInChange(e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
-                          validationErrors.checkIn 
-                            ? 'border-red-300 focus:ring-red-500' 
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                        min={new Date().toISOString().split('T')[0]}
-                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                      />
-                      {checkIn && !validationErrors.checkIn && (
-                        <CheckCircle className="absolute right-3 top-2.5 w-4 h-4 text-green-500" />
-                      )}
-                      {validationErrors.checkIn && (
-                        <AlertCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />
-                      )}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Your Dates
+                    {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
+                  </h3>
+                  <button
+                    onClick={() => {setCheckIn(""); setCheckOut("");}}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {/* Selected Dates Display */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Check-in</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : 'Select date'}
+                      </div>
                     </div>
-                    {validationErrors.checkIn && (
-                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkIn}</p>
-                    )}
+                    <div>
+                      <span className="font-medium text-gray-700">Check-out</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : 'Select date'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Check-out
-                      {isCheckingAvailability && <Clock className="inline w-3 h-3 ml-1 animate-spin" />}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={checkOut}
-                        onChange={(e) => handleCheckOutChange(e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
-                          validationErrors.checkOut 
-                            ? 'border-red-300 focus:ring-red-500' 
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                        min={checkIn ? new Date(new Date(checkIn).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                        disabled={!checkIn}
-                      />
-                      {checkOut && !validationErrors.checkOut && (
-                        <CheckCircle className="absolute right-3 top-2.5 w-4 h-4 text-green-500" />
-                      )}
-                      {validationErrors.checkOut && (
-                        <AlertCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />
-                      )}
+                  {checkIn && checkOut && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-center text-green-600">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        <span className="text-sm font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
+                      </div>
                     </div>
-                    {validationErrors.checkOut && (
-                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkOut}</p>
-                    )}
-                    {!validationErrors.checkOut && checkIn && checkOut && nights > 1 && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        {nights} nights stay confirmed
-                      </p>
-                    )}
+                  )}
+                </div>
+
+                {/* Calendar Navigation */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => navigateMonth('prev')}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    </h4>
+                    <button
+                      onClick={() => navigateMonth('next')}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Days of week header */}
+                  <div className="grid grid-cols-7 mb-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {renderCalendar()}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                        <span className="text-gray-600">Selected</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
+                        <span className="text-gray-600">Unavailable</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {validationErrors.checkIn && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-center text-red-800">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      <span className="text-sm">{validationErrors.checkIn}</span>
+                    </div>
+                  </div>
+                )}
+
+                {validationErrors.checkOut && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-center text-red-800">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      <span className="text-sm">{validationErrors.checkOut}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Guests & Pets Section */}
@@ -720,73 +932,119 @@ export default function Landing() {
 
             {/* Tablet Layout - 2 Columns */}
             <div className="hidden md:grid lg:hidden grid-cols-2 gap-8">
-              {/* Left: Calendar Section */}
+              {/* Left: Advanced Calendar Section */}
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  Select Dates
-                  {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={checkIn}
-                        onChange={(e) => handleCheckInChange(e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all ${
-                          validationErrors.checkIn 
-                            ? 'border-red-300 focus:ring-red-500' 
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                        min={new Date().toISOString().split('T')[0]}
-                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                      />
-                      {checkIn && !validationErrors.checkIn && (
-                        <CheckCircle className="absolute right-3 top-3.5 w-4 h-4 text-green-500" />
-                      )}
-                      {validationErrors.checkIn && (
-                        <AlertCircle className="absolute right-3 top-3.5 w-4 h-4 text-red-500" />
-                      )}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Your Dates
+                    {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
+                  </h3>
+                  <button
+                    onClick={() => {setCheckIn(""); setCheckOut("");}}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {/* Selected Dates Display */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Check-in</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        }) : 'Select check-in date'}
+                      </div>
                     </div>
-                    {validationErrors.checkIn && (
-                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkIn}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={checkOut}
-                        onChange={(e) => handleCheckOutChange(e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all ${
-                          validationErrors.checkOut 
-                            ? 'border-red-300 focus:ring-red-500' 
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                        min={checkIn ? new Date(new Date(checkIn).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                        disabled={!checkIn}
-                      />
-                      {checkOut && !validationErrors.checkOut && (
-                        <CheckCircle className="absolute right-3 top-3.5 w-4 h-4 text-green-500" />
-                      )}
-                      {validationErrors.checkOut && (
-                        <AlertCircle className="absolute right-3 top-3.5 w-4 h-4 text-red-500" />
-                      )}
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Check-out</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        }) : 'Select check-out date'}
+                      </div>
                     </div>
-                    {validationErrors.checkOut && (
-                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkOut}</p>
-                    )}
-                    {!validationErrors.checkOut && checkIn && checkOut && nights > 1 && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        {nights} nights stay confirmed
-                      </p>
+                    {checkIn && checkOut && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex items-center text-green-600">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''} stay</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
+
+                {/* Calendar Navigation */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => navigateMonth('prev')}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    </h4>
+                    <button
+                      onClick={() => navigateMonth('next')}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Days of week header */}
+                  <div className="grid grid-cols-7 mb-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {renderCalendar()}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex justify-between text-xs">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                        <span className="text-gray-600">Selected</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-blue-100 rounded mr-2"></div>
+                        <span className="text-gray-600">In Range</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
+                        <span className="text-gray-600">Unavailable</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {(validationErrors.checkIn || validationErrors.checkOut) && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-center text-red-800">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      <span className="text-sm">
+                        {validationErrors.checkIn || validationErrors.checkOut}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right: Guests/Pets + Price (Vertical Stack) */}
@@ -885,31 +1143,118 @@ export default function Landing() {
 
             {/* Desktop Layout - 3 Equal Columns */}
             <div className="hidden lg:grid grid-cols-3 gap-8">
-              {/* Column 1: Calendar Section */}
+              {/* Column 1: Advanced Calendar Section */}
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Select Dates</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                    <input
-                      type="date"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                    <input
-                      type="date"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={checkIn || new Date().toISOString().split('T')[0]}
-                    />
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Dates
+                  </h3>
+                  <button
+                    onClick={() => {setCheckIn(""); setCheckOut("");}}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {/* Selected Dates Display */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Check-in</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        }) : 'Select date'}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Check-out</span>
+                      <div className="mt-1 text-blue-600 font-semibold">
+                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        }) : 'Select date'}
+                      </div>
+                    </div>
+                    {checkIn && checkOut && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex items-center text-green-600">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span className="font-medium">{nights} night{nights !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Compact Calendar */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      onClick={() => navigateMonth('prev')}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <h4 className="text-base font-semibold text-gray-900">
+                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    </h4>
+                    <button
+                      onClick={() => navigateMonth('next')}
+                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Days of week header */}
+                  <div className="grid grid-cols-7 mb-1">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                      <div key={index} className="h-6 flex items-center justify-center text-xs font-medium text-gray-500">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {renderCalendar().map((day, index) => (
+                      <div key={index} className="flex justify-center">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Compact Legend */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-center space-x-4 text-xs">
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-blue-600 rounded mr-1"></div>
+                        <span className="text-gray-600">Selected</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-red-100 rounded mr-1"></div>
+                        <span className="text-gray-600">Booked</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {(validationErrors.checkIn || validationErrors.checkOut) && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-start text-red-800">
+                      <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">
+                        {validationErrors.checkIn || validationErrors.checkOut}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Column 2: Guests & Pets Section */}
