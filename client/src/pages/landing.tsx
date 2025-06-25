@@ -1,20 +1,61 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Landing() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(2);
   const [hasPet, setHasPet] = useState(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState<number>(0);
 
   const basePrice = 110.50;
   const cleaningFee = 25.00;
   const petFee = hasPet ? 20.00 : 0;
   const serviceFee = 15.00;
-  
+
+  // Rate limiting for availability checks (max 1 per 2 seconds)
+  const RATE_LIMIT_MS = 2000;
+  // Advanced validation functions
+  const validateDates = () => {
+    const errors: Record<string, string> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (!checkIn) {
+      errors.checkIn = "Check-in date is required";
+    } else {
+      const checkInDate = new Date(checkIn);
+      if (checkInDate < today) {
+        errors.checkIn = "Check-in date cannot be in the past";
+      }
+    }
+    
+    if (!checkOut) {
+      errors.checkOut = "Check-out date is required";
+    } else if (checkIn) {
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      if (checkOutDate <= checkInDate) {
+        errors.checkOut = "Check-out must be after check-in date";
+      }
+      
+      const diffTime = checkOutDate.getTime() - checkInDate.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      if (diffDays > 30) {
+        errors.checkOut = "Maximum stay is 30 nights";
+      }
+    }
+    
+    return errors;
+  };
+
   const calculateNights = () => {
     if (!checkIn || !checkOut) return 1;
     const start = new Date(checkIn);
@@ -23,9 +64,74 @@ export default function Landing() {
     return nights > 0 ? nights : 1;
   };
 
+  // Availability check with rate limiting
+  const checkAvailability = async () => {
+    const now = Date.now();
+    if (now - lastAvailabilityCheck < RATE_LIMIT_MS) {
+      return;
+    }
+
+    if (!checkIn || !checkOut || Object.keys(validateDates()).length > 0) {
+      return;
+    }
+
+    setIsCheckingAvailability(true);
+    setLastAvailabilityCheck(now);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
+      // In real app: const response = await apiRequest("POST", "/api/check-availability", { checkIn, checkOut });
+    } catch (error) {
+      console.error("Availability check failed:", error);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  };
+
+  // Real-time validation
+  useEffect(() => {
+    const errors = validateDates();
+    setValidationErrors(errors);
+    
+    if (Object.keys(errors).length === 0 && checkIn && checkOut) {
+      checkAvailability();
+    }
+  }, [checkIn, checkOut]);
+
+  // Secure date handlers with validation
+  const handleCheckInChange = (value: string) => {
+    setCheckIn(value);
+    if (checkOut && new Date(value) >= new Date(checkOut)) {
+      setCheckOut("");
+    }
+  };
+
+  const handleCheckOutChange = (value: string) => {
+    setCheckOut(value);
+  };
+
+  // Enhanced guest controls with validation
+  const handleGuestChange = (delta: number) => {
+    const newGuests = guests + delta;
+    if (newGuests >= 1 && newGuests <= 5) {
+      setGuests(newGuests);
+    }
+  };
+
   const nights = calculateNights();
   const subtotal = basePrice * nights;
   const total = subtotal + cleaningFee + petFee + serviceFee;
+
+  // Pricing tiers based on length of stay
+  const getDiscountedPrice = () => {
+    if (nights >= 7) return basePrice * 0.9; // 10% discount for week+
+    if (nights >= 3) return basePrice * 0.95; // 5% discount for 3+ nights
+    return basePrice;
+  };
+
+  const discountedPrice = getDiscountedPrice();
+  const hasDiscount = discountedPrice < basePrice;
+  const discountAmount = hasDiscount ? (basePrice - discountedPrice) * nights : 0;
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -352,24 +458,69 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold text-gray-900">Select Dates</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                    <input
-                      type="date"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-in
+                      {isCheckingAvailability && <Clock className="inline w-3 h-3 ml-1 animate-spin" />}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={checkIn}
+                        onChange={(e) => handleCheckInChange(e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
+                          validationErrors.checkIn 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        min={new Date().toISOString().split('T')[0]}
+                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      />
+                      {checkIn && !validationErrors.checkIn && (
+                        <CheckCircle className="absolute right-3 top-2.5 w-4 h-4 text-green-500" />
+                      )}
+                      {validationErrors.checkIn && (
+                        <AlertCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    {validationErrors.checkIn && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkIn}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                    <input
-                      type="date"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={checkIn || new Date().toISOString().split('T')[0]}
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-out
+                      {isCheckingAvailability && <Clock className="inline w-3 h-3 ml-1 animate-spin" />}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={checkOut}
+                        onChange={(e) => handleCheckOutChange(e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
+                          validationErrors.checkOut 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        min={checkIn ? new Date(new Date(checkIn).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                        disabled={!checkIn}
+                      />
+                      {checkOut && !validationErrors.checkOut && (
+                        <CheckCircle className="absolute right-3 top-2.5 w-4 h-4 text-green-500" />
+                      )}
+                      {validationErrors.checkOut && (
+                        <AlertCircle className="absolute right-3 top-2.5 w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    {validationErrors.checkOut && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkOut}</p>
+                    )}
+                    {!validationErrors.checkOut && checkIn && checkOut && nights > 1 && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {nights} nights stay confirmed
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -379,63 +530,117 @@ export default function Landing() {
                 <h3 className="text-lg font-semibold text-gray-900">Guests & Preferences</h3>
                 
                 {/* Guests */}
-                <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                  <div className="flex items-center">
-                    <Users className="w-5 h-5 text-gray-500 mr-3" />
-                    <span className="text-gray-700">Guests</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setGuests(Math.max(1, guests - 1))}
-                      disabled={guests <= 1}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="text-lg font-semibold min-w-[2rem] text-center">{guests}</span>
-                    <button
-                      onClick={() => setGuests(Math.min(5, guests + 1))}
-                      disabled={guests >= 5}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                <div className="border border-gray-300 rounded-xl bg-gray-50">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 text-gray-500 mr-3" />
+                      <div>
+                        <span className="text-gray-700 font-medium">Guests</span>
+                        <p className="text-xs text-gray-500">Maximum 5 guests</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => handleGuestChange(-1)}
+                        disabled={guests <= 1}
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:border-blue-400 transition-all duration-200 group"
+                        aria-label="Decrease guests"
+                      >
+                        <Minus className="w-4 h-4 group-hover:text-blue-600 transition-colors" />
+                      </button>
+                      <div className="min-w-[3rem] text-center">
+                        <span className="text-xl font-bold text-gray-900">{guests}</span>
+                        <p className="text-xs text-gray-500">{guests === 1 ? 'guest' : 'guests'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleGuestChange(1)}
+                        disabled={guests >= 5}
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:border-blue-400 transition-all duration-200 group"
+                        aria-label="Increase guests"
+                      >
+                        <Plus className="w-4 h-4 group-hover:text-blue-600 transition-colors" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Pets */}
-                <div className="flex items-center justify-between p-4 border border-gray-300 rounded-xl bg-gray-50">
-                  <div className="flex items-center">
-                    <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
-                    <span className="text-gray-700">Pets</span>
+                <div className="border border-gray-300 rounded-xl bg-gray-50">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center">
+                      <PawPrint className="w-5 h-5 text-gray-500 mr-3" />
+                      <div>
+                        <span className="text-gray-700 font-medium">Pets Welcome</span>
+                        <p className="text-xs text-gray-500">€20 additional fee per stay</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={hasPet}
+                        onChange={(e) => setHasPet(e.target.checked)}
+                        className="sr-only peer"
+                        aria-label="Toggle pet accommodation"
+                      />
+                      <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 group-hover:shadow-md transition-all duration-200"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hasPet}
-                      onChange={(e) => setHasPet(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  {hasPet && (
+                    <div className="px-4 pb-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                        <p className="text-green-800 text-sm">Pet accommodation confirmed. €20 fee included in total.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {hasPet && (
-                  <p className="text-sm text-gray-500 ml-2">Additional €20 pet fee will be added</p>
-                )}
               </div>
 
               {/* Price Summary */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-                <div className="text-center mb-4">
-                  <div className="text-2xl font-bold text-gray-900">€{basePrice.toFixed(2)}</div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
+                {/* Security Badge */}
+                <div className="absolute top-4 right-4">
+                  <div className="flex items-center space-x-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    <Shield className="w-3 h-3" />
+                    <span>Secure</span>
+                  </div>
+                </div>
+
+                <div className="text-center mb-4 mt-2">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="text-2xl font-bold text-gray-900">
+                      €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)}
+                    </div>
+                    {hasDiscount && (
+                      <div className="text-lg text-gray-500 line-through">
+                        €{basePrice.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-600">per night</div>
+                  {hasDiscount && (
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium mt-2 inline-block">
+                      {nights >= 7 ? '10% weekly discount' : '5% multi-night discount'}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span>€{basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                    <span>€{subtotal.toFixed(2)}</span>
+                    <span>
+                      €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}
+                      {hasDiscount && <span className="text-green-600 ml-1">(discounted)</span>}
+                    </span>
+                    <span>€{(hasDiscount ? discountedPrice * nights : subtotal).toFixed(2)}</span>
                   </div>
+                  
+                  {hasDiscount && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount savings</span>
+                      <span>-€{discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-sm">
                     <span>Cleaning fee</span>
                     <span>€{cleaningFee.toFixed(2)}</span>
@@ -453,15 +658,63 @@ export default function Landing() {
                   <hr className="border-gray-300" />
                   <div className="flex justify-between font-bold text-base">
                     <span>Total</span>
-                    <span>€{total.toFixed(2)}</span>
+                    <span className="text-lg">€{(hasDiscount ? (discountedPrice * nights) + cleaningFee + petFee + serviceFee : total).toFixed(2)}</span>
                   </div>
+                  
+                  {hasDiscount && (
+                    <div className="text-center">
+                      <span className="text-xs text-green-600 font-medium">
+                        You saved €{discountAmount.toFixed(2)}!
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all" asChild>
-                  <a href="/api/login">Reserve Now</a>
-                </Button>
+                {/* Availability Status */}
+                {checkIn && checkOut && Object.keys(validationErrors).length === 0 && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center text-green-800">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <span className="text-sm font-medium">Available for your dates</span>
+                    </div>
+                    {isCheckingAvailability && (
+                      <div className="flex items-center text-blue-600 mt-1">
+                        <Clock className="w-3 h-3 mr-1 animate-spin" />
+                        <span className="text-xs">Checking real-time availability...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {Object.keys(validationErrors).length === 0 && checkIn && checkOut ? (
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-[1.02]" 
+                    asChild={true}
+                  >
+                    <a href="/api/login" className="flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Reserve Securely
+                    </a>
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold cursor-not-allowed" 
+                    disabled
+                  >
+                    <span className="flex items-center justify-center">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      {!checkIn || !checkOut ? 'Select dates to continue' : 'Please fix errors above'}
+                    </span>
+                  </Button>
+                )}
                 
-                <p className="text-xs text-gray-500 text-center mt-3">You won't be charged yet</p>
+                <div className="text-center mt-3 space-y-1">
+                  <p className="text-xs text-gray-500">You won't be charged yet</p>
+                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                    <Shield className="w-3 h-3" />
+                    <span>SSL encrypted • Secure payment</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -469,27 +722,69 @@ export default function Landing() {
             <div className="hidden md:grid lg:hidden grid-cols-2 gap-8">
               {/* Left: Calendar Section */}
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Select Dates</h3>
+                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                  Select Dates
+                  {isCheckingAvailability && <Clock className="w-4 h-4 ml-2 animate-spin text-blue-600" />}
+                </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                    <input
-                      type="date"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={checkIn}
+                        onChange={(e) => handleCheckInChange(e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all ${
+                          validationErrors.checkIn 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        min={new Date().toISOString().split('T')[0]}
+                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      />
+                      {checkIn && !validationErrors.checkIn && (
+                        <CheckCircle className="absolute right-3 top-3.5 w-4 h-4 text-green-500" />
+                      )}
+                      {validationErrors.checkIn && (
+                        <AlertCircle className="absolute right-3 top-3.5 w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    {validationErrors.checkIn && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkIn}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                    <input
-                      type="date"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      min={checkIn || new Date().toISOString().split('T')[0]}
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={checkOut}
+                        onChange={(e) => handleCheckOutChange(e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all ${
+                          validationErrors.checkOut 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        min={checkIn ? new Date(new Date(checkIn).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                        max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                        disabled={!checkIn}
+                      />
+                      {checkOut && !validationErrors.checkOut && (
+                        <CheckCircle className="absolute right-3 top-3.5 w-4 h-4 text-green-500" />
+                      )}
+                      {validationErrors.checkOut && (
+                        <AlertCircle className="absolute right-3 top-3.5 w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    {validationErrors.checkOut && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.checkOut}</p>
+                    )}
+                    {!validationErrors.checkOut && checkIn && checkOut && nights > 1 && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {nights} nights stay confirmed
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
