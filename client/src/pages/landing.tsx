@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight, Info, Building, Building2, Sparkles, Tv, Thermometer, Key } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight, Info, Building, Building2, Sparkles, Tv, Thermometer, Key, MessageCircle, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,9 @@ export default function Landing() {
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState<number>(0);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatName, setChatName] = useState("");
+  const [chatEmail, setChatEmail] = useState("");
 
   const basePrice = 110.50;
   const cleaningFee = 25.00;
@@ -2021,6 +2024,100 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Chat Popup */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
+
+      {isChatOpen && (
+        <div className="fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+          {/* Chat Header */}
+          <div className="bg-blue-600 text-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-sm font-semibold">
+                  AA
+                </div>
+                <div>
+                  <h3 className="font-semibold">All'Arco Apartment</h3>
+                  <div className="flex items-center space-x-2 text-sm opacity-90">
+                    <Lock className="w-3 h-3" />
+                    <span>End-to-end encrypted</span>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span>Online</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="text-white/80 hover:text-white text-sm">
+                  End Chat
+                </button>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="text-white/80 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Content */}
+          <div className="p-4 bg-gray-50 min-h-64">
+            <div className="flex items-start space-x-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-sm font-semibold text-white">
+                AA
+              </div>
+              <div className="flex-1">
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                  <p className="text-gray-800">
+                    👋 Welcome to All'Arco Apartment! How can we help you today?
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">All'Arco Staff • now</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Input Form */}
+          <div className="p-4 border-t bg-white space-y-3">
+            <input
+              type="text"
+              placeholder="Your name"
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            />
+            <input
+              type="email"
+              placeholder="Your email"
+              value={chatEmail}
+              onChange={(e) => setChatEmail(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            />
+            <button
+              onClick={() => {
+                // Handle chat start - for now just close the popup
+                setIsChatOpen(false);
+                setChatName("");
+                setChatEmail("");
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            >
+              Start Chatting
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
