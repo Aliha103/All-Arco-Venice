@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,32 @@ export default function Settings() {
   const [showReferralCode, setShowReferralCode] = useState(false);
   const [showPersonalInfo, setShowPersonalInfo] = useState(false);
   const [dobPrivacy, setDobPrivacy] = useState(true); // Only user can see DOB
+  const [dateInputFocused, setDateInputFocused] = useState(false);
+  const [ageDisplay, setAgeDisplay] = useState("");
+
+  // Calculate age from date of birth
+  const calculateAge = useCallback((dateOfBirth: string) => {
+    if (!dateOfBirth) return "";
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    if (age < 0) return "Invalid date";
+    if (age === 0) return "Less than 1 year";
+    return `${age} years old`;
+  }, []);
+
+  // Update age display when date changes
+  useEffect(() => {
+    if (user?.dateOfBirth) {
+      setAgeDisplay(calculateAge(user.dateOfBirth));
+    }
+  }, [user?.dateOfBirth, calculateAge]);
 
   const form = useForm<UpdateUserProfile>({
     resolver: zodResolver(updateUserProfileSchema),
@@ -263,18 +289,88 @@ export default function Settings() {
                               <Lock className="w-3 h-3 text-gray-400" />
                             </FormLabel>
                             <FormControl>
-                              <div className="relative">
+                              <div className="relative group">
                                 <Input 
                                   type="date" 
                                   {...field}
-                                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                                  min="1900-01-01" // Reasonable minimum date
-                                  className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 pl-10"
+                                  max={new Date().toISOString().split('T')[0]}
+                                  min="1900-01-01"
+                                  onFocus={() => setDateInputFocused(true)}
+                                  onBlur={() => setDateInputFocused(false)}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    setAgeDisplay(calculateAge(e.target.value));
+                                  }}
+                                  className={`rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-all duration-300 pl-10 pr-20 ${
+                                    dateInputFocused ? 'shadow-lg scale-[1.02]' : 'shadow-sm'
+                                  }`}
                                 />
-                                <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 transition-colors duration-200 group-hover:text-blue-500" />
+                                
+                                {/* Age Display */}
+                                {field.value && ageDisplay && (
+                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-200">
+                                      {ageDisplay}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </FormControl>
-                            <p className="text-xs text-gray-500 mt-1">🔒 Private - Only visible to you</p>
+                            
+                            {/* Enhanced Helper Text */}
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-xs text-gray-500 flex items-center space-x-1">
+                                <Shield className="w-3 h-3" />
+                                <span>Private - Only visible to you</span>
+                              </p>
+                              {dateInputFocused && (
+                                <p className="text-xs text-blue-600 animate-pulse">
+                                  Age calculated automatically
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Age Validation Messages */}
+                            {field.value && (
+                              <div className="mt-2">
+                                {(() => {
+                                  const age = parseInt(calculateAge(field.value).split(' ')[0]);
+                                  if (isNaN(age)) return null;
+                                  
+                                  if (age < 13) {
+                                    return (
+                                      <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-2 rounded-lg border border-orange-200">
+                                        <Calendar className="w-4 h-4" />
+                                        <span className="text-xs font-medium">Parental consent may be required for users under 13</span>
+                                      </div>
+                                    );
+                                  } else if (age >= 13 && age < 18) {
+                                    return (
+                                      <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 p-2 rounded-lg border border-blue-200">
+                                        <Calendar className="w-4 h-4" />
+                                        <span className="text-xs font-medium">Young adult account - Some restrictions may apply</span>
+                                      </div>
+                                    );
+                                  } else if (age >= 18 && age < 65) {
+                                    return (
+                                      <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">
+                                        <Calendar className="w-4 h-4" />
+                                        <span className="text-xs font-medium">Full account access available</span>
+                                      </div>
+                                    );
+                                  } else if (age >= 65) {
+                                    return (
+                                      <div className="flex items-center space-x-2 text-purple-600 bg-purple-50 p-2 rounded-lg border border-purple-200">
+                                        <Calendar className="w-4 h-4" />
+                                        <span className="text-xs font-medium">Senior discounts may be available</span>
+                                      </div>
+                                    );
+                                  }
+                                })()}
+                              </div>
+                            )}
+                            
                             <FormMessage />
                           </FormItem>
                         )}
