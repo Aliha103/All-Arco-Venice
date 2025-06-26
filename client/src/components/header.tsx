@@ -24,7 +24,7 @@ import {
 import { Link } from "wouter";
 
 export default function Header() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const { data: unreadCount } = useQuery({
