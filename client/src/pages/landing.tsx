@@ -191,7 +191,7 @@ export default function Landing() {
         </div>
       </section>
       {/* —— Booking —— */}
-      <section id="booking-section" className="py-16 px-4 max-w-6xl mx-auto pl-[0px] pr-[0px] pt-[0px] pb-[0px] ml-[0px] mr-[0px]">
+      <section id="booking-section" className="py-16 px-4 max-w-6xl mx-auto pl-[0px] pr-[0px] pt-[15px] pb-[15px] text-center">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Book Your Stay</h2>
           <p className="text-gray-600">Choose your dates and start planning your perfect getaway</p>
@@ -199,10 +199,10 @@ export default function Landing() {
         
         <Card className="smooth-hover touch-interaction slide-up">
           <CardContent className="p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               
               {/* Select Dates Column */}
-              <div className="lg:col-span-1">
+              <div className="md:col-span-1">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Clock className="w-5 h-5 mr-2 text-blue-600"/>
@@ -234,7 +234,7 @@ export default function Landing() {
               </div>
 
               {/* Guests & Pets Column */}
-              <div className="lg:col-span-1">
+              <div className="md:col-span-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
                 
                 <div className="space-y-4">
@@ -273,7 +273,7 @@ export default function Landing() {
               </div>
 
               {/* Price Breakdown Column */}
-              <div className="lg:col-span-1">
+              <div className="md:col-span-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                 
                 <div className="bg-gray-50 rounded-lg p-6 space-y-4">
