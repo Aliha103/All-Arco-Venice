@@ -38,7 +38,8 @@ export default function CalendarBooking() {
 
   const { data: calendarBookings = [] } = useQuery({
     queryKey: ["/api/bookings/calendar", currentYear, currentMonth],
-    refetchInterval: 100, // 100ms refresh rate as requested
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Rely on WebSocket for updates
   });
 
   const createBookingMutation = useMutation({

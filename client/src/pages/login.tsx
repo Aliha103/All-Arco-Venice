@@ -35,8 +35,8 @@ export default function Login() {
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      // Redirect to home page after successful login
-      window.location.href = "/";
+      // Force refresh to update authentication state
+      window.location.reload();
     },
     onError: (error: Error) => {
       toast({
