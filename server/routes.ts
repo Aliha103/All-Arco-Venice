@@ -590,6 +590,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Promotions routes
+  app.get('/api/promotions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const promotions = await storage.getPromotions();
+      res.json(promotions);
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+      res.status(500).json({ message: "Failed to fetch promotions" });
+    }
+  });
+
+  app.get('/api/promotions/active', async (req, res) => {
+    try {
+      const activePromotions = await storage.getActivePromotions();
+      res.json(activePromotions);
+    } catch (error) {
+      console.error("Error fetching active promotions:", error);
+      res.status(500).json({ message: "Failed to fetch active promotions" });
+    }
+  });
+
+  app.post('/api/promotions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const promotionData = {
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+      };
+
+      const promotion = await storage.addPromotion(promotionData);
+      res.json(promotion);
+    } catch (error) {
+      console.error("Error creating promotion:", error);
+      res.status(500).json({ message: "Failed to create promotion" });
+    }
+  });
+
+  app.put('/api/promotions/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      await storage.updatePromotionStatus(id, isActive);
+      res.json({ message: "Promotion status updated successfully" });
+    } catch (error) {
+      console.error("Error updating promotion status:", error);
+      res.status(500).json({ message: "Failed to update promotion status" });
+    }
+  });
+
+  app.delete('/api/promotions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deletePromotion(id);
+      res.json({ message: "Promotion deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting promotion:", error);
+      res.status(500).json({ message: "Failed to delete promotion" });
+    }
+  });
+
   // About content routes
   app.get('/api/about-content', async (req, res) => {
     try {
