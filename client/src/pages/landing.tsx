@@ -2029,7 +2029,7 @@ export default function Landing() {
       {!isChatOpen && (
         <button
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
+          className="fixed bottom-6 right-6 w-16 h-16 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
@@ -2038,10 +2038,10 @@ export default function Landing() {
       {isChatOpen && (
         <div className="fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
           {/* Chat Header */}
-          <div className="bg-blue-600 text-white p-4">
+          <div className="bg-primary text-primary-foreground p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-sm font-semibold">
+                <div className="w-10 h-10 bg-primary/80 rounded-full flex items-center justify-center text-sm font-semibold">
                   AA
                 </div>
                 <div>
@@ -2051,19 +2051,19 @@ export default function Landing() {
                     <span>End-to-end encrypted</span>
                     <span>•</span>
                     <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <div className="w-2 h-2 bg-secondary rounded-full"></div>
                       <span>Online</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="text-white/80 hover:text-white text-sm">
+                <button className="text-primary-foreground/80 hover:text-primary-foreground text-sm">
                   End Chat
                 </button>
                 <button
                   onClick={() => setIsChatOpen(false)}
-                  className="text-white/80 hover:text-white"
+                  className="text-primary-foreground/80 hover:text-primary-foreground"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2074,7 +2074,7 @@ export default function Landing() {
           {/* Chat Content */}
           <div className="p-4 bg-gray-50 min-h-64">
             <div className="flex items-start space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-sm font-semibold text-white">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-sm font-semibold text-primary-foreground">
                 AA
               </div>
               <div className="flex-1">
@@ -2095,14 +2095,14 @@ export default function Landing() {
               placeholder="Your name"
               value={chatName}
               onChange={(e) => setChatName(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <input
               type="email"
               placeholder="Your email"
               value={chatEmail}
               onChange={(e) => setChatEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <button
               onClick={() => {
@@ -2111,7 +2111,7 @@ export default function Landing() {
                 setChatName("");
                 setChatEmail("");
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg font-medium transition-colors"
             >
               Start Chatting
             </button>
