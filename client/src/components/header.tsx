@@ -123,10 +123,8 @@ export default function Header() {
             {user ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-12 w-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-blue-600" />
-                    </div>
+                  <Button variant="ghost" className="relative h-12 w-12 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 border-2 border-blue-200 hover:border-blue-300">
+                    <UserIcon className="w-5 h-5 text-blue-600" />
                     {unreadCount && unreadCount > 0 && (
                       <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 hover:bg-red-600">
                         {unreadCount}
