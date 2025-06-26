@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Link } from "wouter"
 import Header from "@/components/header"
+import HeroImagesGrid from "@/components/hero-images-grid"
 import {
   Star,
   MapPin,
@@ -102,15 +103,7 @@ export default function Landing() {
             <span className="flex items-center space-x-1"><MapPin className="w-4 h-4" /><span>Venice, Italy</span></span>
           </div>
           {/* Images grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
-            <div className="bg-gray-200 flex items-center justify-center rounded-l-xl lg:rounded-none">Main bedroom</div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-blue-100 flex items-center justify-center rounded-tr-xl text-blue-600 font-medium text-sm">Living room</div>
-              <div className="bg-green-100 flex items-center justify-center text-green-600 font-medium text-sm">Kitchen</div>
-              <div className="bg-purple-100 flex items-center justify-center text-purple-600 font-medium text-sm">Bathroom</div>
-              <div className="bg-yellow-100 flex items-center justify-center rounded-br-xl text-yellow-600 font-medium text-sm">Balcony</div>
-            </div>
-          </div>
+          <HeroImagesGrid />
         </div>
       </section>
 
