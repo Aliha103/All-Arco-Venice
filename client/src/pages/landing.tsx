@@ -191,7 +191,7 @@ export default function Landing() {
         </div>
       </section>
       {/* —— Booking —— */}
-      <section id="booking-section" className="py-16 px-4 max-w-6xl mx-auto pl-[0px] pr-[0px] pt-[0px] pb-[0px]">
+      <section id="booking-section" className="py-16 px-4 max-w-6xl mx-auto pl-[0px] pr-[0px] pt-[0px] pb-[0px] ml-[0px] mr-[0px]">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Book Your Stay</h2>
           <p className="text-gray-600">Choose your dates and start planning your perfect getaway</p>
