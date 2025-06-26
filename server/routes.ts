@@ -702,6 +702,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hero images routes
+  app.get('/api/hero-images', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const images = await storage.getHeroImages();
+      res.json(images);
+    } catch (error) {
+      console.error("Error fetching hero images:", error);
+      res.status(500).json({ message: "Failed to fetch hero images" });
+    }
+  });
+
+  app.get('/api/hero-images/active', async (req, res) => {
+    try {
+      const activeImages = await storage.getActiveHeroImages();
+      res.json(activeImages);
+    } catch (error) {
+      console.error("Error fetching active hero images:", error);
+      res.status(500).json({ message: "Failed to fetch active hero images" });
+    }
+  });
+
+  app.post('/api/hero-images', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { url, alt, title, position } = req.body;
+      
+      if (!url || !alt || !title || !position) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const imageData = {
+        url,
+        alt,
+        title,
+        position,
+        isActive: req.body.isActive !== false,
+        displayOrder: req.body.displayOrder || 0,
+      };
+
+      const image = await storage.addHeroImage(imageData);
+      res.json(image);
+    } catch (error) {
+      console.error("Error creating hero image:", error);
+      res.status(500).json({ message: "Failed to create hero image" });
+    }
+  });
+
+  app.put('/api/hero-images/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.updateHeroImage(id, req.body);
+      res.json({ message: "Hero image updated successfully" });
+    } catch (error) {
+      console.error("Error updating hero image:", error);
+      res.status(500).json({ message: "Failed to update hero image" });
+    }
+  });
+
+  app.delete('/api/hero-images/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteHeroImage(id);
+      res.json({ message: "Hero image deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting hero image:", error);
+      res.status(500).json({ message: "Failed to delete hero image" });
+    }
+  });
+
   // About content routes
   app.get('/api/about-content', async (req, res) => {
     try {

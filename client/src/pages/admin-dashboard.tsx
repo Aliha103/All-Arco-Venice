@@ -86,6 +86,18 @@ interface Promotion {
   description: string;
 }
 
+interface HeroImage {
+  id: number;
+  url: string;
+  alt: string;
+  title: string;
+  position: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Message {
   id: number;
   name: string;
@@ -125,7 +137,15 @@ export default function AdminDashboard() {
     description: "",
   });
 
+  const [heroImageForm, setHeroImageForm] = useState({
+    url: "",
+    alt: "",
+    title: "",
+    position: "main",
+  });
+
   const [showPromotionForm, setShowPromotionForm] = useState(false);
+  const [showHeroImageForm, setShowHeroImageForm] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -173,6 +193,13 @@ export default function AdminDashboard() {
   // Promotions query
   const { data: promotions, isLoading: promotionsLoading } = useQuery<Promotion[]>({
     queryKey: ["/api/promotions"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  // Hero images query
+  const { data: heroImages, isLoading: heroImagesLoading } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
@@ -356,6 +383,85 @@ export default function AdminDashboard() {
     },
   });
 
+  // Hero image mutations
+  const createHeroImageMutation = useMutation({
+    mutationFn: async (imageData: Omit<HeroImage, 'id' | 'createdAt' | 'updatedAt'>) => {
+      await apiRequest("POST", "/api/hero-images", imageData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      setHeroImageForm({
+        url: "",
+        alt: "",
+        title: "",
+        position: "main",
+      });
+      setShowHeroImageForm(false);
+      toast({
+        title: "Success",
+        description: "Hero image added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to add hero image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateHeroImageMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<HeroImage> }) => {
+      await apiRequest("PUT", `/api/hero-images/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      toast({
+        title: "Success",
+        description: "Hero image updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update hero image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteHeroImageMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/hero-images/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      toast({
+        title: "Success",
+        description: "Hero image deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete hero image",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
@@ -415,9 +521,9 @@ export default function AdminDashboard() {
               <Star className="w-4 h-4" />
               Reviews
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Pricing
+            <TabsTrigger value="hero-images" className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Hero Images
             </TabsTrigger>
           </TabsList>
 

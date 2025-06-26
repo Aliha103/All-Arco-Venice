@@ -597,6 +597,43 @@ export class DatabaseStorage implements IStorage {
   async deletePromotion(id: number): Promise<void> {
     await db.delete(promotions).where(eq(promotions.id, id));
   }
+
+  // Hero images operations
+  async getHeroImages(): Promise<HeroImage[]> {
+    return await db.select().from(heroImages).orderBy(heroImages.displayOrder, heroImages.position);
+  }
+
+  async getActiveHeroImages(): Promise<HeroImage[]> {
+    return await db.select().from(heroImages)
+      .where(eq(heroImages.isActive, true))
+      .orderBy(heroImages.displayOrder, heroImages.position);
+  }
+
+  async addHeroImage(imageData: InsertHeroImage): Promise<HeroImage> {
+    const [image] = await db
+      .insert(heroImages)
+      .values(imageData)
+      .returning();
+    return image;
+  }
+
+  async updateHeroImage(id: number, data: Partial<HeroImage>): Promise<void> {
+    await db
+      .update(heroImages)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(heroImages.id, id));
+  }
+
+  async deleteHeroImage(id: number): Promise<void> {
+    await db.delete(heroImages).where(eq(heroImages.id, id));
+  }
+
+  async updateHeroImageOrder(id: number, displayOrder: number): Promise<void> {
+    await db
+      .update(heroImages)
+      .set({ displayOrder, updatedAt: new Date() })
+      .where(eq(heroImages.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();
