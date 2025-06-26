@@ -403,18 +403,9 @@ export default function Landing() {
                   <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-300 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {/* Advanced Dropdown Menu */}
+                {/* Dropdown Menu */}
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-300">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center space-x-2">
-                        <Shield className="w-4 h-4 text-blue-600" />
-                        <p className="text-sm font-medium text-gray-700">Secure Access</p>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Your data is protected</p>
-                    </div>
-                    
+                  <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-300">
                     {/* Auth Options */}
                     <div className="p-2">
                       <button 
