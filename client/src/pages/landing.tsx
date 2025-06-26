@@ -1458,7 +1458,6 @@ export default function Landing() {
 
                 {/* Price Breakdown for tablet-like layout (LG screens) */}
                 <div className="xl:hidden space-y-6">
-                  <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
                     <div className="text-center mb-4">
                       <div className="flex items-center justify-center space-x-2">
