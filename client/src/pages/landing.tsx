@@ -1056,16 +1056,137 @@ export default function Landing() {
   );
 }
 
-/* Quick‑chat widget */
+/* Advanced Chat Widget */
 function ChatWidget(){
-  const [open,setOpen]=useState(false);const[name,setName]=useState("");const[email,setEmail]=useState("");
-  return open?(
-    <div className="fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden slide-up">
-      <div className="bg-blue-600 text-white p-4 flex justify-between items-center"><h3 className="font-semibold">All'Arco</h3><button onClick={()=>setOpen(false)} className="gentle-scale touch-interaction"><Lock className="w-4 h-4"/></button></div>
-      <div className="p-4 text-gray-700 text-sm fade-in">👋 How can we help you?</div>
-      <div className="p-4 space-y-3 border-t"><input value={name} onChange={e=>setName(e.target.value)} placeholder="Name" className="w-full p-2 border rounded transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" className="w-full p-2 border rounded transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/><Button onClick={()=>setOpen(false)} className="w-full interactive-button touch-interaction">Start chat</Button></div>
-    </div>
-  ):(
-    <button onClick={()=>setOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center z-50 interactive-button touch-interaction"><MessageCircle className="w-6 h-6 transition-transform duration-200"/></button>
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState([
+    { id: 1, text: "👋 Welcome to All'Arco! How can we help you today?", sender: "bot", timestamp: new Date() }
+  ]);
+
+  const handleSubmit = () => {
+    if (name && email) {
+      setIsTyping(true);
+      setTimeout(() => {
+        setMessages(prev => [...prev, 
+          { id: prev.length + 1, text: `Hi ${name}! Thanks for reaching out. We'll get back to you shortly at ${email}.`, sender: "bot", timestamp: new Date() }
+        ]);
+        setIsTyping(false);
+        setName("");
+        setEmail("");
+      }, 1500);
+    }
+  };
+
+  return (
+    <>
+      {/* Chat Window */}
+      <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-500 ease-out transform ${
+        open ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4 pointer-events-none'
+      }`}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold">All'Arco Support</h3>
+              <div className="flex items-center space-x-1 text-xs text-blue-100">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span>Online now</span>
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={() => setOpen(false)} 
+            className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors duration-200"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'} animate-fadeIn`}>
+              <div className={`max-w-xs px-4 py-2 rounded-2xl text-sm ${
+                message.sender === 'bot' 
+                  ? 'bg-white text-gray-800 shadow-sm' 
+                  : 'bg-blue-600 text-white'
+              }`}>
+                {message.text}
+              </div>
+            </div>
+          ))}
+          
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex justify-start animate-fadeIn">
+              <div className="bg-white px-4 py-2 rounded-2xl shadow-sm">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input Form */}
+        <div className="p-4 border-t bg-white space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name" 
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            />
+            <input 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address" 
+              type="email"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            />
+          </div>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!name || !email || isTyping}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg transition-all duration-200 font-medium"
+          >
+            {isTyping ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Connecting...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>Start conversation</span>
+              </div>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Chat Toggle Button */}
+      <button 
+        onClick={() => setOpen(true)} 
+        className={`fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full shadow-2xl flex items-center justify-center z-50 transition-all duration-300 transform hover:scale-110 ${
+          open ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+        }`}
+      >
+        <div className="relative">
+          <MessageCircle className="w-6 h-6 transition-transform duration-200" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+        </div>
+      </button>
+    </>
   )
 }
