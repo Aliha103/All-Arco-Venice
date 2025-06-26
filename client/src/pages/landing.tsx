@@ -1954,34 +1954,70 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 sm:py-12">
+      <footer className="bg-gray-100 border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div className="col-span-1 sm:col-span-2">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">All'arco Apartment</h3>
-              <p className="text-gray-300 mb-4 text-sm sm:text-base">
-                Experience luxury and comfort in the heart of the city. Your perfect home away from home.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Support Column */}
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Quick Links</h4>
-              <ul className="space-y-2 text-gray-300 text-sm sm:text-base">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">House Rules</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+              <h4 className="font-semibold text-gray-900 mb-4">Support</h4>
+              <ul className="space-y-3 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Safety information</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Cancellation options</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Report a problem</a></li>
               </ul>
             </div>
+
+            {/* Community Column */}
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Contact Info</h4>
-              <ul className="space-y-2 text-gray-300 text-sm sm:text-base">
-                <li>City Center, Downtown</li>
-                <li>+1 (555) 123-4567</li>
-                <li>info@allarco.com</li>
+              <h4 className="font-semibold text-gray-900 mb-4">Community</h4>
+              <ul className="space-y-3 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">All'Arco.com</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Referral program</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Venice guide</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Guest stories</a></li>
+              </ul>
+            </div>
+
+            {/* Hosting Column */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Hosting</h4>
+              <ul className="space-y-3 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Host your home</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Host resources</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Community forum</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Hosting tips</a></li>
+              </ul>
+            </div>
+
+            {/* All'Arco Column */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">All'Arco</h4>
+              <ul className="space-y-3 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Newsroom</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Learn about new features</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Letter from our founders</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Careers</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-gray-400">
-            <p className="text-xs sm:text-sm">&copy; 2024 All'arco Apartment. All rights reserved.</p>
+
+          {/* Bottom Section */}
+          <div className="border-t border-gray-200 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 text-sm text-gray-600">
+              <span>&copy; 2024 All'Arco, Inc.</span>
+              <span className="hidden md:inline">·</span>
+              <a href="#" className="hover:text-gray-900 transition-colors">Privacy</a>
+              <span className="hidden md:inline">·</span>
+              <a href="#" className="hover:text-gray-900 transition-colors">Terms</a>
+              <span className="hidden md:inline">·</span>
+              <a href="#" className="hover:text-gray-900 transition-colors">Sitemap</a>
+            </div>
+
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+              <span className="text-sm text-gray-600">English (US)</span>
+              <span className="text-sm text-gray-600">€ EUR</span>
+            </div>
           </div>
         </div>
       </footer>
