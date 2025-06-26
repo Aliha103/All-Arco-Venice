@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Gift, Users, Eye, EyeOff } from "lucide-react";
+import { User, Gift, Users, Eye, EyeOff, ArrowLeft, CreditCard } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Settings() {
@@ -120,7 +120,18 @@ export default function Settings() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <div className="flex items-center space-x-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
           <p className="text-gray-600 mt-2">Manage your account information and preferences</p>
         </div>
 
@@ -151,6 +162,13 @@ export default function Settings() {
                   <div>
                     <span className="text-sm font-medium text-gray-600">Account Type:</span>
                     <Badge variant="secondary" className="ml-2">{user.role}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Credit Balance:</span>
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="w-4 h-4 text-green-600" />
+                      <span className="text-lg font-semibold text-green-600">0€</span>
+                    </div>
                   </div>
                 </div>
 
@@ -190,7 +208,7 @@ export default function Settings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Country</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select your country" />
@@ -237,8 +255,8 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border-4 border-white shadow-md">
+                    <User className="w-8 h-8 text-blue-600" />
                   </div>
                   <div>
                     <p className="font-medium">{user.firstName} {user.lastName}</p>
@@ -250,6 +268,13 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Account Type</span>
                     <Badge variant="secondary">{user.role}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Credit Balance</span>
+                    <div className="flex items-center space-x-1">
+                      <CreditCard className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-semibold text-green-600">0€</span>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Auth Provider</span>
