@@ -382,7 +382,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (bookings && bookings.length > 0) ? (
                   <div className="space-y-4">
-                    {bookings.map((booking: Booking) => (
+                    {bookings!.map((booking: Booking) => (
                       <div key={booking.id} className="border rounded-lg p-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                           <div className="space-y-2">
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (messages && messages.length > 0) ? (
                   <div className="space-y-4">
-                    {messages.map((message: Message) => (
+                    {messages!.map((message: Message) => (
                       <div 
                         key={message.id} 
                         className={`border rounded-lg p-4 ${!message.isRead ? 'bg-blue-50 border-blue-200' : ''}`}
@@ -497,7 +497,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (propertyImages && propertyImages.length > 0) ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {propertyImages.map((image: PropertyImage) => (
+                    {propertyImages!.map((image: PropertyImage) => (
                       <div key={image.id} className="relative group">
                         <img
                           src={image.url}
@@ -540,7 +540,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (amenities && amenities.length > 0) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {amenities.map((amenity: Amenity) => (
+                    {amenities!.map((amenity: Amenity) => (
                       <div key={amenity.id} className="flex items-center gap-3 p-4 border rounded-lg">
                         <span className="text-2xl">{amenity.icon}</span>
                         <span className="font-medium">{amenity.name}</span>
