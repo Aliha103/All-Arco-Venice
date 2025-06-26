@@ -27,12 +27,10 @@ export default function Header() {
   const { user, isAuthenticated } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const typedUser = user as User | undefined;
-
   const { data: unreadCount } = useQuery({
     queryKey: ["/api/messages/unread-count"],
-    enabled: !!typedUser && typedUser.role === 'admin',
-    refetchInterval: 1000, // Check every second for notifications
+    enabled: !!user && user.role === 'admin',
+    refetchInterval: 1000,
   });
 
   const handleLogout = () => {
@@ -57,9 +55,9 @@ export default function Header() {
             {isAuthenticated && (
               <Button variant="ghost" size="sm" className="relative p-2 rounded-full hover:bg-gray-100">
                 <Bell className="h-5 w-5 text-gray-600" />
-                {unreadCount && unreadCount > 0 && (
+                {unreadCount && Number(unreadCount) > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {Number(unreadCount) > 9 ? '9+' : String(unreadCount)}
                   </span>
                 )}
               </Button>
@@ -71,7 +69,7 @@ export default function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95">
                     <Menu className="h-4 w-4" />
-                    <User className="h-5 w-5" />
+                    <UserIcon className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
