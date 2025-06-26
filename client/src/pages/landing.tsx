@@ -230,6 +230,18 @@ export default function Landing() {
     return date.toISOString().split('T')[0];
   };
 
+  // Helper function to safely format dates without timezone issues
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
   const parseDate = (dateString: string) => {
     return new Date(dateString + 'T00:00:00');
   };
@@ -1505,11 +1517,7 @@ export default function Landing() {
                               <span className="text-sm font-medium text-gray-700">Check-in</span>
                             </div>
                             <div className="text-blue-600 font-semibold text-sm">
-                              {checkIn ? new Date(checkIn + 'T12:00:00').toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              }) : 'Select date'}
+                              {checkIn ? formatDateDisplay(checkIn) : 'Select date'}
                             </div>
                           </div>
                           <div className="bg-white rounded-lg p-3 transition-all duration-200 hover:shadow-sm">
