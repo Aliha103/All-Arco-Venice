@@ -3,12 +3,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 
+interface ReviewStats {
+  averageRating: number;
+  totalCount: number;
+  cleanlinessAvg: number;
+  locationAvg: number;
+  checkinAvg: number;
+  valueAvg: number;
+  communicationAvg: number;
+}
+
+interface Review {
+  id: number;
+  rating: number;
+  content: string;
+  createdAt: string;
+  guestName: string;
+}
+
 export default function ReviewsSection() {
-  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
+  const { data: reviews = [], isLoading: reviewsLoading } = useQuery<Review[]>({
     queryKey: ["/api/reviews"],
   });
 
-  const { data: reviewStats, isLoading: statsLoading } = useQuery({
+  const { data: reviewStats, isLoading: statsLoading } = useQuery<ReviewStats>({
     queryKey: ["/api/reviews/stats"],
   });
 
@@ -47,8 +65,8 @@ export default function ReviewsSection() {
     }
   ];
 
-  const displayStats = reviewStats && reviewStats.averageRating !== null ? reviewStats : defaultStats;
-  const displayReviews = reviews.length > 0 ? reviews : defaultReviews;
+  const displayStats = reviewStats || defaultStats;
+  const displayReviews = (reviews && reviews.length > 0) ? reviews : defaultReviews;
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (

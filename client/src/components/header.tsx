@@ -27,12 +27,15 @@ export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
-  // Simple check: if we have user data with an ID, show authenticated UI
-  const showUserDropdown = user && user.id;
+  // Simple check: any truthy user object means authenticated
+  const showUserDropdown = !!user;
+  
+  // Hide header until we know authentication state
+  if (isLoading) return null;
 
-  const { data: unreadCount } = useQuery({
+  const { data: unreadCount } = useQuery<number>({
     queryKey: ["/api/messages/unread-count"],
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && (user as any)?.role === 'admin',
     refetchInterval: 1000,
   });
 
