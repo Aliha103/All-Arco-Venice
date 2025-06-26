@@ -31,6 +31,7 @@ export interface IStorage {
   getUserByReferralCode(referralCode: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User>;
+  incrementReferralCount(userId: string): Promise<void>;
   
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -131,12 +132,16 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Validate referral code if provided
+    // Validate referral code if provided and get referrer info
     let referredBy: string | undefined;
+    let referrerName: string | undefined;
     if (userData.referralCode) {
       const referrer = await this.getUserByReferralCode(userData.referralCode);
       if (referrer) {
-        referredBy = referrer.id;
+        referredBy = userData.referralCode; // Store the referral code, not ID
+        referrerName = `${referrer.firstName} ${referrer.lastName}`;
+        // Increment referrer's total referrals count
+        await this.incrementReferralCount(referrer.id);
       }
     }
 
@@ -150,6 +155,7 @@ export class DatabaseStorage implements IStorage {
         password: userData.password,
         referralCode: newReferralCode!,
         referredBy,
+        referrerName,
         authProvider: "local",
         role: "guest",
         createdAt: new Date(),
@@ -157,6 +163,16 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async incrementReferralCount(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        totalReferrals: sql`${users.totalReferrals} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
   }
 
   // Booking operations
