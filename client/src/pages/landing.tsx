@@ -281,8 +281,10 @@ export default function Landing() {
           setCheckOut("");
         }
       } else {
-        // Set as check-out date
-        setCheckOut(dateString);
+        // Set as check-out date - validate the range
+        if (canBookDateRange(checkIn, dateString)) {
+          setCheckOut(dateString);
+        }
       }
     }
   };
@@ -318,7 +320,10 @@ export default function Landing() {
       const isSelected = isDateSelected(dateString);
       const isInRange = isDateInRange(dateString);
       const isInHoverRange = isDateInHoverRange(dateString);
-      const isDisabled = isPast || isBooked;
+      const isCheckoutOnly = isCheckoutOnlyDate(dateString);
+      const canCheckIn = canCheckInOnDate(dateString);
+      const canCheckOut = canCheckOutOnDate(dateString);
+      const isDisabled = isPast || (isBooked && !isCheckoutOnly);
       
       days.push(
         <button
@@ -350,16 +355,27 @@ export default function Landing() {
               ? 'ring-2 ring-blue-400 ring-opacity-50' 
               : ''
             }
-            ${isBooked 
+            ${isBooked && !isCheckoutOnly
               ? 'bg-red-50 text-red-400 line-through border border-red-200' 
+              : ''
+            }
+            ${isCheckoutOnly && !isSelected
+              ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700 border border-amber-200 hover:bg-amber-100' 
               : ''
             }
           `}
         >
           {day}
-          {isBooked && (
+          {isBooked && !isCheckoutOnly && (
             <div className="absolute bottom-1 right-1">
               <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+            </div>
+          )}
+          {isCheckoutOnly && !isSelected && (
+            <div className="absolute -top-0.5 -right-0.5 z-10">
+              <div className="bg-amber-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium shadow-sm">
+                CO
+              </div>
             </div>
           )}
           {isSelected && (
@@ -367,7 +383,7 @@ export default function Landing() {
               <CheckCircle className="w-3 h-3 text-white opacity-80" />
             </div>
           )}
-          {!isDisabled && !isSelected && (
+          {!isDisabled && !isSelected && !isCheckoutOnly && (
             <div className="absolute inset-0 rounded-lg bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           )}
         </button>
@@ -961,7 +977,7 @@ export default function Landing() {
 
                   {/* Legend */}
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex items-center justify-center">
                         <div className="w-3 h-3 bg-blue-600 rounded-full mr-1.5 shadow-sm"></div>
                         <span className="text-gray-700 font-medium">Selected</span>
@@ -973,6 +989,13 @@ export default function Landing() {
                       <div className="flex items-center justify-center">
                         <div className="w-3 h-3 bg-red-100 rounded-full mr-1.5"></div>
                         <span className="text-gray-700 font-medium">Booked</span>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <div className="relative">
+                          <div className="w-3 h-3 bg-amber-100 rounded-full mr-1.5"></div>
+                          <div className="absolute -top-1 -right-0.5 bg-amber-500 text-white text-[6px] px-0.5 rounded-sm">CO</div>
+                        </div>
+                        <span className="text-gray-700 font-medium">Checkout Only</span>
                       </div>
                     </div>
                   </div>
@@ -1286,7 +1309,7 @@ export default function Landing() {
 
                   {/* Legend */}
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between text-xs">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="flex items-center">
                         <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
                         <span className="text-gray-600">Selected</span>
@@ -1297,7 +1320,14 @@ export default function Landing() {
                       </div>
                       <div className="flex items-center">
                         <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
-                        <span className="text-gray-600">Unavailable</span>
+                        <span className="text-gray-600">Booked</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="relative">
+                          <div className="w-3 h-3 bg-amber-100 rounded mr-2"></div>
+                          <div className="absolute -top-1 -right-0.5 bg-amber-500 text-white text-[6px] px-0.5 rounded-sm">CO</div>
+                        </div>
+                        <span className="text-gray-600">Checkout Only</span>
                       </div>
                     </div>
                   </div>
