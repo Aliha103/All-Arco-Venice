@@ -1,0 +1,39 @@
+hook.js:608 The above error occurred in the <ReviewsSection> component:
+
+    at ReviewsSection (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.dev/src/components/reviews-section.tsx:24:61)
+    at main
+    at div
+    at Home (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.dev/src/pages/home.tsx:30:21)
+    at Route (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.de…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=afebdd72:323:16)
+    at Switch (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.de…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=afebdd72:379:17)
+    at Router (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.dev/src/App.tsx?v=C8vCkx96bpNtYzAANIlMh:33:42)
+    at Provider (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.de…unner/workspace/node_modules/.vite/deps/chunk-J25VLZS2.js?v=afebdd72:35:15)
+    at TooltipProvider (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.de…rkspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=afebdd72:56:5)
+    at QueryClientProvider (https://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.de…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=afebdd72:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-RPCDYKBN.js?v=afebdd72:9129 Uncaught TypeError: Cannot read properties of null (reading 'toFixed')
+    at ReviewsSection (reviews-section.tsx:96:45)
+useWebSocket.ts:19 WebSocket connected
+jquery-3.5.1.min.js:2 Uncaught Error: Syntax error, unrecognized expression: iframe[src*='https://js.stripe.com/v3/m-outer-3437aad….html#url=…cf8a848b1b5ad8dee&version=6&preview=false&__shared_params__[version]=basil']
+    at se.error (jquery-3.5.1.min.js:2:13606)
+    at se.tokenize (jquery-3.5.1.min.js:2:21617)
+    at se.select (jquery-3.5.1.min.js:2:22444)
+    at S.se [as find] (jquery-3.5.1.min.js:2:7089)
+    at S.fn.init.find (jquery-3.5.1.min.js:2:25014)
+    at new S.fn.init (jquery-3.5.1.min.js:2:25503)
+    at S (jquery-3.5.1.min.js:2:1024)
+    at iframeListener.js:8:30
+jquery-3.5.1.min.js:2 Uncaught Error: Syntax error, unrecognized expression: iframe[src*='https://m.stripe.network/inner.html#url=https%3A%2F%2Fcd64522c-1c4f-44db-91…cf8a848b1b5ad8dee&version=6&preview=false&__shared_params__[version]=basil']
+    at se.error (jquery-3.5.1.min.js:2:13606)
+    at se.tokenize (jquery-3.5.1.min.js:2:21617)
+    at se.select (jquery-3.5.1.min.js:2:22444)
+    at S.se [as find] (jquery-3.5.1.min.js:2:7089)
+    at S.fn.init.find (jquery-3.5.1.min.js:2:25014)
+    at new S.fn.init (jquery-3.5.1.min.js:2:25503)
+    at S (jquery-3.5.1.min.js:2:1024)
+    at iframeListener.js:8:30
+﻿
+

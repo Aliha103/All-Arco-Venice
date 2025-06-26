@@ -47,7 +47,7 @@ export default function ReviewsSection() {
     }
   ];
 
-  const displayStats = reviewStats || defaultStats;
+  const displayStats = reviewStats && reviewStats.averageRating !== null ? reviewStats : defaultStats;
   const displayReviews = reviews.length > 0 ? reviews : defaultReviews;
 
   const renderStars = (rating: number) => {

@@ -128,43 +128,33 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  console.log("isAuthenticated middleware - session:", req.session);
-  console.log("isAuthenticated middleware - user:", req.user);
-  console.log("isAuthenticated middleware - isAuthenticated():", req.isAuthenticated());
-  
   const user = req.user as any;
 
   if (!req.isAuthenticated()) {
-    console.log("Request not authenticated");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   if (!user) {
-    console.log("No user object found");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   // Handle local auth users (they have access_token === 'local_session')
   if (user.access_token === 'local_session') {
-    console.log("Local session detected, proceeding");
     return next();
   }
 
   // Handle Replit Auth users
   if (!user.expires_at) {
-    console.log("No expires_at found for Replit user");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
-    console.log("Replit session still valid");
     return next();
   }
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    console.log("No refresh token available");
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
@@ -173,10 +163,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
-    console.log("Token refreshed successfully");
     return next();
   } catch (error) {
-    console.error("Token refresh failed:", error);
     res.status(401).json({ message: "Unauthorized" });
     return;
   }

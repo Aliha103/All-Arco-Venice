@@ -22,16 +22,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      console.log("Auth user request - session:", req.session);
-      console.log("Auth user request - user:", req.user);
-      console.log("Auth user request - isAuthenticated:", req.isAuthenticated());
-      
       const userId = req.user.claims.sub;
-      console.log("Looking up user with ID:", userId);
-      
       const user = await storage.getUser(userId);
-      console.log("Found user:", user ? `${user.firstName} ${user.lastName}` : 'null');
-      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -100,23 +92,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const validatedData = loginSchema.parse(req.body);
-      console.log("Login attempt for:", validatedData.email);
       
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
       if (!user || user.authProvider !== 'local' || !user.password) {
-        console.log("User not found or invalid auth provider:", validatedData.email);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       // Verify password
       const isValidPassword = await bcrypt.compare(validatedData.password, user.password);
       if (!isValidPassword) {
-        console.log("Invalid password for:", validatedData.email);
         return res.status(401).json({ message: "Invalid email or password" });
       }
-
-      console.log("Password verified for user:", user.id);
 
       // Create session compatible with Replit Auth middleware
       const sessionUser = {
@@ -127,12 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.login(sessionUser, (err) => {
         if (err) {
-          console.error("Session creation failed:", err);
           return res.status(500).json({ message: "Session creation failed" });
         }
-        
-        console.log("Session created successfully for user:", user.id);
-        console.log("User authenticated:", req.isAuthenticated());
         
         // Return user without password
         const { password, ...userResponse } = user;
@@ -142,7 +125,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
     } catch (error: any) {
-      console.error("Login error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ 
           message: "Validation error", 
