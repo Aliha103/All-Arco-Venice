@@ -733,6 +733,123 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* —— Trust & Quality Assurance —— */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Verified Property</h3>
+              <p className="text-gray-600 text-sm">Licensed & insured accommodation</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,16.5L18,9.5L16.59,8.09L11,13.67L7.91,10.59L6.5,12L11,16.5Z"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quality Assured</h3>
+              <p className="text-gray-600 text-sm">Premium certified standards</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">24/7 Support</h3>
+              <p className="text-gray-600 text-sm">Always available to help</p>
+            </div>
+          </div>
+
+          {/* Guest Reviews Badge */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center bg-yellow-50 border border-yellow-200 rounded-full px-4 py-2 mb-4">
+              <svg className="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"/>
+              </svg>
+              <span className="text-yellow-700 font-medium">Guest Reviews</span>
+            </div>
+            <h2 className="text-xl text-gray-900 mb-8">What our guests say about their Venice experience</h2>
+
+            {/* Rating Categories */}
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <div className="flex items-center justify-center mb-6">
+                <svg className="w-6 h-6 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.46,13.97L5.82,21L12,17.27Z"/>
+                </svg>
+                <span className="text-lg font-semibold text-gray-900">Overall Rating</span>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12,2C13.1,2 14,2.9 14,4C14,5.1 13.1,6 12,6C10.9,6 10,5.1 10,4C10,2.9 10.9,2 12,2M21,9V7L15,1H5C3.89,1 3,1.89 3,3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V9M19,19H5V3H9V9H19V19Z"/>
+                    </svg>
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-1">Cleanliness</h4>
+                  <div className="flex justify-center mb-1">
+                    {[1,2,3,4].map(i => <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />)}
+                    <Star className="w-3 h-3 text-gray-300" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">4.9</span>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z"/>
+                    </svg>
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-1">Price Value</h4>
+                  <div className="flex justify-center mb-1">
+                    {[1,2,3,4].map(i => <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />)}
+                    <Star className="w-3 h-3 text-gray-300" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">4.8</span>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M3,5A2,2 0 0,1 5,3H19A2,2 0 0,1 21,5V9.17L12,14.17L3,9.17V5M21,11.83L12,16.83L3,11.83V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11.83Z"/>
+                    </svg>
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-1">WiFi Quality</h4>
+                  <div className="flex justify-center mb-1">
+                    {[1,2,3,4].map(i => <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />)}
+                    <Star className="w-3 h-3 text-gray-300" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">4.9</span>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                    </svg>
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-1">Response Time</h4>
+                  <div className="flex justify-center mb-1">
+                    {[1,2,3,4].map(i => <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />)}
+                    <Star className="w-3 h-3 text-gray-300" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">4.7</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* —— Guest Reviews (condensed) —— */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto text-center mb-12"><h2 className="text-2xl font-bold text-gray-900">Guest Reviews</h2><p className="text-gray-600">Rated 4.9/5 by 2,400 guests</p></div>
