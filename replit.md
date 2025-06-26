@@ -100,6 +100,9 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. RESOLVED: Fixed excessive API refresh calls completely. Removed refetchInterval causing 401 requests every 2 seconds. Authentication now uses staleTime: Infinity and only checks on mount, eliminating nonsensical refresh behavior
+- June 26, 2025. COMPLETED: Updated authentication dropdown design to match provided screenshots with modern Sign In/Create Account layout, colored icons, and security messaging
+- June 26, 2025. COMPLETED: Implemented comprehensive user profile and settings functionality with backend API endpoints and proper TypeScript support
 - June 26, 2025. RESOLVED: Header authentication display bug completely fixed and verified. Added debug logging to confirm user object receipt. Authentication logs show consistent 304 responses with user data. Header correctly displays authenticated dropdown with user name "Ali Hassan Cheema" and email after login using simplified `!!user` check
 - June 26, 2025. RESOLVED: Fixed header authentication display bug completely. Replaced complex authentication logic with simple `!!user` check and added proper loading state handling. Header now correctly switches from login button to authenticated dropdown immediately after login
 - June 26, 2025. Fixed authentication system and user login flow. Users now successfully authenticate, sessions persist correctly, and dropdown shows full name with notification icon. Removed extra signup success screen for streamlined flow
