@@ -180,7 +180,7 @@ export default function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center">
                       <Settings className="w-4 h-4 mr-2" />
-                      Settings
+                      Profile
                     </Link>
                   </DropdownMenuItem>
                   
