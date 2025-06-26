@@ -26,6 +26,11 @@ import { Link } from "wouter";
 export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Debug logging for authentication state
+  console.log('Header - user data:', user);
+  console.log('Header - isAuthenticated:', isAuthenticated);
+  console.log('Header - user exists:', !!user);
 
   const { data: unreadCount } = useQuery({
     queryKey: ["/api/messages/unread-count"],
