@@ -1523,21 +1523,7 @@ export default function Landing() {
                       )}
                     </div>
 
-                    {/* Availability Status */}
-                    {checkIn && checkOut && Object.keys(validationErrors).length === 0 && (
-                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center text-green-800">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          <span className="text-sm font-medium">Available for your dates</span>
-                        </div>
-                        {isCheckingAvailability && (
-                          <div className="flex items-center text-blue-600 mt-1">
-                            <Clock className="w-3 h-3 mr-1 animate-spin" />
-                            <span className="text-xs">Checking real-time availability...</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+
 
                     {Object.keys(validationErrors).length === 0 && checkIn && checkOut ? (
                       <Button 
@@ -1632,21 +1618,7 @@ export default function Landing() {
                     )}
                   </div>
 
-                  {/* Availability Status */}
-                  {checkIn && checkOut && Object.keys(validationErrors).length === 0 && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center text-green-800">
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        <span className="text-sm font-medium">Available for your dates</span>
-                      </div>
-                      {isCheckingAvailability && (
-                        <div className="flex items-center text-blue-600 mt-1">
-                          <Clock className="w-3 h-3 mr-1 animate-spin" />
-                          <span className="text-xs">Checking real-time availability...</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+
 
                   {Object.keys(validationErrors).length === 0 && checkIn && checkOut ? (
                     <Button 
