@@ -31,6 +31,7 @@ export interface IStorage {
   getUserByReferralCode(referralCode: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User>;
+  createAdminUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User>;
   incrementReferralCount(userId: string): Promise<void>;
   updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
   
@@ -167,6 +168,38 @@ export class DatabaseStorage implements IStorage {
         referrerName,
         authProvider: "local",
         role: "guest",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return user;
+  }
+
+  async createAdminUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User> {
+    const id = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Generate a unique referral code for admin
+    let newReferralCode: string | undefined;
+    let isUnique = false;
+    while (!isUnique) {
+      newReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const existingUser = await this.getUserByReferralCode(newReferralCode);
+      if (!existingUser) {
+        isUnique = true;
+      }
+    }
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        password: userData.password,
+        referralCode: newReferralCode!,
+        authProvider: "local",
+        role: "admin", // Set role as admin
         createdAt: new Date(),
         updatedAt: new Date(),
       })

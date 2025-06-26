@@ -57,6 +57,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize admin user if it doesn't exist
+  async function initializeAdminUser() {
+    try {
+      const adminEmail = "admin@allarco.com";
+      const existingAdmin = await storage.getUserByEmail(adminEmail);
+      
+      if (!existingAdmin) {
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash("admin123", saltRounds);
+        
+        const adminUser = await storage.createAdminUser({
+          firstName: "Hassan",
+          lastName: "Cheema",
+          email: adminEmail,
+          password: hashedPassword,
+        });
+        
+        console.log("Admin user created successfully:", adminUser.email);
+      } else {
+        console.log("Admin user already exists");
+      }
+    } catch (error) {
+      console.error("Error initializing admin user:", error);
+    }
+  }
+
+  // Initialize admin user on server start
+  initializeAdminUser();
+
   // Local signup route
   app.post('/api/auth/signup', async (req, res) => {
     try {

@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Gift, Users, ArrowLeft, CreditCard, Shield, Calendar } from "lucide-react";
+import { User, Gift, Users, ArrowLeft, CreditCard, Shield, Calendar, Lock } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Settings() {
