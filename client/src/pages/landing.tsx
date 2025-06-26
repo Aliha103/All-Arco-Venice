@@ -643,7 +643,6 @@ export default function Landing() {
           </CardContent>
         </Card>
       </section>
-
       {/* —— About This Space —— */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto text-center">
@@ -651,7 +650,6 @@ export default function Landing() {
           <p className="text-xl text-gray-600">Experience authentic Venetian luxury in the heart of the floating city</p>
         </div>
       </section>
-
       {/* —— Property Description —— */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -711,7 +709,6 @@ export default function Landing() {
           
         </div>
       </section>
-
       {/* —— Amenities —— */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -733,9 +730,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Trust & Quality Assurance —— */}
-      <section className="py-16 px-4 bg-gray-50">
+      <section className="py-16 px-4 bg-gray-50 pt-[0px] pb-[0px]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-center gap-4 mb-16">
             <div className="text-center flex-1 min-w-0 max-w-xs">
@@ -849,7 +845,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Recent Reviews —— */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -947,7 +942,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Guest Reviews (condensed) —— */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto text-center mb-12"><h2 className="text-2xl font-bold text-gray-900">Guest Reviews</h2><p className="text-gray-600">Rated 4.9/5 by 2,400 guests</p></div>
