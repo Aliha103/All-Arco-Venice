@@ -1935,18 +1935,94 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      {/* Call to Action */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-[#f3f4f6] text-[#101827]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 px-4">
-            Ready to Book Your Perfect Stay?
-          </h2>
-          <p className="text-primary-foreground mb-6 sm:mb-8 text-base sm:text-lg px-4">
-            Join thousands of satisfied guests who have made All'arco their home away from home.
-          </p>
-          <Button size="lg" variant="secondary" className="text-sm sm:text-base" asChild>
-            <a href="/api/login">Book Your Stay Now</a>
-          </Button>
+      {/* Advanced Call to Action */}
+      <section className="relative py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div className="relative max-w-6xl mx-auto">
+          {/* Main Content */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
+              <Building2 className="w-8 h-8 text-primary" />
+            </div>
+            
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              Ready to Book Your
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent block sm:inline sm:ml-3">
+                Perfect Stay?
+              </span>
+            </h2>
+            
+            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Join thousands of satisfied guests who have made All'arco their home away from home. 
+              Experience luxury, comfort, and unforgettable memories in the heart of the city.
+            </p>
+
+            {/* Stats Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 max-w-2xl mx-auto">
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="text-2xl font-bold text-primary mb-1">4.9★</div>
+                <div className="text-sm text-gray-600">Guest Rating</div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="text-2xl font-bold text-primary mb-1">2,400+</div>
+                <div className="text-sm text-gray-600">Happy Guests</div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="text-2xl font-bold text-primary mb-1">24/7</div>
+                <div className="text-sm text-gray-600">Support</div>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg" 
+                className="group bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                asChild
+              >
+                <a href="/api/login" className="flex items-center space-x-2">
+                  <span>Book Your Stay Now</span>
+                  <Calendar className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </a>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="group border-2 border-gray-300 hover:border-primary hover:bg-primary/5 text-gray-700 hover:text-primary px-8 py-4 text-lg font-medium rounded-xl transition-all duration-300"
+                asChild
+              >
+                <a href="#about" className="flex items-center space-x-2">
+                  <span>Learn More</span>
+                  <Info className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                </a>
+              </Button>
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="mt-10 pt-8 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-4">Trusted by guests worldwide</p>
+              <div className="flex flex-wrap justify-center items-center gap-6 opacity-60">
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-4 h-4 text-green-600" />
+                  <span className="text-xs font-medium text-gray-700">Verified Property</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Lock className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-medium text-gray-700">Secure Booking</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <span className="text-xs font-medium text-gray-700">Instant Confirmation</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       {/* Footer */}
