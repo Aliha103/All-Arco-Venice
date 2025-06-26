@@ -1505,7 +1505,7 @@ export default function Landing() {
                               <span className="text-sm font-medium text-gray-700">Check-in</span>
                             </div>
                             <div className="text-blue-600 font-semibold text-sm">
-                              {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                              {checkIn ? new Date(checkIn + 'T12:00:00').toLocaleDateString('en-US', { 
                                 weekday: 'short', 
                                 month: 'short', 
                                 day: 'numeric' 
@@ -1518,7 +1518,7 @@ export default function Landing() {
                               <span className="text-sm font-medium text-gray-700">Check-out</span>
                             </div>
                             <div className="text-blue-600 font-semibold text-sm">
-                              {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                              {checkOut ? new Date(checkOut + 'T12:00:00').toLocaleDateString('en-US', { 
                                 weekday: 'short', 
                                 month: 'short', 
                                 day: 'numeric' 
