@@ -323,45 +323,45 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Tablet: 60/40 layout with price below */}
+            {/* Tablet: 60/40 layout with price under guests */}
             <div className="hidden md:block lg:hidden">
-              <div className="space-y-8">
-                {/* Top row: Calendar 60% + Guests 40% */}
-                <div className="grid grid-cols-5 gap-8">
-                  {/* Select Dates - 60% (3/5) */}
-                  <div className="col-span-3">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <Clock className="w-5 h-5 mr-2 text-blue-600"/>
-                        Select Dates
-                      </h3>
-                      <button className="text-sm text-blue-600 hover:text-blue-700">Clear</button>
-                    </div>
-                    
-                    <div className="space-y-4 mb-6">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="text-xs text-gray-500 mb-1">Check-in</div>
-                          <div className="text-sm font-medium text-gray-900">{checkIn || "Select date"}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="text-xs text-gray-500 mb-1">Check-out</div>
-                          <div className="text-sm font-medium text-gray-900">{checkOut || "Select date"}</div>
-                        </div>
-                      </div>
-                      {validationErrors.checkOut && (
-                        <p className="text-red-600 flex items-center text-sm gentle-pulse">
-                          <AlertCircle className="w-4 h-4 mr-1" />
-                          {validationErrors.checkOut}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
+              <div className="grid grid-cols-5 gap-8">
+                {/* Select Dates - 60% (3/5) */}
+                <div className="col-span-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <Clock className="w-5 h-5 mr-2 text-blue-600"/>
+                      Select Dates
+                    </h3>
+                    <button className="text-sm text-blue-600 hover:text-blue-700">Clear</button>
                   </div>
+                  
+                  <div className="space-y-4 mb-6">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 mb-1">Check-in</div>
+                        <div className="text-sm font-medium text-gray-900">{checkIn || "Select date"}</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 mb-1">Check-out</div>
+                        <div className="text-sm font-medium text-gray-900">{checkOut || "Select date"}</div>
+                      </div>
+                    </div>
+                    {validationErrors.checkOut && (
+                      <p className="text-red-600 flex items-center text-sm gentle-pulse">
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        {validationErrors.checkOut}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
+                </div>
 
-                  {/* Guests & Pets - 40% (2/5) */}
-                  <div className="col-span-2">
+                {/* Right column: Guests & Pets + Price - 40% (2/5) */}
+                <div className="col-span-2 space-y-8">
+                  {/* Guests & Pets */}
+                  <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
                     
                     <div className="space-y-4">
@@ -397,54 +397,54 @@ export default function Landing() {
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom row: Price Breakdown - Full Width */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
-                  
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <div className="text-3xl font-bold text-gray-900">€{total.toFixed(2)}</div>
-                      <div className="text-sm text-gray-500">per night</div>
-                    </div>
+                  {/* Price Breakdown - Under Guests & Pets */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                     
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">€{discNight.toFixed(2)} × {nights} night{nights !== 1 && "s"}</span>
-                        <span className="font-medium">€{(discNight * nights).toFixed(2)}</span>
+                    <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                      <div className="text-center mb-4">
+                        <div className="text-3xl font-bold text-gray-900">€{total.toFixed(2)}</div>
+                        <div className="text-sm text-gray-500">per night</div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Cleaning fee</span>
-                        <span className="font-medium">€{clean.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Service fee</span>
-                        <span className="font-medium">€{service.toFixed(2)}</span>
-                      </div>
-                      {hasPet && (
+                      
+                      <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Pet fee</span>
-                          <span className="font-medium">€{pet.toFixed(2)}</span>
+                          <span className="text-gray-600">€{discNight.toFixed(2)} × {nights} night{nights !== 1 && "s"}</span>
+                          <span className="font-medium">€{(discNight * nights).toFixed(2)}</span>
                         </div>
-                      )}
-                      <hr className="border-gray-200"/>
-                      <div className="flex justify-between text-lg font-semibold">
-                        <span>Total</span>
-                        <span>€{total.toFixed(2)}</span>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Cleaning fee</span>
+                          <span className="font-medium">€{clean.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Service fee</span>
+                          <span className="font-medium">€{service.toFixed(2)}</span>
+                        </div>
+                        {hasPet && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Pet fee</span>
+                            <span className="font-medium">€{pet.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <hr className="border-gray-200"/>
+                        <div className="flex justify-between text-lg font-semibold">
+                          <span>Total</span>
+                          <span>€{total.toFixed(2)}</span>
+                        </div>
                       </div>
+                      
+                      <Button 
+                        disabled={Object.keys(validationErrors).length > 0 || !checkIn || !checkOut} 
+                        className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg interactive-button touch-interaction"
+                        asChild
+                      >
+                        <a href="/api/login" className="flex items-center justify-center">
+                          <Lock className="w-4 h-4 mr-2 transition-transform duration-200"/>
+                          Select dates to continue
+                        </a>
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      disabled={Object.keys(validationErrors).length > 0 || !checkIn || !checkOut} 
-                      className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg interactive-button touch-interaction"
-                      asChild
-                    >
-                      <a href="/api/login" className="flex items-center justify-center">
-                        <Lock className="w-4 h-4 mr-2 transition-transform duration-200"/>
-                        Select dates to continue
-                      </a>
-                    </Button>
                   </div>
                 </div>
               </div>
