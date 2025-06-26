@@ -19,6 +19,9 @@ import {
   Thermometer,
   Key,
   Sparkles,
+  LogIn,
+  UserPlus,
+  ChevronDown,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -43,6 +46,7 @@ export default function Landing() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState(0)
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
 
   /* ------------------------------------------------------------------ */
   //  Mock bookings → arrival dates only
@@ -83,6 +87,91 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* —— Header —— */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              {/* All'arco Venice Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <svg width="40" height="40" viewBox="0 0 40 40" className="transition-transform duration-300 hover:scale-105">
+                    <defs>
+                      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: '#1e40af', stopOpacity: 1 }} />
+                        <stop offset="50%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: '#60a5fa', stopOpacity: 1 }} />
+                      </linearGradient>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    
+                    {/* Venetian Arch Symbol */}
+                    <path
+                      d="M8 32 L8 20 Q8 12 20 12 Q32 12 32 20 L32 32 L28 32 L28 20 Q28 16 20 16 Q12 16 12 20 L12 32 L8 32 Z"
+                      fill="url(#logoGradient)"
+                      filter="url(#glow)"
+                      className="animate-pulse"
+                    />
+                    
+                    {/* Decorative Elements */}
+                    <circle cx="20" cy="14" r="1.5" fill="#60a5fa" opacity="0.8" />
+                    <circle cx="16" cy="18" r="1" fill="#93c5fd" opacity="0.6" />
+                    <circle cx="24" cy="18" r="1" fill="#93c5fd" opacity="0.6" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                    All'arco
+                  </h1>
+                  <p className="text-xs text-gray-500 font-medium">Venice</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Contact
+              </Button>
+              
+              <div className="relative">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="flex items-center space-x-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
+                    <div className="py-1">
+                      <a href="/api/login" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign In
+                      </a>
+                      <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* —— Hero —— */}
       <section className="bg-white px-4 py-10 sm:py-14">
         <div className="max-w-7xl mx-auto">
