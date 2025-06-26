@@ -117,245 +117,247 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => window.history.back()}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
             </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+              <p className="text-gray-600 text-sm">Manage your account settings</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-600 mt-2">Manage your account information and preferences</p>
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+            <User className="w-6 h-6 text-white" />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="border-0 shadow-md bg-white/80 backdrop-blur-sm">
+            <CardContent className="flex items-center space-x-3 p-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Account Type</p>
+                <p className="font-semibold text-gray-900 capitalize">{user.role}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-md bg-white/80 backdrop-blur-sm">
+            <CardContent className="flex items-center space-x-3 p-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Credit Balance</p>
+                <p className="font-semibold text-green-600">0€</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-md bg-white/80 backdrop-blur-sm">
+            <CardContent className="flex items-center space-x-3 p-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Referrals</p>
+                <p className="font-semibold text-gray-900">{user.totalReferrals || 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Information */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Account Information</span>
-                </CardTitle>
-                <CardDescription>
-                  Update your personal details and contact information
+            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg text-gray-900">Personal Information</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Update your profile details
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Display current user info */}
-                <div className="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Name:</span>
-                    <p className="text-gray-900">{user.firstName} {user.lastName}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Email:</span>
-                    <p className="text-gray-900">{user.email}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Account Type:</span>
-                    <Badge variant="secondary" className="ml-2">{user.role}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Credit Balance:</span>
-                    <div className="flex items-center space-x-2">
-                      <CreditCard className="w-4 h-4 text-green-600" />
-                      <span className="text-lg font-semibold text-green-600">0€</span>
+                {/* Current Info Display */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
                     </div>
                   </div>
                 </div>
 
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Birth</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dateOfBirth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-gray-700">Date of Birth</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="date" 
+                                {...field} 
+                                className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-gray-700">Country</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200">
+                                  <SelectValue placeholder="Select country" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="US">United States</SelectItem>
+                                <SelectItem value="CA">Canada</SelectItem>
+                                <SelectItem value="GB">United Kingdom</SelectItem>
+                                <SelectItem value="DE">Germany</SelectItem>
+                                <SelectItem value="FR">France</SelectItem>
+                                <SelectItem value="IT">Italy</SelectItem>
+                                <SelectItem value="ES">Spain</SelectItem>
+                                <SelectItem value="AU">Australia</SelectItem>
+                                <SelectItem value="JP">Japan</SelectItem>
+                                <SelectItem value="BR">Brazil</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       control={form.control}
                       name="mobileNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Mobile Number</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700">Mobile Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="+1 (555) 123-4567" {...field} />
+                            <Input 
+                              placeholder="+1 (555) 123-4567" 
+                              {...field} 
+                              className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Country</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select your country" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="US">United States</SelectItem>
-                              <SelectItem value="CA">Canada</SelectItem>
-                              <SelectItem value="GB">United Kingdom</SelectItem>
-                              <SelectItem value="DE">Germany</SelectItem>
-                              <SelectItem value="FR">France</SelectItem>
-                              <SelectItem value="IT">Italy</SelectItem>
-                              <SelectItem value="ES">Spain</SelectItem>
-                              <SelectItem value="AU">Australia</SelectItem>
-                              <SelectItem value="JP">Japan</SelectItem>
-                              <SelectItem value="BR">Brazil</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="submit"
-                      disabled={updateProfileMutation.isPending}
-                      className="w-full md:w-auto"
-                    >
-                      {updateProfileMutation.isPending ? "Updating..." : "Update Settings"}
-                    </Button>
+                    <div className="pt-4">
+                      <Button
+                        type="submit"
+                        disabled={updateProfileMutation.isPending}
+                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        {updateProfileMutation.isPending ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Updating...</span>
+                          </div>
+                        ) : (
+                          "Update Profile"
+                        )}
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </CardContent>
             </Card>
           </div>
 
-          {/* Account Summary & Referrals */}
-          <div className="space-y-6">
-            {/* Account Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Account Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border-4 border-white shadow-md">
-                    <User className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{user.firstName} {user.lastName}</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Account Type</span>
-                    <Badge variant="secondary">{user.role}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Credit Balance</span>
-                    <div className="flex items-center space-x-1">
-                      <CreditCard className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-semibold text-green-600">0€</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Auth Provider</span>
-                    <Badge variant="outline">{user.authProvider}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Member Since</span>
-                    <span className="text-sm">
-                      {user.createdAt ? new Date(user.createdAt as unknown as string).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Referral Program */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Gift className="w-5 h-5" />
-                  <span>Referral Program</span>
+          {/* Referral Section */}
+          <div>
+            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg text-gray-900">
+                  <Gift className="w-5 h-5 text-purple-600" />
+                  <span>Referral Code</span>
                 </CardTitle>
-                <CardDescription>
-                  Share your referral code and earn rewards
+                <CardDescription className="text-gray-600">
+                  Share and earn rewards
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label htmlFor="referralCode" className="text-sm font-medium">
-                    Your Referral Code
-                  </label>
-                  <div className="flex items-center space-x-2 mt-1">
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                  <div className="flex items-center space-x-2 mb-2">
                     <Input
-                      id="referralCode"
                       value={user.referralCode || ""}
                       readOnly
                       type={showReferralCode ? "text" : "password"}
-                      className="font-mono"
+                      className="font-mono text-center border-0 bg-white/70 text-gray-900 font-semibold"
                     />
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowReferralCode(!showReferralCode)}
+                      className="shrink-0"
                     >
                       {showReferralCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">Total Referrals</span>
-                  </span>
-                  <Badge variant="secondary">{user.totalReferrals || 0}</Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (user.referralCode) {
+                        navigator.clipboard.writeText(user.referralCode);
+                        toast({
+                          title: "Copied!",
+                          description: "Referral code copied to clipboard",
+                        });
+                      }
+                    }}
+                    className="w-full mt-2 bg-white/80 hover:bg-white border-purple-200 text-purple-700 hover:text-purple-800"
+                  >
+                    Copy Code
+                  </Button>
                 </div>
 
                 {user.referrerName && (
-                  <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                     <p className="text-sm text-green-800">
                       <span className="font-medium">Referred by:</span> {user.referrerName}
                     </p>
                   </div>
                 )}
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (user.referralCode) {
-                      navigator.clipboard.writeText(user.referralCode);
-                      toast({
-                        title: "Copied!",
-                        description: "Referral code copied to clipboard",
-                      });
-                    }
-                  }}
-                  className="w-full"
-                >
-                  Copy Referral Code
-                </Button>
+                <div className="pt-2 text-center">
+                  <p className="text-xs text-gray-500">
+                    Member since {user.createdAt ? new Date(user.createdAt as unknown as string).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
