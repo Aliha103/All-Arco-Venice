@@ -243,6 +243,9 @@ export const loginSchema = z.object({
 
 // User profile update schema
 export const updateUserProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name too long").optional(),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name too long").optional(),
+  email: z.string().email("Invalid email address").optional(),
   dateOfBirth: z.string().optional(),
   country: z.string().optional(),
   mobileNumber: z.string().optional()
