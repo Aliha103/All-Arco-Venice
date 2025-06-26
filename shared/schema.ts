@@ -27,13 +27,18 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table (supports both Replit Auth and local signup)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
   profileImageUrl: varchar("profile_image_url"),
+  password: varchar("password"), // For local signup, null for Replit Auth users
+  dateOfBirth: date("date_of_birth"),
+  country: varchar("country"),
+  mobileNumber: varchar("mobile_number"),
+  authProvider: varchar("auth_provider", { enum: ["replit", "local"] }).default("local"),
   role: varchar("role", { enum: ["guest", "admin"] }).default("guest"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -212,9 +217,38 @@ export const insertAboutContentSchema = createInsertSchema(aboutContent).omit({
 
 export const upsertUserSchema = createInsertSchema(users);
 
+// Local signup schema
+export const signupSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name too long"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name too long"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain uppercase, lowercase, and number"),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+});
+
+// Login schema
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required")
+});
+
+// User profile update schema
+export const updateUserProfileSchema = z.object({
+  dateOfBirth: z.string().optional(),
+  country: z.string().optional(),
+  mobileNumber: z.string().optional()
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type SignupData = z.infer<typeof signupSchema>;
+export type LoginData = z.infer<typeof loginSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertPropertyImage = z.infer<typeof insertPropertyImageSchema>;

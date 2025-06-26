@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { Link } from "wouter"
 import {
   Star,
   MapPin,
@@ -139,20 +140,20 @@ export default function Landing() {
                     <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
                       Welcome to All'Arco
                     </div>
-                    <a 
-                      href="/api/login" 
+                    <Link 
+                      href="/login" 
                       className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                     >
                       <LogIn className="w-4 h-4 text-blue-600" />
                       <span>Log in</span>
-                    </a>
-                    <a 
-                      href="/api/login" 
+                    </Link>
+                    <Link 
+                      href="/signup" 
                       className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                     >
                       <UserPlus className="w-4 h-4 text-green-600" />
                       <span>Sign up</span>
-                    </a>
+                    </Link>
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       <div className="px-4 py-2 text-xs text-gray-500">
                         Need help? Contact support
