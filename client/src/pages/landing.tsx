@@ -315,10 +315,10 @@ export default function Landing() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-4 xl:px-6">
+          <div className="flex justify-between items-center h-12 sm:h-14 lg:h-12">
             <div className="flex items-center">
-              <div className="flex items-center space-x-2 sm:space-x-3 group">
+              <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-2 group">
                 {/* Elegant Logo Mark */}
                 <div className="relative">
                   {/* Main logo container */}
@@ -381,7 +381,7 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3 sm:space-x-6">
+            <div className="flex items-center space-x-3 sm:space-x-6 lg:space-x-4">
               <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600">
                 <span className="font-medium">EN</span>
                 <span className="text-gray-400">|</span>
