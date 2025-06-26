@@ -390,60 +390,97 @@ export default function Landing() {
               <div className="relative">
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center space-x-1 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors group"
+                  className="flex items-center space-x-1 p-2 hover:bg-gray-50 rounded-xl transition-all duration-200 group border border-transparent hover:border-gray-200"
+                  aria-label="Account menu"
+                  aria-expanded={isUserDropdownOpen}
+                  aria-haspopup="true"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+                  <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-300 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {/* Dropdown Menu */}
+                {/* Advanced Dropdown Menu */}
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Account</p>
+                  <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-300">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-gray-100">
+                      <div className="flex items-center space-x-2">
+                        <Shield className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm font-medium text-gray-700">Secure Access</p>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Your data is protected</p>
                     </div>
                     
-                    <button 
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        window.location.href = '/api/login';
-                      }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <LogIn className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">Sign In</div>
-                        <div className="text-xs text-gray-500">Access your account</div>
-                      </div>
-                    </button>
+                    {/* Auth Options */}
+                    <div className="p-2">
+                      <button 
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          // Add slight delay for smooth UX
+                          setTimeout(() => {
+                            window.location.href = '/api/login';
+                          }, 150);
+                        }}
+                        className="w-full flex items-center space-x-3 px-3 py-3 text-left rounded-xl hover:bg-blue-50 transition-all duration-200 group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <LogIn className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900">Sign In</div>
+                          <div className="text-xs text-gray-500">Access your account securely</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      </button>
+                      
+                      <button 
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          // Add slight delay for smooth UX
+                          setTimeout(() => {
+                            window.location.href = '/api/login';
+                          }, 150);
+                        }}
+                        className="w-full flex items-center space-x-3 px-3 py-3 text-left rounded-xl hover:bg-green-50 transition-all duration-200 group mt-1"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <UserPlus className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900">Create Account</div>
+                          <div className="text-xs text-gray-500">Join our community today</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
+                      </button>
+                    </div>
                     
-                    <button 
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        window.location.href = '/api/login';
-                      }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                        <UserPlus className="w-4 h-4 text-green-600" />
+                    {/* Security Notice */}
+                    <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
+                      <div className="flex items-start space-x-2">
+                        <Lock className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          We use secure authentication to protect your personal information
+                        </p>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">Sign Up</div>
-                        <div className="text-xs text-gray-500">Create new account</div>
-                      </div>
-                    </button>
+                    </div>
                   </div>
                 )}
                 
-                {/* Backdrop to close dropdown */}
+                {/* Enhanced Backdrop */}
                 {isUserDropdownOpen && (
                   <div 
-                    className="fixed inset-0 z-40" 
+                    className="fixed inset-0 z-40 bg-black/5 backdrop-blur-sm" 
                     onClick={() => setIsUserDropdownOpen(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsUserDropdownOpen(false);
+                      }
+                    }}
+                    tabIndex={-1}
                   />
                 )}
               </div>
