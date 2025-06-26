@@ -317,7 +317,40 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center">
-              <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">All'Arco Venice</h1>
+              <div className="flex items-center space-x-3">
+                {/* Logo Icon */}
+                <div className="relative">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-lg shadow-lg flex items-center justify-center transform hover:scale-105 transition-all duration-300">
+                    {/* Venetian Bridge Icon */}
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 12h18" strokeLinecap="round"/>
+                      <path d="M8 8c2.5-3 6.5-3 9 0" strokeLinecap="round"/>
+                      <path d="M2 16h20" strokeLinecap="round"/>
+                      <circle cx="6" cy="16" r="1" fill="currentColor"/>
+                      <circle cx="18" cy="16" r="1" fill="currentColor"/>
+                    </svg>
+                    {/* Subtle glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent rounded-lg"></div>
+                  </div>
+                  {/* Premium indicator dot */}
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full border-2 border-white shadow-sm"></div>
+                </div>
+                
+                {/* Brand Text */}
+                <div className="flex flex-col">
+                  <div className="flex items-center space-x-1">
+                    <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
+                      All'Arco
+                    </h1>
+                    <span className="text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      Venice
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 font-medium tracking-wide hidden sm:block">
+                    Luxury Apartments
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-3 sm:space-x-6">
               <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600">
