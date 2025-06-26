@@ -42,9 +42,9 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center cursor-pointer">
-              <h1 className="text-2xl font-bold text-primary">All'arco</h1>
-              <span className="ml-2 text-sm text-gray-600 hidden sm:block">Luxury Apartment</span>
+            <div className="flex items-center cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95">
+              <h1 className="text-2xl font-bold text-primary transition-colors duration-200 hover:text-blue-700">All'arco</h1>
+              <span className="ml-2 text-sm text-gray-600 hidden sm:block transition-colors duration-200 hover:text-gray-800">Luxury Apartment</span>
             </div>
           </Link>
 
@@ -68,7 +68,7 @@ export default function Header() {
             {isAuthenticated ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md">
+                  <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95">
                     <Menu className="h-4 w-4" />
                     <User className="h-5 w-5" />
                   </Button>

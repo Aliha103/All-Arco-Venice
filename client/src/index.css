@@ -82,6 +82,94 @@
 }
 
 @layer components {
+  /* Micro-interactions for smooth mobile responsiveness */
+  .touch-interaction {
+    @apply transition-all duration-200 ease-in-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .touch-interaction:active {
+    @apply scale-95;
+  }
+
+  .smooth-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .smooth-hover:hover {
+    @apply transform -translate-y-1 shadow-lg;
+  }
+
+  .gentle-scale {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  .gentle-scale:hover {
+    @apply scale-105;
+  }
+
+  .gentle-scale:active {
+    @apply scale-95;
+  }
+
+  /* Enhanced button interactions */
+  .interactive-button {
+    @apply transition-all duration-200 ease-in-out transform;
+  }
+
+  .interactive-button:hover {
+    @apply scale-105 shadow-md;
+  }
+
+  .interactive-button:active {
+    @apply scale-95;
+  }
+
+  /* Smooth fade animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Pulse animation for loading states */
+  .gentle-pulse {
+    animation: gentlePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes gentlePulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
   /* Calendar custom styles */
   .rdp {
     --rdp-cell-size: 40px;
