@@ -144,8 +144,31 @@ export default function AdminDashboard() {
     position: "main",
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string>("");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
+
+  // Handle file selection and preview
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setUploadPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   // Redirect if not admin
   useEffect(() => {
@@ -385,8 +408,25 @@ export default function AdminDashboard() {
 
   // Hero image mutations
   const createHeroImageMutation = useMutation({
-    mutationFn: async (imageData: Omit<HeroImage, 'id' | 'createdAt' | 'updatedAt'>) => {
-      await apiRequest("POST", "/api/hero-images", imageData);
+    mutationFn: async (imageData: { file: File; title: string; alt: string; position: string }) => {
+      const formData = new FormData();
+      formData.append('image', imageData.file);
+      formData.append('title', imageData.title);
+      formData.append('alt', imageData.alt);
+      formData.append('position', imageData.position);
+      formData.append('isActive', 'true');
+      formData.append('displayOrder', '0');
+
+      const response = await fetch('/api/hero-images/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
@@ -396,14 +436,16 @@ export default function AdminDashboard() {
         title: "",
         position: "main",
       });
+      setSelectedFile(null);
+      setUploadPreview("");
       setShowHeroImageForm(false);
       toast({
         title: "Success",
-        description: "Hero image added successfully",
+        description: "Hero image uploaded successfully",
       });
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
+      if (error.message.includes('401')) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -416,7 +458,7 @@ export default function AdminDashboard() {
       }
       toast({
         title: "Error",
-        description: "Failed to add hero image",
+        description: "Failed to upload hero image",
         variant: "destructive",
       });
     },
@@ -839,16 +881,37 @@ export default function AdminDashboard() {
                 {showHeroImageForm && (
                   <div className="mb-6 p-4 border rounded-lg bg-gray-50">
                     <h4 className="font-medium mb-4">Add New Hero Image</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* File Upload Section */}
+                    <div className="mb-6 space-y-4">
                       <div>
-                        <Label htmlFor="imageUrl">Image URL</Label>
+                        <Label htmlFor="imageFile">Upload Image File</Label>
                         <Input
-                          id="imageUrl"
-                          value={heroImageForm.url}
-                          onChange={(e) => setHeroImageForm({ ...heroImageForm, url: e.target.value })}
-                          placeholder="https://example.com/image.jpg"
+                          id="imageFile"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
+                        <p className="text-xs text-gray-500 mt-1">Supported formats: JPG, PNG, GIF, WebP (Max 10MB)</p>
                       </div>
+                      
+                      {/* Preview */}
+                      {uploadPreview && (
+                        <div className="mt-4">
+                          <Label>Preview</Label>
+                          <div className="mt-2 border rounded-lg p-2">
+                            <img 
+                              src={uploadPreview} 
+                              alt="Upload preview" 
+                              className="max-w-full h-32 object-cover rounded"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
                       <div>
                         <Label htmlFor="imageTitle">Title</Label>
@@ -894,19 +957,20 @@ export default function AdminDashboard() {
                       <Button 
                         onClick={() => {
                           // Validate form fields
-                          if (!heroImageForm.url || !heroImageForm.title || !heroImageForm.alt || !heroImageForm.position) {
+                          if (!selectedFile || !heroImageForm.title || !heroImageForm.alt || !heroImageForm.position) {
                             toast({
                               title: "Validation Error",
-                              description: "All fields are required",
+                              description: "Please select an image file and fill in all fields",
                               variant: "destructive",
                             });
                             return;
                           }
 
                           createHeroImageMutation.mutate({
-                            ...heroImageForm,
-                            isActive: true,
-                            displayOrder: 0
+                            file: selectedFile,
+                            title: heroImageForm.title,
+                            alt: heroImageForm.alt,
+                            position: heroImageForm.position
                           });
                         }}
                         disabled={createHeroImageMutation.isPending}
