@@ -31,6 +31,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user referral statistics
+  app.get('/api/auth/referral-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getUserReferralStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching referral stats:", error);
+      res.status(500).json({ message: "Failed to fetch referral statistics" });
+    }
+  });
+
   // Local signup route
   app.post('/api/auth/signup', async (req, res) => {
     try {
@@ -55,12 +67,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referralCode: validatedData.referralCode,
       });
 
-      // Return user without password, include referral code for confirmation
+      // Return user without password, include referral info for confirmation
       const { password, ...userResponse } = user;
       res.status(201).json({ 
         message: "Account created successfully",
         user: userResponse,
-        referralCode: user.referralCode
+        referralCode: user.referralCode,
+        wasReferred: !!user.referrerName,
+        referrerName: user.referrerName
       });
     } catch (error: any) {
       console.error("Signup error:", error);

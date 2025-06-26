@@ -83,6 +83,14 @@ export interface IStorage {
     occupancyRate: number;
     averageRating: number;
   }>;
+  
+  // Referral analytics
+  getUserReferralStats(userId: string): Promise<{
+    totalReferrals: number;
+    referredBy: string | null;
+    referrerName: string | null;
+    referralCode: string;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -465,6 +473,26 @@ export class DatabaseStorage implements IStorage {
       totalRevenue: Number(bookingStats.totalRevenue),
       occupancyRate,
       averageRating: Number(reviewStats.averageRating),
+    };
+  }
+
+  async getUserReferralStats(userId: string): Promise<{
+    totalReferrals: number;
+    referredBy: string | null;
+    referrerName: string | null;
+    referralCode: string;
+  }> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return {
+      totalReferrals: user.totalReferrals || 0,
+      referredBy: user.referredBy,
+      referrerName: user.referrerName,
+      referralCode: user.referralCode!,
     };
   }
 }

@@ -17,6 +17,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [generatedReferralCode, setGeneratedReferralCode] = useState<string | null>(null);
+  const [referrerInfo, setReferrerInfo] = useState<{ wasReferred: boolean; referrerName?: string } | null>(null);
   const { toast } = useToast();
 
   const {
@@ -36,9 +37,15 @@ export default function Signup() {
     },
     onSuccess: (data) => {
       setGeneratedReferralCode(data.referralCode);
+      setReferrerInfo({
+        wasReferred: data.wasReferred,
+        referrerName: data.referrerName
+      });
       toast({
         title: "Account created successfully!",
-        description: "Your referral code has been generated. Share it with friends!",
+        description: data.wasReferred 
+          ? `Welcome! You were referred by ${data.referrerName}` 
+          : "Your referral code has been generated. Share it with friends!",
       });
     },
     onError: (error: Error) => {
@@ -93,6 +100,19 @@ export default function Signup() {
               <p className="text-gray-600 text-sm">Your account has been created successfully</p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {referrerInfo?.wasReferred && (
+                <div className="bg-green-50 rounded-lg p-4 text-center mb-4">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Referred by {referrerInfo.referrerName}</span>
+                  </div>
+                  <p className="text-xs text-green-700">
+                    You've successfully joined through {referrerInfo.referrerName}'s referral! 
+                    Both of you may be eligible for special rewards.
+                  </p>
+                </div>
+              )}
+
               <div className="bg-blue-50 rounded-lg p-4 text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Gift className="w-5 h-5 text-blue-600" />
