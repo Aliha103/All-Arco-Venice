@@ -81,9 +81,11 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   //  Pricing helpers
   /* ------------------------------------------------------------------ */
-  const base = 110.5, clean=25, service=15, pet=hasPet?20:0
+  const base = 110.5, clean=25, service=15
   const nights=(!checkIn||!checkOut)?1:Math.max(1,(new Date(checkOut).getTime()-new Date(checkIn).getTime())/86_400_000)
   const discNight=nights>=7?base*0.9:nights>=3?base*0.95:base
+  // Pet fee: €25 for 1 night, €35 total for multiple nights
+  const pet = hasPet ? (nights === 1 ? 25 : 35) : 0
   const total=discNight*nights+clean+service+pet
 
   /* ------------------------------------------------------------------ */
@@ -265,8 +267,15 @@ export default function Landing() {
                           <div className="font-medium text-gray-900">Pets</div>
                         </div>
                       </div>
-                      <div className="w-12 h-6 bg-gray-200 rounded-full p-1 cursor-pointer transition-colors">
-                        <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                      <div 
+                        onClick={() => setHasPet(!hasPet)}
+                        className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${
+                          hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+                          hasPet ? 'translate-x-6' : 'translate-x-0'
+                        }`}></div>
                       </div>
                     </div>
                   </div>
@@ -274,7 +283,6 @@ export default function Landing() {
 
                 {/* Price Breakdown */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                   
                   <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                     <div className="text-center mb-4">
@@ -393,8 +401,15 @@ export default function Landing() {
                             <div className="font-medium text-gray-900">Pets</div>
                           </div>
                         </div>
-                        <div className="w-12 h-6 bg-gray-200 rounded-full p-1 cursor-pointer transition-colors">
-                          <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                        <div 
+                          onClick={() => setHasPet(!hasPet)}
+                          className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${
+                            hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+                            hasPet ? 'translate-x-6' : 'translate-x-0'
+                          }`}></div>
                         </div>
                       </div>
                     </div>
@@ -402,7 +417,6 @@ export default function Landing() {
 
                   {/* Price Breakdown - Under Guests & Pets */}
                   <div>
-                    
                     <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                       <div className="text-center mb-4">
                         <div className="text-3xl font-bold text-gray-900">€{total.toFixed(2)}</div>
@@ -516,8 +530,15 @@ export default function Landing() {
                         <div className="font-medium text-gray-900">Pets</div>
                       </div>
                     </div>
-                    <div className="w-12 h-6 bg-gray-200 rounded-full p-1 cursor-pointer transition-colors">
-                      <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                    <div 
+                      onClick={() => setHasPet(!hasPet)}
+                      className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${
+                        hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+                        hasPet ? 'translate-x-6' : 'translate-x-0'
+                      }`}></div>
                     </div>
                   </div>
                 </div>
@@ -525,7 +546,6 @@ export default function Landing() {
 
               {/* Price Breakdown Column */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                 
                 <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                   <div className="text-center mb-4">
