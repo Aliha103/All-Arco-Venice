@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Enhanced referral system with referrer name tracking and total referral count. Database stores referrer's full name and automatically increments referral counter when users sign up with referral codes
 - June 26, 2025. Added referral code system with automatic generation, validation, and tracking. Users receive unique codes upon signup and can enter referral codes for benefits
 - June 26, 2025. Created comprehensive signup and login forms with password validation, strength indicators, and secure authentication system supporting both local accounts and Replit Auth
 - June 26, 2025. Enhanced user schema with additional fields (password, dateOfBirth, country, mobileNumber) and authentication provider support for dual auth system
