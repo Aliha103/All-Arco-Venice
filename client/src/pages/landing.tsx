@@ -23,6 +23,7 @@ import {
   LogIn,
   UserPlus,
   ChevronDown,
+  Calendar as CalendarIcon,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -118,7 +119,7 @@ export default function Landing() {
         </div>
       </header>
       {/* —— Hero —— */}
-      <section className="bg-white px-4 py-10 sm:py-14 pt-[25px] pb-[25px] pl-[0px] pr-[0px]">
+      <section className="bg-white px-4 py-10 sm:py-14 pl-[10px] pr-[10px]">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">All'Arco Apartment – Heart of Venice</h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600 mb-6">
@@ -190,14 +191,139 @@ export default function Landing() {
         </div>
       </section>
       {/* —— Booking —— */}
-      <section id="booking-section" className="py-16 px-4 max-w-4xl mx-auto">
-        <Card className="smooth-hover touch-interaction slide-up"><CardContent className="p-8 space-y-8">
-          <h2 className="text-xl font-semibold flex items-center text-gray-900"><Clock className="w-5 h-5 mr-2 text-blue-600"/>Select your dates{isCheckingAvailability&&<Clock className="w-4 h-4 ml-2 animate-spin text-blue-600"/>}</h2>
-          <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
-          <div className="bg-blue-50 rounded-xl p-4 text-sm space-y-1 smooth-hover touch-interaction"><div className="flex justify-between transition-colors duration-200"><span>Check‑in</span><span className={checkIn ? "font-medium text-blue-700" : "text-gray-400"}>{checkIn||"—"}</span></div><div className="flex justify-between transition-colors duration-200"><span>Check‑out</span><span className={checkOut ? "font-medium text-blue-700" : "text-gray-400"}>{checkOut||"—"}</span></div>{validationErrors.checkOut&&<p className="text-red-600 flex items-center gentle-pulse"><AlertCircle className="w-4 h-4 mr-1" />{validationErrors.checkOut}</p>}</div>
-          <div className="bg-white rounded-xl p-4 shadow-sm space-y-1 smooth-hover touch-interaction"><div className="flex justify-between transition-all duration-200 hover:text-blue-600 cursor-pointer group"><span>€{discNight.toFixed(2)} × {nights} night{nights!==1&&"s"}</span><span className="group-hover:font-semibold">€{(discNight*nights).toFixed(2)}</span></div><div className="flex justify-between text-sm text-gray-600 transition-all duration-200 hover:text-gray-800 cursor-pointer"><span>Cleaning</span><span>€{clean.toFixed(2)}</span></div><div className="flex justify-between text-sm text-gray-600 transition-all duration-200 hover:text-gray-800 cursor-pointer"><span>Service</span><span>€{service.toFixed(2)}</span></div>{hasPet&&<div className="flex justify-between text-sm text-gray-600 transition-all duration-200 hover:text-gray-800 cursor-pointer"><span>Pet fee</span><span>€{pet.toFixed(2)}</span></div>}<hr className="transition-colors duration-200"/><div className="flex justify-between font-semibold text-lg transition-all duration-200 hover:text-blue-600 gentle-scale cursor-pointer group"><span>Total</span><span className="group-hover:text-xl">€{total.toFixed(2)}</span></div></div>
-          <Button disabled={Object.keys(validationErrors).length>0||!checkIn||!checkOut} className="w-full interactive-button touch-interaction" asChild><a href="/api/login" className="flex items-center justify-center"><Lock className="w-4 h-4 mr-2 transition-transform duration-200"/>Reserve securely</a></Button>
-        </CardContent></Card>
+      <section id="booking-section" className="py-16 px-4 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Book Your Stay</h2>
+          <p className="text-gray-600">Choose your dates and start planning your perfect getaway</p>
+        </div>
+        
+        <Card className="smooth-hover touch-interaction slide-up">
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Select Dates Column */}
+              <div className="lg:col-span-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <CalendarIcon className="w-5 h-5 mr-2 text-blue-600"/>
+                    Select Dates
+                  </h3>
+                  <button className="text-sm text-blue-600 hover:text-blue-700">Clear</button>
+                </div>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Check-in</div>
+                      <div className="text-sm font-medium text-gray-900">{checkIn || "Select date"}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Check-out</div>
+                      <div className="text-sm font-medium text-gray-900">{checkOut || "Select date"}</div>
+                    </div>
+                  </div>
+                  {validationErrors.checkOut && (
+                    <p className="text-red-600 flex items-center text-sm gentle-pulse">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.checkOut}
+                    </p>
+                  )}
+                </div>
+                
+                <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
+              </div>
+
+              {/* Guests & Pets Column */}
+              <div className="lg:col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-3 text-gray-400"/>
+                      <div>
+                        <div className="font-medium text-gray-900">Guests</div>
+                        <div className="text-sm text-gray-500">Max 5</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                        <Minus className="w-4 h-4"/>
+                      </button>
+                      <span className="font-medium text-gray-900 min-w-[20px] text-center">2</span>
+                      <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                        <Plus className="w-4 h-4"/>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center">
+                      <PawPrint className="w-5 h-5 mr-3 text-gray-400"/>
+                      <div>
+                        <div className="font-medium text-gray-900">Pets</div>
+                        <div className="text-sm text-gray-500">€20 fee</div>
+                      </div>
+                    </div>
+                    <div className="w-12 h-6 bg-gray-200 rounded-full p-1 cursor-pointer transition-colors">
+                      <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Breakdown Column */}
+              <div className="lg:col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                
+                <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="text-3xl font-bold text-gray-900">€{total.toFixed(2)}</div>
+                    <div className="text-sm text-gray-500">per night</div>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">€{discNight.toFixed(2)} × {nights} night{nights !== 1 && "s"}</span>
+                      <span className="font-medium">€{(discNight * nights).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cleaning fee</span>
+                      <span className="font-medium">€{clean.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Service fee</span>
+                      <span className="font-medium">€{service.toFixed(2)}</span>
+                    </div>
+                    {hasPet && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Pet fee</span>
+                        <span className="font-medium">€{pet.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <hr className="border-gray-200"/>
+                    <div className="flex justify-between text-lg font-semibold">
+                      <span>Total</span>
+                      <span>€{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    disabled={Object.keys(validationErrors).length > 0 || !checkIn || !checkOut} 
+                    className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg interactive-button touch-interaction"
+                    asChild
+                  >
+                    <a href="/api/login" className="flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2 transition-transform duration-200"/>
+                      Select dates to continue
+                    </a>
+                  </Button>
+                </div>
+              </div>
+              
+            </div>
+          </CardContent>
+        </Card>
       </section>
       {/* —— Amenities —— */}
       <section className="py-16 px-4 bg-white">
