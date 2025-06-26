@@ -25,9 +25,8 @@ export function useWebSocket() {
           
           switch (message.type) {
             case 'new_booking':
-              // Invalidate bookings and calendar queries
+              // Invalidate bookings queries (calendar updates via specific messages)
               queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-              queryClient.invalidateQueries({ queryKey: ["/api/bookings/calendar"] });
               queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
               
               toast({

@@ -32,19 +32,16 @@ export default function Login() {
       return response.json();
     },
     onSuccess: async () => {
-      // Force refresh the authentication query
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      // Clear authentication cache and refetch
+      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
       
-      // Wait a moment for state to update, then redirect
-      setTimeout(() => {
-        window.location.replace("/");
-      }, 100);
+      // Force a page reload to ensure proper authentication state
+      window.location.reload();
     },
     onError: (error: Error) => {
       toast({

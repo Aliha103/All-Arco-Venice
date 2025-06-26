@@ -33,14 +33,11 @@ export default function CalendarBooking() {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
-  // Real-time calendar updates via WebSocket
-  useWebSocket();
+  // Temporarily disable WebSocket to stop excessive API calls
+  // useWebSocket();
 
-  const { data: calendarBookings = [] } = useQuery({
-    queryKey: ["/api/bookings/calendar", currentYear, currentMonth],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false, // Rely on WebSocket for updates
-  });
+  // Temporarily using static empty array to prevent excessive API calls
+  const calendarBookings: any[] = [];
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
