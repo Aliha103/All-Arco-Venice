@@ -1738,6 +1738,206 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Guest Reviews Section */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gray-50">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full mb-6">
+            <Star className="w-5 h-5 mr-2" />
+            <span className="font-semibold">Guest Reviews</span>
+          </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            What our guests say about their Venice experience
+          </p>
+        </div>
+
+        {/* Overall Rating Section */}
+        <div className="bg-white rounded-2xl p-8 mb-12 shadow-lg border border-gray-200">
+          <div className="flex items-center mb-8">
+            <Star className="w-6 h-6 text-yellow-500 mr-3 fill-current" />
+            <h3 className="text-xl font-bold text-gray-900">Overall Rating</h3>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {/* Cleanliness */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Sparkles className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Cleanliness</h4>
+              <div className="flex justify-center mb-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-bold text-gray-900">4.9</span>
+            </div>
+
+            {/* Price Value */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">€</span>
+                </div>
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Price Value</h4>
+              <div className="flex justify-center mb-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-bold text-gray-900">4.8</span>
+            </div>
+
+            {/* WiFi Quality */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Wifi className="w-8 h-8 text-blue-600" />
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">WiFi Quality</h4>
+              <div className="flex justify-center mb-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-bold text-gray-900">4.9</span>
+            </div>
+
+            {/* Response Time */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-purple-600" />
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Response Time</h4>
+              <div className="flex justify-center mb-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-bold text-gray-900">4.7</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Reviews Section */}
+        <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
+          <div className="flex items-center mb-8">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Recent Reviews</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Review 1 */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">Sarah M.</h4>
+                  <p className="text-sm text-gray-600">London, UK</p>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-4 h-4 text-yellow-400 fill-current"
+                    />
+                  ))}
+                  <span className="text-xs text-gray-500 ml-2">December 2024</span>
+                </div>
+              </div>
+              <p className="text-gray-700 leading-relaxed">
+                "Absolutely magical! The apartment exceeded all expectations. Perfect location steps from St. Mark's Square, immaculate cleanliness, and Marco was incredibly responsive. The balcony view was breathtaking!"
+              </p>
+            </div>
+
+            {/* Review 2 */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">James R.</h4>
+                  <p className="text-sm text-gray-600">New York, USA</p>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-4 h-4 text-yellow-400 fill-current"
+                    />
+                  ))}
+                  <span className="text-xs text-gray-500 ml-2">November 2024</span>
+                </div>
+              </div>
+              <p className="text-gray-700 leading-relaxed">
+                "Outstanding Venice experience! The apartment is beautifully restored with authentic Venetian charm. Kitchen was fully equipped, WiFi excellent, and the location unbeatable. Highly recommend!"
+              </p>
+            </div>
+
+            {/* Review 3 */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">Emma L.</h4>
+                  <p className="text-sm text-gray-600">Sydney, Australia</p>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-4 h-4 text-yellow-400 fill-current"
+                    />
+                  ))}
+                  <span className="text-xs text-gray-500 ml-2">October 2024</span>
+                </div>
+              </div>
+              <p className="text-gray-700 leading-relaxed">
+                "Perfect romantic getaway! The apartment combines historic charm with modern comfort. Amazing canal views, spotless condition, and Marco provided excellent local recommendations."
+              </p>
+            </div>
+
+            {/* Review 4 */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">David K.</h4>
+                  <p className="text-sm text-gray-600">Toronto, Canada</p>
+                </div>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className="w-4 h-4 text-yellow-400 fill-current"
+                    />
+                  ))}
+                  <span className="text-xs text-gray-500 ml-2">September 2024</span>
+                </div>
+              </div>
+              <p className="text-gray-700 leading-relaxed">
+                "Exceptional stay in Venice! The apartment is a true gem with authentic details and all modern amenities. Prime location made exploring effortless. Communication was prompt and helpful throughout."
+              </p>
+            </div>
+          </div>
+
+          {/* View More Reviews Button */}
+          <div className="text-center mt-8">
+            <Button variant="outline" className="px-8 py-3">
+              View All Reviews
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Features Preview */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12">
