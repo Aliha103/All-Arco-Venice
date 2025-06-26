@@ -27,7 +27,11 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Eye
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  Reply
 } from "lucide-react";
 
 interface Analytics {

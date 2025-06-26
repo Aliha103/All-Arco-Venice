@@ -148,6 +148,20 @@ export const aboutContent = pgTable("about_content", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Promotions
+export const promotions = pgTable("promotions", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).notNull(),
+  tag: varchar("tag", { length: 100 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
@@ -216,6 +230,12 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export const insertAboutContentSchema = createInsertSchema(aboutContent).omit({
   id: true,
+  updatedAt: true,
+});
+
+export const insertPromotionSchema = createInsertSchema(promotions).omit({
+  id: true,
+  createdAt: true,
   updatedAt: true,
 });
 
