@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -30,13 +31,20 @@ export default function Login() {
       const response = await apiRequest("POST", "/api/auth/login", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Force refresh the authentication query
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
-      // Force refresh to update authentication state
-      window.location.reload();
+      
+      // Wait a moment for state to update, then redirect
+      setTimeout(() => {
+        window.location.replace("/");
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
