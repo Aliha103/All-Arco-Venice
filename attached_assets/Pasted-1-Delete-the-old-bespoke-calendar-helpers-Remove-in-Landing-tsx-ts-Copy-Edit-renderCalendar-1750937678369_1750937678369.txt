@@ -1,0 +1,73 @@
+1. Delete the old, bespoke calendar helpers
+Remove in Landing.tsx:
+
+ts
+Copy
+Edit
+// ❌ renderCalendar, navigateMonth, monthNames, getDaysInMonth, …
+// ❌ canCheckInOnDate, canCheckOutOnDate, isDateBooked, isDateInRange, …
+…and ditch calender.tsx entirely (it duplicates the simple DayPicker wrapper you no longer need).
+
+2. Import the hardened calendar component
+ts
+Copy
+Edit
+import {
+  Calendar as AdvancedCalendar,
+  validateStayRange,
+  type DateRange,
+} from "@/components/advanced-calendar";
+3. Keep the single source-of-truth for booked check-ins
+ts
+Copy
+Edit
+// ➜ same as you had
+const bookedCheckInDates = existingBookings.map(
+  b => new Date(b.checkIn)          // « arrival days only
+);
+No other “bookedDates” arrays are needed—the validator detects any clash by itself.
+
+4. Render AdvancedCalendar in place of the manual grid
+Replace the three screen-size variants that currently wrap renderCalendar() with one component call:
+
+tsx
+Copy
+Edit
+<AdvancedCalendar
+  bookedCheckIns={bookedCheckInDates}
+  defaultMonth={currentMonth}              // optional: start view
+  onMonthChange={setCurrentMonth}          // keep your nav arrows working
+  onValidRangeSelect={handleValidRangeSelect}
+/>
+The navigation arrows now just call setCurrentMonth(prev => addMonths(prev, ±1)).
+
+The little “only check-out” note and the disabled check-in logic are already baked in.
+
+5. Validate from one place
+Anywhere you need to re-check a range (e.g. before hitting “Reserve”), call the exported validator instead of home-grown helpers:
+
+ts
+Copy
+Edit
+const verdict = validateStayRange(
+  { from: new Date(checkIn), to: new Date(checkOut) },
+  bookedCheckInDates,
+  { maxStayDays: 30 }          // ← optional override
+);
+
+if (!verdict.valid) {
+  setValidationErrors({ checkOut: verdict.reason! });
+  return;
+}
+6. Remove duplicate state & effects
+Because the calendar now enforces:
+
+past dates disabled
+
+arrival cannot land on another check-in
+
+span cannot cross another check-in
+
+stay ≤ maxStayDays
+
+…you can delete the validateDates, calculateNights (keep if you like), hover-range logic, and all the “isDateInRange” helpers—UI ranges come ready-made from DayPicker.

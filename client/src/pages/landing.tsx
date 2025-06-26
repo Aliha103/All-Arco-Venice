@@ -5,9 +5,12 @@ import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Calendar as AdvancedCalendar, validateStayRange } from "@/components/advanced-calendar";
+import {
+  Calendar as AdvancedCalendar,
+  validateStayRange,
+} from "@/components/advanced-calendar";
 import { DateRange } from "react-day-picker";
-import { format, startOfDay } from "date-fns";
+import { format, addMonths } from "date-fns";
 
 export default function Landing() {
   const [checkIn, setCheckIn] = useState("");
@@ -41,60 +44,10 @@ export default function Landing() {
     { checkIn: "2025-07-20", checkOut: "2025-07-22" }, // 20-21 booked, 22 checkout only
   ];
 
-  // Convert booked check-in dates to Date objects for the advanced calendar
+  // Single source-of-truth for booked check-ins
   const bookedCheckInDates = existingBookings.map(booking => new Date(booking.checkIn));
 
-  // Generate list of all booked dates (excluding checkout days)
-  const bookedDates = existingBookings.flatMap(booking => {
-    const dates = [];
-    const start = new Date(booking.checkIn);
-    const end = new Date(booking.checkOut);
-    
-    while (start < end) {
-      dates.push(start.toISOString().split('T')[0]);
-      start.setDate(start.getDate() + 1);
-    }
-    return dates;
-  });
 
-  // Generate list of checkout-only dates
-  const checkoutOnlyDates = existingBookings.map(booking => booking.checkOut);
-
-  // Advanced booking validation functions
-  const canCheckInOnDate = (date: string) => {
-    // Can't check in if date is already booked for check-in
-    if (bookedDates.includes(date)) return false;
-    return true;
-  };
-
-  const canCheckOutOnDate = (date: string) => {
-    // Can always check out on any date (including booked check-in dates)
-    return true;
-  };
-
-  const isCheckoutOnlyDate = (date: string) => {
-    // Dates that are booked for check-in are checkout-only for new bookings
-    return date === '2024-07-16';
-  };
-
-  const canBookDateRange = (startDate: string, endDate: string) => {
-    // Check if check-in date is available
-    if (!canCheckInOnDate(startDate)) return false;
-    
-    // Check if any dates in the range (excluding checkout date) are booked
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    while (start < end) {
-      const dateStr = start.toISOString().split('T')[0];
-      if (bookedDates.includes(dateStr)) {
-        return false;
-      }
-      start.setDate(start.getDate() + 1);
-    }
-    
-    return true;
-  };
 
   // Advanced validation functions
   const validateDates = () => {
