@@ -819,172 +819,74 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Pricing Tab */}
-          <TabsContent value="pricing" className="space-y-6">
-            {/* Basic Pricing Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Pricing Settings</CardTitle>
-                <CardDescription>Set base prices and fees for your property</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {pricingLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-16 bg-gray-200 rounded"></div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <Label htmlFor="basePrice">Base Price per Night (€)</Label>
-                        <Input
-                          id="basePrice"
-                          type="number"
-                          value={pricingForm.basePrice}
-                          onChange={(e) => setPricingForm({ ...pricingForm, basePrice: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.basePrice?.toString() || "150"}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="cleaningFee">Cleaning Fee (€)</Label>
-                        <Input
-                          id="cleaningFee"
-                          type="number"
-                          value={pricingForm.cleaningFee}
-                          onChange={(e) => setPricingForm({ ...pricingForm, cleaningFee: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.cleaningFee?.toString() || "25"}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="petFee">Pet Fee (€)</Label>
-                        <Input
-                          id="petFee"
-                          type="number"
-                          value={pricingForm.petFee}
-                          onChange={(e) => setPricingForm({ ...pricingForm, petFee: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.petFee?.toString() || "35"}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <Button 
-                        onClick={() => updatePricingMutation.mutate(pricingForm)}
-                        disabled={updatePricingMutation.isPending}
-                        className="w-full md:w-auto"
-                      >
-                        {updatePricingMutation.isPending ? "Updating..." : "Update Base Pricing"}
-                      </Button>
-                    </div>
-                    
-                    {pricingSettings && (
-                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-3">Current Pricing</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Base Price</p>
-                            <p className="text-2xl font-bold text-green-600">€{pricingSettings.basePrice}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Cleaning Fee</p>
-                            <p className="text-2xl font-bold">€{pricingSettings.cleaningFee}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Pet Fee</p>
-                            <p className="text-2xl font-bold">€{pricingSettings.petFee}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Promotions Management */}
+          {/* Hero Images Tab */}
+          <TabsContent value="hero-images" className="space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Promotions & Discounts</CardTitle>
-                    <CardDescription>Create and manage promotional offers with custom discount tags</CardDescription>
+                    <CardTitle>Hero Section Images</CardTitle>
+                    <CardDescription>Manage images displayed in the main hero section of your landing page</CardDescription>
                   </div>
-                  <Button onClick={() => setShowPromotionForm(!showPromotionForm)}>
+                  <Button onClick={() => setShowHeroImageForm(!showHeroImageForm)}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Promotion
+                    Add Image
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Promotion Form */}
-                {showPromotionForm && (
+                {/* Hero Image Form */}
+                {showHeroImageForm && (
                   <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                    <h4 className="font-medium mb-4">Create New Promotion</h4>
+                    <h4 className="font-medium mb-4">Add New Hero Image</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="promotionName">Promotion Name</Label>
+                        <Label htmlFor="imageUrl">Image URL</Label>
                         <Input
-                          id="promotionName"
-                          value={promotionForm.name}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, name: e.target.value })}
-                          placeholder="Early Bird Special"
+                          id="imageUrl"
+                          value={heroImageForm.url}
+                          onChange={(e) => setHeroImageForm({ ...heroImageForm, url: e.target.value })}
+                          placeholder="https://example.com/image.jpg"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="discountTag">Discount Tag (Frontend Display)</Label>
+                        <Label htmlFor="imageTitle">Title</Label>
                         <Input
-                          id="discountTag"
-                          value={promotionForm.tag}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, tag: e.target.value })}
-                          placeholder="20% OFF"
+                          id="imageTitle"
+                          value={heroImageForm.title}
+                          onChange={(e) => setHeroImageForm({ ...heroImageForm, title: e.target.value })}
+                          placeholder="Main bedroom"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="discountPercentage">Discount Percentage (%)</Label>
+                        <Label htmlFor="imageAlt">Alt Text</Label>
                         <Input
-                          id="discountPercentage"
-                          type="number"
-                          value={promotionForm.discountPercentage}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, discountPercentage: parseFloat(e.target.value) || 0 })}
-                          placeholder="20"
-                          max="100"
+                          id="imageAlt"
+                          value={heroImageForm.alt}
+                          onChange={(e) => setHeroImageForm({ ...heroImageForm, alt: e.target.value })}
+                          placeholder="Beautiful main bedroom with canal view"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="promotionDescription">Description</Label>
-                        <Input
-                          id="promotionDescription"
-                          value={promotionForm.description}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, description: e.target.value })}
-                          placeholder="Book early and save!"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="startDate">Start Date</Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          value={promotionForm.startDate}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, startDate: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="endDate">End Date</Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          value={promotionForm.endDate}
-                          onChange={(e) => setPromotionForm({ ...promotionForm, endDate: e.target.value })}
-                        />
+                        <Label htmlFor="imagePosition">Position</Label>
+                        <Select 
+                          value={heroImageForm.position} 
+                          onValueChange={(value) => setHeroImageForm({ ...heroImageForm, position: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="main">Main (Large Left)</SelectItem>
+                            <SelectItem value="top-right">Top Right</SelectItem>
+                            <SelectItem value="top-left">Top Left</SelectItem>
+                            <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                            <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     
@@ -992,7 +894,7 @@ export default function AdminDashboard() {
                       <Button 
                         onClick={() => {
                           // Validate form fields
-                          if (!promotionForm.name || !promotionForm.tag || !promotionForm.discountPercentage || !promotionForm.startDate || !promotionForm.endDate) {
+                          if (!heroImageForm.url || !heroImageForm.title || !heroImageForm.alt || !heroImageForm.position) {
                             toast({
                               title: "Validation Error",
                               description: "All fields are required",
@@ -1001,81 +903,78 @@ export default function AdminDashboard() {
                             return;
                           }
 
-                          // Validate dates
-                          const startDate = new Date(promotionForm.startDate);
-                          const endDate = new Date(promotionForm.endDate);
-                          
-                          if (startDate >= endDate) {
-                            toast({
-                              title: "Validation Error",
-                              description: "End date must be after start date",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-
-                          createPromotionMutation.mutate({
-                            ...promotionForm,
-                            isActive: true
+                          createHeroImageMutation.mutate({
+                            ...heroImageForm,
+                            isActive: true,
+                            displayOrder: 0
                           });
                         }}
-                        disabled={createPromotionMutation.isPending}
+                        disabled={createHeroImageMutation.isPending}
                       >
-                        {createPromotionMutation.isPending ? "Creating..." : "Create Promotion"}
+                        {createHeroImageMutation.isPending ? "Adding..." : "Add Image"}
                       </Button>
-                      <Button variant="outline" onClick={() => setShowPromotionForm(false)}>
+                      <Button variant="outline" onClick={() => setShowHeroImageForm(false)}>
                         Cancel
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Active Promotions List */}
-                {promotionsLoading ? (
+                {/* Hero Images List */}
+                {heroImagesLoading ? (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-24 bg-gray-200 rounded"></div>
+                      <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : (promotions && promotions.length > 0) ? (
-                  <div className="space-y-4">
-                    {promotions!.map((promotion: Promotion) => (
-                      <div key={promotion.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-semibold text-lg">{promotion.name}</h4>
-                              <Badge 
-                                className={`${promotion.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
-                              >
-                                {promotion.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
-                              <Badge className="bg-blue-100 text-blue-800 font-medium">
-                                {promotion.tag}
-                              </Badge>
-                            </div>
-                            <p className="text-gray-600 mb-2">{promotion.description}</p>
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span>Discount: {promotion.discountPercentage}%</span>
-                              <span>From: {formatDate(promotion.startDate)}</span>
-                              <span>To: {formatDate(promotion.endDate)}</span>
-                            </div>
+                ) : (heroImages && heroImages.length > 0) ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {heroImages!.map((image: HeroImage) => (
+                      <div key={image.id} className="border rounded-lg overflow-hidden">
+                        <div className="aspect-video bg-gray-100 relative">
+                          <img 
+                            src={image.url} 
+                            alt={image.alt}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.parentElement!.innerHTML = `
+                                <div class="w-full h-full flex items-center justify-center text-gray-500 text-sm">
+                                  Image failed to load
+                                </div>
+                              `;
+                            }}
+                          />
+                          <Badge 
+                            className={`absolute top-2 right-2 ${image.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                          >
+                            {image.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-semibold text-lg">{image.title}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {image.position}
+                            </Badge>
                           </div>
+                          <p className="text-gray-600 text-sm mb-3">{image.alt}</p>
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
-                              variant={promotion.isActive ? "destructive" : "default"}
-                              onClick={() => togglePromotionMutation.mutate({ 
-                                id: promotion.id, 
-                                isActive: !promotion.isActive 
+                              variant={image.isActive ? "destructive" : "default"}
+                              onClick={() => updateHeroImageMutation.mutate({ 
+                                id: image.id, 
+                                data: { isActive: !image.isActive }
                               })}
                             >
-                              {promotion.isActive ? "Deactivate" : "Activate"}
+                              {image.isActive ? "Deactivate" : "Activate"}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => deletePromotionMutation.mutate(promotion.id)}
+                              onClick={() => deleteHeroImageMutation.mutate(image.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1085,7 +984,11 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No promotions created yet</p>
+                  <div className="text-center py-12">
+                    <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg mb-2">No hero images uploaded yet</p>
+                    <p className="text-gray-400 text-sm">Add images to showcase your property in the hero section</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
