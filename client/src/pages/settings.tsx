@@ -258,7 +258,7 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Member Since</span>
                     <span className="text-sm">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                      {user.createdAt ? new Date(user.createdAt as unknown as string).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>
