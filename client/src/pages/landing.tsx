@@ -1263,10 +1263,10 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Desktop Layout - Better responsive handling */}
-            <div className="hidden lg:grid gap-8 lg:grid-cols-2 xl:grid-cols-12">
-              {/* Column 1: Advanced Calendar Section */}
-              <div className="lg:col-span-1 xl:col-span-6 space-y-6">
+            {/* Desktop Layout - Tablet-like for medium screens, full desktop for XL+ */}
+            <div className="hidden lg:grid gap-8 lg:grid-cols-5 xl:grid-cols-12">
+              {/* Column 1: Advanced Calendar Section - 60% on tablet-like, 50% on XL+ */}
+              <div className="lg:col-span-3 xl:col-span-6 space-y-6">
                 <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold text-gray-900 flex items-center">
                         <Calendar className="w-5 h-5 mr-2 text-blue-600" />
@@ -1388,8 +1388,8 @@ export default function Landing() {
                     )}
                   </div>
 
-              {/* Column 2: Guests & Pets Section */}
-              <div className="lg:col-span-1 xl:col-span-3 space-y-6">
+              {/* Column 2: Combined Guests & Price Section - 40% on tablet-like, split on XL+ */}
+              <div className="lg:col-span-2 xl:col-span-3 space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
                 
                 {/* Guests */}
@@ -1455,10 +1455,118 @@ export default function Landing() {
                     )}
                   </div>
                 </div>
+
+                {/* Price Breakdown for tablet-like layout (LG screens) */}
+                <div className="xl:hidden space-y-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
+                    <div className="text-center mb-4">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="text-2xl font-bold text-gray-900">
+                          €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)}
+                        </div>
+                        {hasDiscount && (
+                          <div className="text-lg text-gray-500 line-through">
+                            €{basePrice.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600">per night</div>
+                      {hasDiscount && (
+                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium mt-2 inline-block">
+                          {nights >= 7 ? '10% weekly discount' : '5% multi-night discount'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 mb-6">
+                      <div className="flex justify-between text-sm">
+                        <span>
+                          €{hasDiscount ? discountedPrice.toFixed(2) : basePrice.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}
+                          {hasDiscount && <span className="text-green-600 ml-1">(discounted)</span>}
+                        </span>
+                        <span>€{(hasDiscount ? discountedPrice * nights : subtotal).toFixed(2)}</span>
+                      </div>
+                      
+                      {hasDiscount && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Discount savings</span>
+                          <span>-€{discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between text-sm">
+                        <span>Cleaning fee</span>
+                        <span>€{cleaningFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Service fee</span>
+                        <span>€{serviceFee.toFixed(2)}</span>
+                      </div>
+                      {hasPet && (
+                        <div className="flex justify-between text-sm">
+                          <span>Pet fee</span>
+                          <span>€{petFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <hr className="border-gray-300" />
+                      <div className="flex justify-between font-bold text-base">
+                        <span>Total</span>
+                        <span className="text-lg">€{(hasDiscount ? (discountedPrice * nights) + cleaningFee + petFee + serviceFee : total).toFixed(2)}</span>
+                      </div>
+                      
+                      {hasDiscount && (
+                        <div className="text-center">
+                          <span className="text-xs text-green-600 font-medium">
+                            You saved €{discountAmount.toFixed(2)}!
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Availability Status */}
+                    {checkIn && checkOut && Object.keys(validationErrors).length === 0 && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center text-green-800">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Available for your dates</span>
+                        </div>
+                        {isCheckingAvailability && (
+                          <div className="flex items-center text-blue-600 mt-1">
+                            <Clock className="w-3 h-3 mr-1 animate-spin" />
+                            <span className="text-xs">Checking real-time availability...</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {Object.keys(validationErrors).length === 0 && checkIn && checkOut ? (
+                      <Button 
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-[1.02]" 
+                        asChild={true}
+                      >
+                        <a href="/api/login" className="flex items-center justify-center">
+                          <Lock className="w-4 h-4 mr-2" />
+                          Reserve Securely
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="w-full bg-gray-400 text-white py-3 rounded-xl font-semibold cursor-not-allowed" 
+                        disabled
+                      >
+                        <span className="flex items-center justify-center">
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          {!checkIn || !checkOut ? 'Select dates to continue' : 'Please fix errors above'}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Column 3: Price Breakdown */}
-              <div className="lg:col-span-2 xl:col-span-3 space-y-6">
+              {/* Column 3: Price Breakdown - Hidden on tablet-like, shown on XL+ */}
+              <div className="hidden xl:block xl:col-span-3 space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
                   <div className="text-center mb-4">
