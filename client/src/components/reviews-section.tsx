@@ -192,7 +192,7 @@ export default function ReviewsSection() {
 
           {/* Individual Reviews */}
           <div className="space-y-6">
-            {displayReviews.slice(0, 3).map((review: any) => (
+            {displayReviews.slice(0, 3).map((review) => (
               <div key={review.id} className="border-b border-gray-200 pb-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
