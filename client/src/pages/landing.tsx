@@ -143,17 +143,16 @@ export default function Landing() {
       <section className="px-4 py-6">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-              {/* Left Content */}
-              <div className="flex-1 flex flex-col lg:flex-row lg:items-center gap-6">
-                {/* Host & Property Info */}
+            <div className="flex flex-col xl:flex-row xl:items-center gap-4">
+              {/* Top Row: Host Info and Price */}
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <User className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Entire apartment hosted by Fatima</h2>
-                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                         <span>Superhost</span>
@@ -164,29 +163,29 @@ export default function Landing() {
                   </div>
                 </div>
 
-                {/* Property Details */}
-                <div className="flex flex-wrap lg:flex-nowrap items-center gap-6">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900 font-medium">5 guests</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Bed className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900 font-medium">2 bedrooms</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className="w-4 h-4 flex items-center justify-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded"></div>
-                    </div>
-                    <span className="text-gray-900 font-medium">1 bathroom</span>
-                  </div>
+                {/* Price */}
+                <div className="text-right flex-shrink-0">
+                  <div className="text-2xl font-bold text-gray-900">€110.50</div>
+                  <div className="text-sm text-gray-500">/night</div>
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="flex-shrink-0 text-right min-w-[120px]">
-                <div className="text-2xl font-bold text-gray-900">€110.50</div>
-                <div className="text-sm text-gray-500">/night</div>
+              {/* Bottom Row: Property Details */}
+              <div className="flex flex-wrap items-center gap-6 xl:ml-auto">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-900 font-medium">5 guests</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <Bed className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-900 font-medium">2 bedrooms</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-gray-400 rounded"></div>
+                  </div>
+                  <span className="text-gray-900 font-medium">1 bathroom</span>
+                </div>
               </div>
             </div>
           </div>
