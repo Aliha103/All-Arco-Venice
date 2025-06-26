@@ -41,6 +41,9 @@ export default function Landing() {
     { checkIn: "2025-07-20", checkOut: "2025-07-22" }, // 20-21 booked, 22 checkout only
   ];
 
+  // Convert booked check-in dates to Date objects for the advanced calendar
+  const bookedCheckInDates = existingBookings.map(booking => new Date(booking.checkIn));
+
   // Generate list of all booked dates (excluding checkout days)
   const bookedDates = existingBookings.flatMap(booking => {
     const dates = [];

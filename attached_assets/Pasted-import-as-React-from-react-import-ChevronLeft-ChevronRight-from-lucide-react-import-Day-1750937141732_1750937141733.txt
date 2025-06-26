@@ -83,15 +83,15 @@ export function validateStayRange(
       if (isValidDate(d)) reserved.add(dayToOrdinal(d))
     }
 
-    // 5. Rule: arrival cannot sit on someone else's check‑in
+    // 5. Rule: arrival cannot sit on someone else’s check‑in
     if (reserved.has(dayToOrdinal(from))) {
       return {
         valid: false,
-        reason: "That day is reserved for another guest's check‑in.",
+        reason: "That day is reserved for another guest’s check‑in.",
       }
     }
 
-    // 6. Rule: interior days cannot contain anyone else's arrival
+    // 6. Rule: interior days cannot contain anyone else’s arrival
     for (
       let ord = dayToOrdinal(from) + 1, ordEnd = dayToOrdinal(to);
       ord < ordEnd;
@@ -100,12 +100,12 @@ export function validateStayRange(
       if (reserved.has(ord)) {
         return {
           valid: false,
-          reason: "Your stay crosses another guest's arrival.",
+          reason: "Your stay crosses another guest’s arrival.",
         }
       }
     }
 
-    // 7. Check‑out is always allowed—even on someone else's arrival day.
+    // 7. Check‑out is always allowed—even on someone else’s arrival day.
     return { valid: true }
   } catch (err: unknown) {
     // Defensive: capture *all* runtime errors and surface as invalid.
