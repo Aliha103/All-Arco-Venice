@@ -113,16 +113,8 @@ export default function Landing() {
             <div className="flex items-center space-x-6">
               <span className="text-sm text-gray-600">EN</span>
               <span className="text-sm text-gray-600">IT</span>
-              
-              {/* Login/Signup Button */}
-              <div className="flex items-center space-x-3">
-                <a 
-                  href="/api/login"
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">Sign In</span>
-                </a>
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors">
+                <User className="w-4 h-4 text-gray-600" />
               </div>
             </div>
           </div>
