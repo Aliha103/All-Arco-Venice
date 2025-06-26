@@ -528,6 +528,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pricing settings routes
+  app.get('/api/pricing-settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Return default pricing settings for now
+      const defaultPricing = {
+        basePrice: 150,
+        cleaningFee: 25,
+        petFee: 35,
+        discountWeekly: 10,
+        discountMonthly: 20
+      };
+      
+      res.json(defaultPricing);
+    } catch (error) {
+      console.error("Error fetching pricing settings:", error);
+      res.status(500).json({ message: "Failed to fetch pricing settings" });
+    }
+  });
+
+  app.put('/api/pricing-settings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { basePrice, cleaningFee, petFee, discountWeekly, discountMonthly } = req.body;
+      
+      // For now, just return success - in a real app you'd store these in the database
+      res.json({ 
+        message: "Pricing settings updated successfully",
+        basePrice,
+        cleaningFee,
+        petFee,
+        discountWeekly,
+        discountMonthly
+      });
+    } catch (error) {
+      console.error("Error updating pricing settings:", error);
+      res.status(500).json({ message: "Failed to update pricing settings" });
+    }
+  });
+
   app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
     try {
       const count = await storage.getUnreadMessagesCount();

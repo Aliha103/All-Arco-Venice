@@ -50,18 +50,25 @@ interface Booking {
   createdAt: string;
 }
 
-interface PropertyImage {
+interface Review {
   id: number;
-  url: string;
-  title: string;
-  order: number;
+  rating: number;
+  content: string;
+  createdAt: string;
+  guestName: string;
+  cleanlinessRating: number;
+  locationRating: number;
+  checkinRating: number;
+  valueRating: number;
+  communicationRating: number;
 }
 
-interface Amenity {
-  id: number;
-  name: string;
-  icon: string;
-  order: number;
+interface PricingSettings {
+  basePrice: number;
+  cleaningFee: number;
+  petFee: number;
+  discountWeekly: number;
+  discountMonthly: number;
 }
 
 interface Message {
@@ -78,6 +85,13 @@ export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [pricingForm, setPricingForm] = useState({
+    basePrice: 0,
+    cleaningFee: 0,
+    petFee: 0,
+    discountWeekly: 0,
+    discountMonthly: 0,
+  });
 
   // Redirect if not admin
   useEffect(() => {
@@ -108,19 +122,32 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  // Property images query
-  const { data: propertyImages, isLoading: imagesLoading } = useQuery<PropertyImage[]>({
-    queryKey: ["/api/property-images"],
+  // Reviews query
+  const { data: reviews, isLoading: reviewsLoading } = useQuery<Review[]>({
+    queryKey: ["/api/reviews"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
 
-  // Amenities query
-  const { data: amenities, isLoading: amenitiesLoading } = useQuery<Amenity[]>({
-    queryKey: ["/api/amenities"],
+  // Pricing settings query
+  const { data: pricingSettings, isLoading: pricingLoading } = useQuery<PricingSettings>({
+    queryKey: ["/api/pricing-settings"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
+
+  // Update pricing form when data loads
+  React.useEffect(() => {
+    if (pricingSettings) {
+      setPricingForm({
+        basePrice: pricingSettings.basePrice,
+        cleaningFee: pricingSettings.cleaningFee,
+        petFee: pricingSettings.petFee,
+        discountWeekly: pricingSettings.discountWeekly,
+        discountMonthly: pricingSettings.discountMonthly,
+      });
+    }
+  }, [pricingSettings]);
 
   // Messages query
   const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
@@ -173,22 +200,33 @@ export default function AdminDashboard() {
     },
   });
 
-  // Delete property image mutation
-  const deleteImageMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/property-images/${id}`);
+  // Update pricing settings mutation
+  const updatePricingMutation = useMutation({
+    mutationFn: async (pricingData: PricingSettings) => {
+      await apiRequest("PUT", "/api/pricing-settings", pricingData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/property-images"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pricing-settings"] });
       toast({
         title: "Success",
-        description: "Image deleted successfully",
+        description: "Pricing settings updated successfully",
       });
     },
     onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Error",
-        description: "Failed to delete image",
+        description: "Failed to update pricing settings",
         variant: "destructive",
       });
     },
@@ -249,13 +287,13 @@ export default function AdminDashboard() {
               <MessageSquare className="w-4 h-4" />
               Messages
             </TabsTrigger>
-            <TabsTrigger value="property" className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Property
-            </TabsTrigger>
-            <TabsTrigger value="amenities" className="flex items-center gap-2">
+            <TabsTrigger value="reviews" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
-              Amenities
+              Reviews
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Pricing
             </TabsTrigger>
           </TabsList>
 
@@ -481,74 +519,189 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Property Tab */}
-          <TabsContent value="property" className="space-y-6">
+          {/* Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Property Images</CardTitle>
-                <CardDescription>Manage property photos and gallery</CardDescription>
+                <CardTitle>Guest Reviews</CardTitle>
+                <CardDescription>View and manage guest reviews and ratings</CardDescription>
               </CardHeader>
               <CardContent>
-                {imagesLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-48 bg-gray-200 rounded"></div>
+                {reviewsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : (propertyImages && propertyImages.length > 0) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {propertyImages!.map((image: PropertyImage) => (
-                      <div key={image.id} className="relative group">
-                        <img
-                          src={image.url}
-                          alt={image.title}
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteImageMutation.mutate(image.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                ) : (reviews && reviews.length > 0) ? (
+                  <div className="space-y-4">
+                    {reviews!.map((review: Review) => (
+                      <div key={review.id} className="border rounded-lg p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h4 className="font-semibold text-lg">{review.guestName}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star 
+                                    key={i} 
+                                    className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-gray-600">{review.rating}/5</span>
+                            </div>
+                          </div>
+                          <span className="text-sm text-gray-500">{formatDate(review.createdAt)}</span>
                         </div>
-                        <p className="mt-2 text-sm font-medium">{image.title}</p>
+                        
+                        <p className="text-gray-700 mb-4">{review.content}</p>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                          <div className="text-center">
+                            <p className="font-medium">Cleanliness</p>
+                            <p className="text-gray-600">{review.cleanlinessRating}/5</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">Location</p>
+                            <p className="text-gray-600">{review.locationRating}/5</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">Check-in</p>
+                            <p className="text-gray-600">{review.checkinRating}/5</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">Value</p>
+                            <p className="text-gray-600">{review.valueRating}/5</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">Communication</p>
+                            <p className="text-gray-600">{review.communicationRating}/5</p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No images uploaded yet</p>
+                  <p className="text-gray-500 text-center py-8">No reviews yet</p>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Amenities Tab */}
-          <TabsContent value="amenities" className="space-y-6">
+          {/* Pricing Tab */}
+          <TabsContent value="pricing" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Property Amenities</CardTitle>
-                <CardDescription>Manage available amenities and features</CardDescription>
+                <CardTitle>Pricing Settings</CardTitle>
+                <CardDescription>Manage property pricing and fees</CardDescription>
               </CardHeader>
               <CardContent>
-                {amenitiesLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
+                {pricingLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
                       <div key={i} className="animate-pulse h-16 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : (amenities && amenities.length > 0) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {amenities!.map((amenity: Amenity) => (
-                      <div key={amenity.id} className="flex items-center gap-3 p-4 border rounded-lg">
-                        <span className="text-2xl">{amenity.icon}</span>
-                        <span className="font-medium">{amenity.name}</span>
-                      </div>
-                    ))}
-                  </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No amenities configured yet</p>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="basePrice">Base Price per Night (€)</Label>
+                        <Input
+                          id="basePrice"
+                          type="number"
+                          value={pricingForm.basePrice}
+                          onChange={(e) => setPricingForm({ ...pricingForm, basePrice: parseFloat(e.target.value) || 0 })}
+                          placeholder={pricingSettings?.basePrice?.toString() || "0"}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="cleaningFee">Cleaning Fee (€)</Label>
+                        <Input
+                          id="cleaningFee"
+                          type="number"
+                          value={pricingForm.cleaningFee}
+                          onChange={(e) => setPricingForm({ ...pricingForm, cleaningFee: parseFloat(e.target.value) || 0 })}
+                          placeholder={pricingSettings?.cleaningFee?.toString() || "0"}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="petFee">Pet Fee (€)</Label>
+                        <Input
+                          id="petFee"
+                          type="number"
+                          value={pricingForm.petFee}
+                          onChange={(e) => setPricingForm({ ...pricingForm, petFee: parseFloat(e.target.value) || 0 })}
+                          placeholder={pricingSettings?.petFee?.toString() || "0"}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="discountWeekly">Weekly Discount (%)</Label>
+                        <Input
+                          id="discountWeekly"
+                          type="number"
+                          value={pricingForm.discountWeekly}
+                          onChange={(e) => setPricingForm({ ...pricingForm, discountWeekly: parseFloat(e.target.value) || 0 })}
+                          placeholder={pricingSettings?.discountWeekly?.toString() || "0"}
+                          max="100"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <Label htmlFor="discountMonthly">Monthly Discount (%)</Label>
+                        <Input
+                          id="discountMonthly"
+                          type="number"
+                          value={pricingForm.discountMonthly}
+                          onChange={(e) => setPricingForm({ ...pricingForm, discountMonthly: parseFloat(e.target.value) || 0 })}
+                          placeholder={pricingSettings?.discountMonthly?.toString() || "0"}
+                          max="100"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <Button 
+                        onClick={() => updatePricingMutation.mutate(pricingForm)}
+                        disabled={updatePricingMutation.isPending}
+                        className="w-full md:w-auto"
+                      >
+                        {updatePricingMutation.isPending ? "Updating..." : "Update Pricing"}
+                      </Button>
+                    </div>
+                    
+                    {pricingSettings && (
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-medium mb-3">Current Settings</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-600">Base Price</p>
+                            <p className="font-medium">€{pricingSettings.basePrice}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Cleaning Fee</p>
+                            <p className="font-medium">€{pricingSettings.cleaningFee}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Pet Fee</p>
+                            <p className="font-medium">€{pricingSettings.petFee}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Weekly Discount</p>
+                            <p className="font-medium">{pricingSettings.discountWeekly}%</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Monthly Discount</p>
+                            <p className="font-medium">{pricingSettings.discountMonthly}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
