@@ -27,11 +27,26 @@ export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
+  // Comprehensive debugging
+  console.log("=== HEADER DEBUG START ===");
+  console.log("Raw user object:", user);
+  console.log("User type:", typeof user);
+  console.log("User truthiness:", !!user);
+  console.log("isAuthenticated:", isAuthenticated);
+  console.log("isLoading:", isLoading);
+  console.log("User has id:", user?.id);
+  console.log("User has email:", user?.email);
+  console.log("=== HEADER DEBUG END ===");
+  
   // Simple check: any truthy user object means authenticated
   const showUserDropdown = !!user;
+  console.log("Final showUserDropdown decision:", showUserDropdown);
   
   // Hide header until we know authentication state
-  if (isLoading) return null;
+  if (isLoading) {
+    console.log("Header hidden - still loading");
+    return null;
+  }
 
   const { data: unreadCount } = useQuery<number>({
     queryKey: ["/api/messages/unread-count"],
@@ -85,43 +100,49 @@ export default function Header() {
 
             {/* User Dropdown or Login Button */}
             {showUserDropdown ? (
-              <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95">
-                    <Menu className="h-4 w-4" />
-                    <UserIcon className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <div className="text-sm font-medium">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}` 
-                        : user?.email || "User"}
+              <>
+                {console.log("RENDERING USER DROPDOWN - showUserDropdown is TRUE")}
+                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95">
+                      <Menu className="h-4 w-4" />
+                      <UserIcon className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="text-sm font-medium">
+                        {user?.firstName && user?.lastName 
+                          ? `${user.firstName} ${user.lastName}` 
+                          : user?.email || "User"}
+                      </div>
+                      <div className="text-sm text-gray-600">{user?.email}</div>
                     </div>
-                    <div className="text-sm text-gray-600">{user?.email}</div>
-                  </div>
-                  
-                  <DropdownMenuItem>
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Bookings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Messages
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    
+                    <DropdownMenuItem>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Bookings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Messages
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
-              <Button asChild>
-                <a href="/api/login">Sign In</a>
-              </Button>
+              <>
+                {console.log("RENDERING LOGIN BUTTON - showUserDropdown is FALSE")}
+                <Button asChild>
+                  <a href="/api/login">Sign In</a>
+                </Button>
+              </>
             )}
           </div>
         </div>
