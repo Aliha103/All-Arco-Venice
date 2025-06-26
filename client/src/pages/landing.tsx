@@ -452,7 +452,7 @@ export default function Landing() {
         </div>
       </header>
       {/* Hero Section */}
-      <section className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <section className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pt-[15px] pb-[15px]">
         <div className="max-w-7xl mx-auto">
           {/* Title and Rating */}
           <div className="mb-6">
