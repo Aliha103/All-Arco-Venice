@@ -100,6 +100,8 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Implemented functional pet toggle with correct pricing (€25 for 1 night, €35 total for multiple nights) and removed "Price Breakdown" heading for cleaner minimalist design
+- June 26, 2025. Fixed calendar width constraints to prevent overflow in tablet layout with responsive flex-based grid system
 - June 26, 2025. Repositioned price breakdown to appear directly under guests & pets section in tablet layout for better visual hierarchy and user flow
 - June 26, 2025. Refined booking section layout for optimal tablet display: 2-column grid (calendar + guests) with full-width price section below, maintaining 3-column desktop layout
 - June 26, 2025. Implemented comprehensive micro-interactions for smooth mobile responsiveness with touch feedback, loading states, and enhanced visual feedback
