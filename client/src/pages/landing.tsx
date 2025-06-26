@@ -181,13 +181,9 @@ export default function Landing() {
               </div>
 
               {/* Price */}
-              <div className="text-center lg:text-right">
+              <div className="text-right">
                 <div className="text-2xl font-bold text-gray-900">€110.50</div>
                 <div className="text-sm text-gray-500">/night</div>
-                <div className="flex items-center justify-center lg:justify-end space-x-1 mt-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-600 font-medium">Available</span>
-                </div>
               </div>
             </div>
           </div>
