@@ -733,7 +733,7 @@ export default function Landing() {
       {/* —— Trust & Quality Assurance —— */}
       <section className="py-16 px-4 bg-gray-50 pt-[0px] pb-[0px]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap justify-center gap-4 mb-16">
+          <div className="flex flex-wrap justify-center gap-4 mb-16 pt-[10px] pb-[10px]">
             <div className="text-center flex-1 min-w-0 max-w-xs">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
