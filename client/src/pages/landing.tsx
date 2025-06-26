@@ -618,7 +618,7 @@ export default function Landing() {
         </div>
       </section>
       {/* Booking Section */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section id="booking-section" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12 lg:mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Book Your Stay</h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">Choose your dates and start planning your perfect getaway</p>
@@ -2054,12 +2054,15 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 className="group bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                asChild
+                onClick={() => {
+                  const bookingSection = document.querySelector('#booking-section');
+                  if (bookingSection) {
+                    bookingSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
               >
-                <a href="/api/login" className="flex items-center space-x-2">
-                  <span>Book Your Stay Now</span>
-                  <Calendar className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-                </a>
+                <span>Book Your Stay Now</span>
+                <Calendar className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
               </Button>
               
               <Button 
