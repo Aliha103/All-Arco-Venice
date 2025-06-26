@@ -117,9 +117,8 @@ export default function Landing() {
           </div>
         </div>
       </header>
-
       {/* —— Hero —— */}
-      <section className="bg-white px-4 py-10 sm:py-14">
+      <section className="bg-white px-4 py-10 sm:py-14 pt-[25px] pb-[25px] pl-[0px] pr-[0px]">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">All'Arco Apartment – Heart of Venice</h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600 mb-6">
@@ -138,7 +137,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Host Information —— */}
       <section className="px-4 py-6">
         <div className="max-w-6xl mx-auto">
@@ -191,7 +189,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Booking —— */}
       <section id="booking-section" className="py-16 px-4 max-w-4xl mx-auto">
         <Card className="smooth-hover touch-interaction slide-up"><CardContent className="p-8 space-y-8">
@@ -202,7 +199,6 @@ export default function Landing() {
           <Button disabled={Object.keys(validationErrors).length>0||!checkIn||!checkOut} className="w-full interactive-button touch-interaction" asChild><a href="/api/login" className="flex items-center justify-center"><Lock className="w-4 h-4 mr-2 transition-transform duration-200"/>Reserve securely</a></Button>
         </CardContent></Card>
       </section>
-
       {/* —— Amenities —— */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -224,7 +220,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Guest Reviews (condensed) —— */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto text-center mb-12"><h2 className="text-2xl font-bold text-gray-900">Guest Reviews</h2><p className="text-gray-600">Rated 4.9/5 by 2,400 guests</p></div>
@@ -250,7 +245,6 @@ export default function Landing() {
           ))}
         </div>
       </section>
-
       {/* —— Footer —— */}
       <footer className="bg-gray-100 border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -268,11 +262,10 @@ export default function Landing() {
           <span className="mt-2 sm:mt-0">English (US) · € EUR</span>
         </div>
       </footer>
-
       {/* —— Chat —— */}
       <ChatWidget />
     </div>
-  )
+  );
 }
 
 /* Quick‑chat widget */
