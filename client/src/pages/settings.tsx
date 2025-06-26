@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Gift, Users, Eye, EyeOff, ArrowLeft, CreditCard } from "lucide-react";
+import { User, Gift, Users, Eye, EyeOff, ArrowLeft, CreditCard, Shield, Lock, Calendar } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Settings() {
@@ -33,6 +33,8 @@ export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showReferralCode, setShowReferralCode] = useState(false);
+  const [showPersonalInfo, setShowPersonalInfo] = useState(false);
+  const [dobPrivacy, setDobPrivacy] = useState(true); // Only user can see DOB
 
   const form = useForm<UpdateUserProfile>({
     resolver: zodResolver(updateUserProfileSchema),
@@ -136,9 +138,7 @@ export default function Settings() {
               <p className="text-gray-600 text-sm">Manage your account settings</p>
             </div>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-            <User className="w-6 h-6 text-white" />
-          </div>
+          
         </div>
 
         {/* Quick Stats */}
@@ -191,17 +191,62 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Current Info Display */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                    </div>
+                {/* Security Notice */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Shield className="w-5 h-5 text-green-600" />
+                    <h4 className="font-medium text-green-800">Private & Secure</h4>
                   </div>
+                  <p className="text-sm text-green-700">Your personal information is encrypted and only visible to you. Date of birth is kept private for security.</p>
+                </div>
+
+                {/* Current Info Display with Privacy Controls */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                        <User className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPersonalInfo(!showPersonalInfo)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      {showPersonalInfo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  
+                  {showPersonalInfo && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-blue-500" />
+                          <span className="text-gray-600">DOB:</span>
+                          <span className="font-medium text-gray-800">
+                            {dobPrivacy ? "••••••••••" : (user.dateOfBirth || "Not set")}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDobPrivacy(!dobPrivacy)}
+                            className="p-1 h-auto"
+                          >
+                            <Lock className="w-3 h-3 text-gray-500" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-600">Country:</span>
+                          <span className="font-medium text-gray-800">{user.country || "Not set"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Form {...form}>
@@ -212,14 +257,24 @@ export default function Settings() {
                         name="dateOfBirth"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-gray-700">Date of Birth</FormLabel>
+                            <FormLabel className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                              <Calendar className="w-4 h-4 text-blue-500" />
+                              <span>Date of Birth</span>
+                              <Lock className="w-3 h-3 text-gray-400" />
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                type="date" 
-                                {...field} 
-                                className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
-                              />
+                              <div className="relative">
+                                <Input 
+                                  type="date" 
+                                  {...field}
+                                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                                  min="1900-01-01" // Reasonable minimum date
+                                  className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 pl-10"
+                                />
+                                <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              </div>
                             </FormControl>
+                            <p className="text-xs text-gray-500 mt-1">🔒 Private - Only visible to you</p>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -234,21 +289,258 @@ export default function Settings() {
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200">
-                                  <SelectValue placeholder="Select country" />
+                                  <SelectValue placeholder="Select your country" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
-                                <SelectItem value="US">United States</SelectItem>
-                                <SelectItem value="CA">Canada</SelectItem>
-                                <SelectItem value="GB">United Kingdom</SelectItem>
-                                <SelectItem value="DE">Germany</SelectItem>
-                                <SelectItem value="FR">France</SelectItem>
-                                <SelectItem value="IT">Italy</SelectItem>
-                                <SelectItem value="ES">Spain</SelectItem>
-                                <SelectItem value="AU">Australia</SelectItem>
-                                <SelectItem value="JP">Japan</SelectItem>
-                                <SelectItem value="BR">Brazil</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                              <SelectContent className="max-h-60">
+                                <SelectItem value="AD">🇦🇩 Andorra</SelectItem>
+                                <SelectItem value="AE">🇦🇪 United Arab Emirates</SelectItem>
+                                <SelectItem value="AF">🇦🇫 Afghanistan</SelectItem>
+                                <SelectItem value="AG">🇦🇬 Antigua and Barbuda</SelectItem>
+                                <SelectItem value="AI">🇦🇮 Anguilla</SelectItem>
+                                <SelectItem value="AL">🇦🇱 Albania</SelectItem>
+                                <SelectItem value="AM">🇦🇲 Armenia</SelectItem>
+                                <SelectItem value="AO">🇦🇴 Angola</SelectItem>
+                                <SelectItem value="AQ">🇦🇶 Antarctica</SelectItem>
+                                <SelectItem value="AR">🇦🇷 Argentina</SelectItem>
+                                <SelectItem value="AS">🇦🇸 American Samoa</SelectItem>
+                                <SelectItem value="AT">🇦🇹 Austria</SelectItem>
+                                <SelectItem value="AU">🇦🇺 Australia</SelectItem>
+                                <SelectItem value="AW">🇦🇼 Aruba</SelectItem>
+                                <SelectItem value="AX">🇦🇽 Åland Islands</SelectItem>
+                                <SelectItem value="AZ">🇦🇿 Azerbaijan</SelectItem>
+                                <SelectItem value="BA">🇧🇦 Bosnia and Herzegovina</SelectItem>
+                                <SelectItem value="BB">🇧🇧 Barbados</SelectItem>
+                                <SelectItem value="BD">🇧🇩 Bangladesh</SelectItem>
+                                <SelectItem value="BE">🇧🇪 Belgium</SelectItem>
+                                <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
+                                <SelectItem value="BG">🇧🇬 Bulgaria</SelectItem>
+                                <SelectItem value="BH">🇧🇭 Bahrain</SelectItem>
+                                <SelectItem value="BI">🇧🇮 Burundi</SelectItem>
+                                <SelectItem value="BJ">🇧🇯 Benin</SelectItem>
+                                <SelectItem value="BL">🇧🇱 Saint Barthélemy</SelectItem>
+                                <SelectItem value="BM">🇧🇲 Bermuda</SelectItem>
+                                <SelectItem value="BN">🇧🇳 Brunei</SelectItem>
+                                <SelectItem value="BO">🇧🇴 Bolivia</SelectItem>
+                                <SelectItem value="BR">🇧🇷 Brazil</SelectItem>
+                                <SelectItem value="BS">🇧🇸 Bahamas</SelectItem>
+                                <SelectItem value="BT">🇧🇹 Bhutan</SelectItem>
+                                <SelectItem value="BV">🇧🇻 Bouvet Island</SelectItem>
+                                <SelectItem value="BW">🇧🇼 Botswana</SelectItem>
+                                <SelectItem value="BY">🇧🇾 Belarus</SelectItem>
+                                <SelectItem value="BZ">🇧🇿 Belize</SelectItem>
+                                <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                                <SelectItem value="CC">🇨🇨 Cocos Islands</SelectItem>
+                                <SelectItem value="CD">🇨🇩 Democratic Republic of the Congo</SelectItem>
+                                <SelectItem value="CF">🇨🇫 Central African Republic</SelectItem>
+                                <SelectItem value="CG">🇨🇬 Republic of the Congo</SelectItem>
+                                <SelectItem value="CH">🇨🇭 Switzerland</SelectItem>
+                                <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
+                                <SelectItem value="CK">🇨🇰 Cook Islands</SelectItem>
+                                <SelectItem value="CL">🇨🇱 Chile</SelectItem>
+                                <SelectItem value="CM">🇨🇲 Cameroon</SelectItem>
+                                <SelectItem value="CN">🇨🇳 China</SelectItem>
+                                <SelectItem value="CO">🇨🇴 Colombia</SelectItem>
+                                <SelectItem value="CR">🇨🇷 Costa Rica</SelectItem>
+                                <SelectItem value="CU">🇨🇺 Cuba</SelectItem>
+                                <SelectItem value="CV">🇨🇻 Cape Verde</SelectItem>
+                                <SelectItem value="CW">🇨🇼 Curaçao</SelectItem>
+                                <SelectItem value="CX">🇨🇽 Christmas Island</SelectItem>
+                                <SelectItem value="CY">🇨🇾 Cyprus</SelectItem>
+                                <SelectItem value="CZ">🇨🇿 Czech Republic</SelectItem>
+                                <SelectItem value="DE">🇩🇪 Germany</SelectItem>
+                                <SelectItem value="DJ">🇩🇯 Djibouti</SelectItem>
+                                <SelectItem value="DK">🇩🇰 Denmark</SelectItem>
+                                <SelectItem value="DM">🇩🇲 Dominica</SelectItem>
+                                <SelectItem value="DO">🇩🇴 Dominican Republic</SelectItem>
+                                <SelectItem value="DZ">🇩🇿 Algeria</SelectItem>
+                                <SelectItem value="EC">🇪🇨 Ecuador</SelectItem>
+                                <SelectItem value="EE">🇪🇪 Estonia</SelectItem>
+                                <SelectItem value="EG">🇪🇬 Egypt</SelectItem>
+                                <SelectItem value="EH">🇪🇭 Western Sahara</SelectItem>
+                                <SelectItem value="ER">🇪🇷 Eritrea</SelectItem>
+                                <SelectItem value="ES">🇪🇸 Spain</SelectItem>
+                                <SelectItem value="ET">🇪🇹 Ethiopia</SelectItem>
+                                <SelectItem value="FI">🇫🇮 Finland</SelectItem>
+                                <SelectItem value="FJ">🇫🇯 Fiji</SelectItem>
+                                <SelectItem value="FK">🇫🇰 Falkland Islands</SelectItem>
+                                <SelectItem value="FM">🇫🇲 Micronesia</SelectItem>
+                                <SelectItem value="FO">🇫🇴 Faroe Islands</SelectItem>
+                                <SelectItem value="FR">🇫🇷 France</SelectItem>
+                                <SelectItem value="GA">🇬🇦 Gabon</SelectItem>
+                                <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
+                                <SelectItem value="GD">🇬🇩 Grenada</SelectItem>
+                                <SelectItem value="GE">🇬🇪 Georgia</SelectItem>
+                                <SelectItem value="GF">🇬🇫 French Guiana</SelectItem>
+                                <SelectItem value="GG">🇬🇬 Guernsey</SelectItem>
+                                <SelectItem value="GH">🇬🇭 Ghana</SelectItem>
+                                <SelectItem value="GI">🇬🇮 Gibraltar</SelectItem>
+                                <SelectItem value="GL">🇬🇱 Greenland</SelectItem>
+                                <SelectItem value="GM">🇬🇲 Gambia</SelectItem>
+                                <SelectItem value="GN">🇬🇳 Guinea</SelectItem>
+                                <SelectItem value="GP">🇬🇵 Guadeloupe</SelectItem>
+                                <SelectItem value="GQ">🇬🇶 Equatorial Guinea</SelectItem>
+                                <SelectItem value="GR">🇬🇷 Greece</SelectItem>
+                                <SelectItem value="GS">🇬🇸 South Georgia</SelectItem>
+                                <SelectItem value="GT">🇬🇹 Guatemala</SelectItem>
+                                <SelectItem value="GU">🇬🇺 Guam</SelectItem>
+                                <SelectItem value="GW">🇬🇼 Guinea-Bissau</SelectItem>
+                                <SelectItem value="GY">🇬🇾 Guyana</SelectItem>
+                                <SelectItem value="HK">🇭🇰 Hong Kong</SelectItem>
+                                <SelectItem value="HM">🇭🇲 Heard Island</SelectItem>
+                                <SelectItem value="HN">🇭🇳 Honduras</SelectItem>
+                                <SelectItem value="HR">🇭🇷 Croatia</SelectItem>
+                                <SelectItem value="HT">🇭🇹 Haiti</SelectItem>
+                                <SelectItem value="HU">🇭🇺 Hungary</SelectItem>
+                                <SelectItem value="ID">🇮🇩 Indonesia</SelectItem>
+                                <SelectItem value="IE">🇮🇪 Ireland</SelectItem>
+                                <SelectItem value="IL">🇮🇱 Israel</SelectItem>
+                                <SelectItem value="IM">🇮🇲 Isle of Man</SelectItem>
+                                <SelectItem value="IN">🇮🇳 India</SelectItem>
+                                <SelectItem value="IO">🇮🇴 British Indian Ocean Territory</SelectItem>
+                                <SelectItem value="IQ">🇮🇶 Iraq</SelectItem>
+                                <SelectItem value="IR">🇮🇷 Iran</SelectItem>
+                                <SelectItem value="IS">🇮🇸 Iceland</SelectItem>
+                                <SelectItem value="IT">🇮🇹 Italy</SelectItem>
+                                <SelectItem value="JE">🇯🇪 Jersey</SelectItem>
+                                <SelectItem value="JM">🇯🇲 Jamaica</SelectItem>
+                                <SelectItem value="JO">🇯🇴 Jordan</SelectItem>
+                                <SelectItem value="JP">🇯🇵 Japan</SelectItem>
+                                <SelectItem value="KE">🇰🇪 Kenya</SelectItem>
+                                <SelectItem value="KG">🇰🇬 Kyrgyzstan</SelectItem>
+                                <SelectItem value="KH">🇰🇭 Cambodia</SelectItem>
+                                <SelectItem value="KI">🇰🇮 Kiribati</SelectItem>
+                                <SelectItem value="KM">🇰🇲 Comoros</SelectItem>
+                                <SelectItem value="KN">🇰🇳 Saint Kitts and Nevis</SelectItem>
+                                <SelectItem value="KP">🇰🇵 North Korea</SelectItem>
+                                <SelectItem value="KR">🇰🇷 South Korea</SelectItem>
+                                <SelectItem value="KW">🇰🇼 Kuwait</SelectItem>
+                                <SelectItem value="KY">🇰🇾 Cayman Islands</SelectItem>
+                                <SelectItem value="KZ">🇰🇿 Kazakhstan</SelectItem>
+                                <SelectItem value="LA">🇱🇦 Laos</SelectItem>
+                                <SelectItem value="LB">🇱🇧 Lebanon</SelectItem>
+                                <SelectItem value="LC">🇱🇨 Saint Lucia</SelectItem>
+                                <SelectItem value="LI">🇱🇮 Liechtenstein</SelectItem>
+                                <SelectItem value="LK">🇱🇰 Sri Lanka</SelectItem>
+                                <SelectItem value="LR">🇱🇷 Liberia</SelectItem>
+                                <SelectItem value="LS">🇱🇸 Lesotho</SelectItem>
+                                <SelectItem value="LT">🇱🇹 Lithuania</SelectItem>
+                                <SelectItem value="LU">🇱🇺 Luxembourg</SelectItem>
+                                <SelectItem value="LV">🇱🇻 Latvia</SelectItem>
+                                <SelectItem value="LY">🇱🇾 Libya</SelectItem>
+                                <SelectItem value="MA">🇲🇦 Morocco</SelectItem>
+                                <SelectItem value="MC">🇲🇨 Monaco</SelectItem>
+                                <SelectItem value="MD">🇲🇩 Moldova</SelectItem>
+                                <SelectItem value="ME">🇲🇪 Montenegro</SelectItem>
+                                <SelectItem value="MF">🇲🇫 Saint Martin</SelectItem>
+                                <SelectItem value="MG">🇲🇬 Madagascar</SelectItem>
+                                <SelectItem value="MH">🇲🇭 Marshall Islands</SelectItem>
+                                <SelectItem value="MK">🇲🇰 North Macedonia</SelectItem>
+                                <SelectItem value="ML">🇲🇱 Mali</SelectItem>
+                                <SelectItem value="MM">🇲🇲 Myanmar</SelectItem>
+                                <SelectItem value="MN">🇲🇳 Mongolia</SelectItem>
+                                <SelectItem value="MO">🇲🇴 Macao</SelectItem>
+                                <SelectItem value="MP">🇲🇵 Northern Mariana Islands</SelectItem>
+                                <SelectItem value="MQ">🇲🇶 Martinique</SelectItem>
+                                <SelectItem value="MR">🇲🇷 Mauritania</SelectItem>
+                                <SelectItem value="MS">🇲🇸 Montserrat</SelectItem>
+                                <SelectItem value="MT">🇲🇹 Malta</SelectItem>
+                                <SelectItem value="MU">🇲🇺 Mauritius</SelectItem>
+                                <SelectItem value="MV">🇲🇻 Maldives</SelectItem>
+                                <SelectItem value="MW">🇲🇼 Malawi</SelectItem>
+                                <SelectItem value="MX">🇲🇽 Mexico</SelectItem>
+                                <SelectItem value="MY">🇲🇾 Malaysia</SelectItem>
+                                <SelectItem value="MZ">🇲🇿 Mozambique</SelectItem>
+                                <SelectItem value="NA">🇳🇦 Namibia</SelectItem>
+                                <SelectItem value="NC">🇳🇨 New Caledonia</SelectItem>
+                                <SelectItem value="NE">🇳🇪 Niger</SelectItem>
+                                <SelectItem value="NF">🇳🇫 Norfolk Island</SelectItem>
+                                <SelectItem value="NG">🇳🇬 Nigeria</SelectItem>
+                                <SelectItem value="NI">🇳🇮 Nicaragua</SelectItem>
+                                <SelectItem value="NL">🇳🇱 Netherlands</SelectItem>
+                                <SelectItem value="NO">🇳🇴 Norway</SelectItem>
+                                <SelectItem value="NP">🇳🇵 Nepal</SelectItem>
+                                <SelectItem value="NR">🇳🇷 Nauru</SelectItem>
+                                <SelectItem value="NU">🇳🇺 Niue</SelectItem>
+                                <SelectItem value="NZ">🇳🇿 New Zealand</SelectItem>
+                                <SelectItem value="OM">🇴🇲 Oman</SelectItem>
+                                <SelectItem value="PA">🇵🇦 Panama</SelectItem>
+                                <SelectItem value="PE">🇵🇪 Peru</SelectItem>
+                                <SelectItem value="PF">🇵🇫 French Polynesia</SelectItem>
+                                <SelectItem value="PG">🇵🇬 Papua New Guinea</SelectItem>
+                                <SelectItem value="PH">🇵🇭 Philippines</SelectItem>
+                                <SelectItem value="PK">🇵🇰 Pakistan</SelectItem>
+                                <SelectItem value="PL">🇵🇱 Poland</SelectItem>
+                                <SelectItem value="PM">🇵🇲 Saint Pierre and Miquelon</SelectItem>
+                                <SelectItem value="PN">🇵🇳 Pitcairn</SelectItem>
+                                <SelectItem value="PR">🇵🇷 Puerto Rico</SelectItem>
+                                <SelectItem value="PS">🇵🇸 Palestine</SelectItem>
+                                <SelectItem value="PT">🇵🇹 Portugal</SelectItem>
+                                <SelectItem value="PW">🇵🇼 Palau</SelectItem>
+                                <SelectItem value="PY">🇵🇾 Paraguay</SelectItem>
+                                <SelectItem value="QA">🇶🇦 Qatar</SelectItem>
+                                <SelectItem value="RE">🇷🇪 Réunion</SelectItem>
+                                <SelectItem value="RO">🇷🇴 Romania</SelectItem>
+                                <SelectItem value="RS">🇷🇸 Serbia</SelectItem>
+                                <SelectItem value="RU">🇷🇺 Russia</SelectItem>
+                                <SelectItem value="RW">🇷🇼 Rwanda</SelectItem>
+                                <SelectItem value="SA">🇸🇦 Saudi Arabia</SelectItem>
+                                <SelectItem value="SB">🇸🇧 Solomon Islands</SelectItem>
+                                <SelectItem value="SC">🇸🇨 Seychelles</SelectItem>
+                                <SelectItem value="SD">🇸🇩 Sudan</SelectItem>
+                                <SelectItem value="SE">🇸🇪 Sweden</SelectItem>
+                                <SelectItem value="SG">🇸🇬 Singapore</SelectItem>
+                                <SelectItem value="SH">🇸🇭 Saint Helena</SelectItem>
+                                <SelectItem value="SI">🇸🇮 Slovenia</SelectItem>
+                                <SelectItem value="SJ">🇸🇯 Svalbard and Jan Mayen</SelectItem>
+                                <SelectItem value="SK">🇸🇰 Slovakia</SelectItem>
+                                <SelectItem value="SL">🇸🇱 Sierra Leone</SelectItem>
+                                <SelectItem value="SM">🇸🇲 San Marino</SelectItem>
+                                <SelectItem value="SN">🇸🇳 Senegal</SelectItem>
+                                <SelectItem value="SO">🇸🇴 Somalia</SelectItem>
+                                <SelectItem value="SR">🇸🇷 Suriname</SelectItem>
+                                <SelectItem value="SS">🇸🇸 South Sudan</SelectItem>
+                                <SelectItem value="ST">🇸🇹 São Tomé and Príncipe</SelectItem>
+                                <SelectItem value="SV">🇸🇻 El Salvador</SelectItem>
+                                <SelectItem value="SX">🇸🇽 Sint Maarten</SelectItem>
+                                <SelectItem value="SY">🇸🇾 Syria</SelectItem>
+                                <SelectItem value="SZ">🇸🇿 Eswatini</SelectItem>
+                                <SelectItem value="TC">🇹🇨 Turks and Caicos Islands</SelectItem>
+                                <SelectItem value="TD">🇹🇩 Chad</SelectItem>
+                                <SelectItem value="TF">🇹🇫 French Southern Territories</SelectItem>
+                                <SelectItem value="TG">🇹🇬 Togo</SelectItem>
+                                <SelectItem value="TH">🇹🇭 Thailand</SelectItem>
+                                <SelectItem value="TJ">🇹🇯 Tajikistan</SelectItem>
+                                <SelectItem value="TK">🇹🇰 Tokelau</SelectItem>
+                                <SelectItem value="TL">🇹🇱 Timor-Leste</SelectItem>
+                                <SelectItem value="TM">🇹🇲 Turkmenistan</SelectItem>
+                                <SelectItem value="TN">🇹🇳 Tunisia</SelectItem>
+                                <SelectItem value="TO">🇹🇴 Tonga</SelectItem>
+                                <SelectItem value="TR">🇹🇷 Turkey</SelectItem>
+                                <SelectItem value="TT">🇹🇹 Trinidad and Tobago</SelectItem>
+                                <SelectItem value="TV">🇹🇻 Tuvalu</SelectItem>
+                                <SelectItem value="TW">🇹🇼 Taiwan</SelectItem>
+                                <SelectItem value="TZ">🇹🇿 Tanzania</SelectItem>
+                                <SelectItem value="UA">🇺🇦 Ukraine</SelectItem>
+                                <SelectItem value="UG">🇺🇬 Uganda</SelectItem>
+                                <SelectItem value="UM">🇺🇲 United States Minor Outlying Islands</SelectItem>
+                                <SelectItem value="US">🇺🇸 United States</SelectItem>
+                                <SelectItem value="UY">🇺🇾 Uruguay</SelectItem>
+                                <SelectItem value="UZ">🇺🇿 Uzbekistan</SelectItem>
+                                <SelectItem value="VA">🇻🇦 Vatican City</SelectItem>
+                                <SelectItem value="VC">🇻🇨 Saint Vincent and the Grenadines</SelectItem>
+                                <SelectItem value="VE">🇻🇪 Venezuela</SelectItem>
+                                <SelectItem value="VG">🇻🇬 British Virgin Islands</SelectItem>
+                                <SelectItem value="VI">🇻🇮 U.S. Virgin Islands</SelectItem>
+                                <SelectItem value="VN">🇻🇳 Vietnam</SelectItem>
+                                <SelectItem value="VU">🇻🇺 Vanuatu</SelectItem>
+                                <SelectItem value="WF">🇼🇫 Wallis and Futuna</SelectItem>
+                                <SelectItem value="WS">🇼🇸 Samoa</SelectItem>
+                                <SelectItem value="YE">🇾🇪 Yemen</SelectItem>
+                                <SelectItem value="YT">🇾🇹 Mayotte</SelectItem>
+                                <SelectItem value="ZA">🇿🇦 South Africa</SelectItem>
+                                <SelectItem value="ZM">🇿🇲 Zambia</SelectItem>
+                                <SelectItem value="ZW">🇿🇼 Zimbabwe</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />

@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. COMPLETED: Enhanced profile page with enterprise-level security and privacy controls including date of birth protection, comprehensive country selection (195+ countries with flags), advanced UI/UX with glass-morphism effects, and multi-layer privacy toggles ensuring only authenticated users can view their sensitive information
 - June 26, 2025. COMPLETED: Implemented automatic login after signup - users are now immediately authenticated after account creation without requiring separate login step
 - June 26, 2025. RESOLVED: Fixed excessive API refresh calls completely. Removed refetchInterval causing 401 requests every 2 seconds. Authentication now uses staleTime: Infinity and only checks on mount, eliminating nonsensical refresh behavior
 - June 26, 2025. COMPLETED: Updated authentication dropdown design to match provided screenshots with modern Sign In/Create Account layout, colored icons, and security messaging
