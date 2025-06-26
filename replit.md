@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Redesigned host information section with horizontal three-column layout (1/3 each) responsive across all screen sizes with proper content optimization
 - June 26, 2025. Fixed host information layout to position price on right side across all screen sizes with proper two-row structure matching provided screenshot
 - June 26, 2025. Added detailed "Recent Reviews" section with four guest testimonials, ratings, dates, and responsive grid layout matching provided screenshot
 - June 26, 2025. Implemented horizontal trust elements layout for all screen sizes using flexbox with percentage-based widths and responsive scaling
