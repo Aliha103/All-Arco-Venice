@@ -100,7 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
-- June 26, 2025. Fixing authentication state update issue - header shows login/signup dropdown instead of user dropdown after successful login. Implementing comprehensive authentication state refresh
+- June 26, 2025. Fixed authentication system and user login flow. Users now successfully authenticate, sessions persist correctly, and dropdown shows full name with notification icon. Removed extra signup success screen for streamlined flow
 - June 26, 2025. Fixed routing to ensure all users see Landing page at root URL. Login and signup now properly redirect to user's intended landing page instead of other components
 - June 26, 2025. Fixed excessive calendar API calls causing server load. Temporarily disabled calendar query to eliminate flood of requests while maintaining functionality
 - June 26, 2025. Resolved authentication redirect loop - users now stay logged in properly after login with improved session handling
