@@ -29,11 +29,70 @@ export default function Landing() {
   // Rate limiting for availability checks (max 1 per 2 seconds)
   const RATE_LIMIT_MS = 2000;
 
-  // Mock booked dates (in real app, this would come from API)
-  const bookedDates = [
-    "2025-06-15", "2025-06-16", "2025-06-22", "2025-06-23", "2025-06-24",
-    "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-10", "2025-07-11"
+  // Mock booked dates with detailed booking information
+  const existingBookings = [
+    { checkIn: "2025-06-15", checkOut: "2025-06-17" }, // 15-16 booked, 17 checkout only
+    { checkIn: "2025-06-22", checkOut: "2025-06-25" }, // 22-24 booked, 25 checkout only
+    { checkIn: "2025-07-01", checkOut: "2025-07-04" }, // 1-3 booked, 4 checkout only
+    { checkIn: "2025-07-10", checkOut: "2025-07-12" }, // 10-11 booked, 12 checkout only
+    { checkIn: "2025-07-20", checkOut: "2025-07-22" }, // 20-21 booked, 22 checkout only
   ];
+
+  // Generate list of all booked dates (excluding checkout days)
+  const bookedDates = existingBookings.flatMap(booking => {
+    const dates = [];
+    const start = new Date(booking.checkIn);
+    const end = new Date(booking.checkOut);
+    
+    while (start < end) {
+      dates.push(start.toISOString().split('T')[0]);
+      start.setDate(start.getDate() + 1);
+    }
+    return dates;
+  });
+
+  // Generate list of checkout-only dates
+  const checkoutOnlyDates = existingBookings.map(booking => booking.checkOut);
+
+  // Advanced booking validation functions
+  const canCheckInOnDate = (date: string) => {
+    // Can't check in if date is already booked
+    if (bookedDates.includes(date)) return false;
+    
+    // Can check in on checkout-only dates
+    if (checkoutOnlyDates.includes(date)) return true;
+    
+    return true;
+  };
+
+  const canCheckOutOnDate = (date: string) => {
+    // Can always check out on any date (including booked dates)
+    return true;
+  };
+
+  const isCheckoutOnlyDate = (date: string) => {
+    return checkoutOnlyDates.includes(date) && !bookedDates.includes(date);
+  };
+
+  const canBookDateRange = (startDate: string, endDate: string) => {
+    // Check if check-in date is available
+    if (!canCheckInOnDate(startDate)) return false;
+    
+    // Check if any dates in the range (excluding checkout date) are booked
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    while (start < end) {
+      const dateStr = start.toISOString().split('T')[0];
+      if (bookedDates.includes(dateStr)) {
+        return false;
+      }
+      start.setDate(start.getDate() + 1);
+    }
+    
+    return true;
+  };
+
   // Advanced validation functions
   const validateDates = () => {
     const errors: Record<string, string> = {};
@@ -46,6 +105,8 @@ export default function Landing() {
       const checkInDate = new Date(checkIn);
       if (checkInDate < today) {
         errors.checkIn = "Check-in date cannot be in the past";
+      } else if (!canCheckInOnDate(checkIn)) {
+        errors.checkIn = "This date is not available for check-in";
       }
     }
     
@@ -56,12 +117,14 @@ export default function Landing() {
       const checkOutDate = new Date(checkOut);
       if (checkOutDate <= checkInDate) {
         errors.checkOut = "Check-out must be after check-in date";
-      }
-      
-      const diffTime = checkOutDate.getTime() - checkInDate.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      if (diffDays > 30) {
-        errors.checkOut = "Maximum stay is 30 nights";
+      } else if (!canBookDateRange(checkIn, checkOut)) {
+        errors.checkOut = "Selected dates conflict with existing bookings";
+      } else {
+        const diffTime = checkOutDate.getTime() - checkInDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        if (diffDays > 30) {
+          errors.checkOut = "Maximum stay is 30 nights";
+        }
       }
     }
     
@@ -196,8 +259,6 @@ export default function Landing() {
   };
 
   const handleDateClick = (dateString: string) => {
-    if (isDateBooked(dateString)) return;
-    
     const clickedDate = parseDate(dateString);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -205,16 +266,20 @@ export default function Landing() {
     if (clickedDate < today) return;
 
     if (!checkIn || (checkIn && checkOut)) {
-      // Start new selection
-      setCheckIn(dateString);
-      setCheckOut("");
+      // Start new selection - check if can check-in on this date
+      if (canCheckInOnDate(dateString)) {
+        setCheckIn(dateString);
+        setCheckOut("");
+      }
     } else {
       // Complete the range
       const startDate = parseDate(checkIn);
       if (clickedDate <= startDate) {
         // If clicked date is before or same as check-in, make it the new check-in
-        setCheckIn(dateString);
-        setCheckOut("");
+        if (canCheckInOnDate(dateString)) {
+          setCheckIn(dateString);
+          setCheckOut("");
+        }
       } else {
         // Set as check-out date
         setCheckOut(dateString);
@@ -423,7 +488,6 @@ export default function Landing() {
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-semibold text-gray-900">Sign In</div>
-                          <div className="text-xs text-gray-500">Access your account securely</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       </button>
@@ -443,21 +507,12 @@ export default function Landing() {
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-semibold text-gray-900">Create Account</div>
-                          <div className="text-xs text-gray-500">Join our community today</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
                       </button>
                     </div>
                     
-                    {/* Security Notice */}
-                    <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
-                      <div className="flex items-start space-x-2">
-                        <Lock className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          We use secure authentication to protect your personal information
-                        </p>
-                      </div>
-                    </div>
+                    
                   </div>
                 )}
                 
