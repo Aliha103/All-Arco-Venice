@@ -95,35 +95,35 @@ export default function AdminDashboard() {
   }, [isAuthenticated, user, toast]);
 
   // Analytics query
-  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
 
   // Bookings query
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+  const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
 
   // Property images query
-  const { data: propertyImages, isLoading: imagesLoading } = useQuery({
+  const { data: propertyImages, isLoading: imagesLoading } = useQuery<PropertyImage[]>({
     queryKey: ["/api/property-images"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
 
   // Amenities query
-  const { data: amenities, isLoading: amenitiesLoading } = useQuery({
+  const { data: amenities, isLoading: amenitiesLoading } = useQuery<Amenity[]>({
     queryKey: ["/api/amenities"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
   });
 
   // Messages query
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ["/api/messages"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
-                ) : bookings?.length > 0 ? (
+                ) : (bookings && bookings.length > 0) ? (
                   <div className="space-y-4">
                     {bookings.slice(0, 5).map((booking: Booking) => (
                       <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -380,7 +380,7 @@ export default function AdminDashboard() {
                       <div key={i} className="animate-pulse h-20 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : bookings?.length > 0 ? (
+                ) : (bookings && bookings.length > 0) ? (
                   <div className="space-y-4">
                     {bookings.map((booking: Booking) => (
                       <div key={booking.id} className="border rounded-lg p-6">
@@ -443,7 +443,7 @@ export default function AdminDashboard() {
                       <div key={i} className="animate-pulse h-24 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : messages?.length > 0 ? (
+                ) : (messages && messages.length > 0) ? (
                   <div className="space-y-4">
                     {messages.map((message: Message) => (
                       <div 
@@ -495,7 +495,7 @@ export default function AdminDashboard() {
                       <div key={i} className="animate-pulse h-48 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : propertyImages?.length > 0 ? (
+                ) : (propertyImages && propertyImages.length > 0) ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {propertyImages.map((image: PropertyImage) => (
                       <div key={image.id} className="relative group">
@@ -538,7 +538,7 @@ export default function AdminDashboard() {
                       <div key={i} className="animate-pulse h-16 bg-gray-200 rounded"></div>
                     ))}
                   </div>
-                ) : amenities?.length > 0 ? (
+                ) : (amenities && amenities.length > 0) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {amenities.map((amenity: Amenity) => (
                       <div key={amenity.id} className="flex items-center gap-3 p-4 border rounded-lg">

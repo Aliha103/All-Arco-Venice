@@ -485,6 +485,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/messages/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const messageId = parseInt(req.params.id);
+      await storage.markMessageAsRead(messageId);
+      res.json({ message: "Message marked as read" });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  // Admin booking status update
+  app.put('/api/bookings/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      await storage.updateBookingStatus(bookingId, status);
+      res.json({ message: "Booking status updated successfully" });
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
   app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
     try {
       const count = await storage.getUnreadMessagesCount();
