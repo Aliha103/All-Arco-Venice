@@ -199,51 +199,39 @@ export default function Header() {
                     <UserIcon className="w-5 h-5 text-gray-600" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80 p-0" align="end">
-                  <div className="p-6 space-y-4">
+                <DropdownMenuContent className="w-64 p-0" align="end">
+                  <div className="p-4 space-y-2">
                     {/* Sign In Option */}
                     <a href="/api/login" className="block">
-                      <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                          <LogIn className="w-6 h-6 text-blue-600" />
+                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <LogIn className="w-5 h-5 text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
                             Sign In
                           </h3>
-                          <p className="text-sm text-gray-500">
-                            Access your account securely
-                          </p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       </div>
                     </a>
 
                     {/* Create Account Option */}
                     <a href="/signup" className="block">
-                      <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                          <UserPlus className="w-6 h-6 text-green-600" />
+                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                          <UserPlus className="w-5 h-5 text-green-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-green-600 transition-colors">
+                          <h3 className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">
                             Create Account
                           </h3>
-                          <p className="text-sm text-gray-500">
-                            Join our community today
-                          </p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
                       </div>
                     </a>
 
-                    {/* Security Notice */}
-                    <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Shield className="w-5 h-5 text-gray-400 mt-0.5" />
-                      <p className="text-sm text-gray-600">
-                        We use secure authentication to protect your personal information
-                      </p>
-                    </div>
+                    
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
