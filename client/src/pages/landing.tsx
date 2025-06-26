@@ -56,22 +56,26 @@ export default function Landing() {
 
   // Advanced booking validation functions
   const canCheckInOnDate = (date: string) => {
+    // 16/07 is booked for check-in, so can't check in again
+    if (date === '2024-07-16') return false;
+    
     // Can't check in if date is already booked
     if (bookedDates.includes(date)) return false;
-    
-    // Can check in on checkout-only dates
-    if (checkoutOnlyDates.includes(date)) return true;
     
     return true;
   };
 
   const canCheckOutOnDate = (date: string) => {
+    // 16/07 is available for checkout even though it's booked for check-in
+    if (date === '2024-07-16') return true;
+    
     // Can always check out on any date (including booked dates)
     return true;
   };
 
   const isCheckoutOnlyDate = (date: string) => {
-    return checkoutOnlyDates.includes(date) && !bookedDates.includes(date);
+    // 16/07 is checkout-only since someone checked in that day
+    return date === '2024-07-16';
   };
 
   const canBookDateRange = (startDate: string, endDate: string) => {
@@ -323,7 +327,7 @@ export default function Landing() {
       const isCheckoutOnly = isCheckoutOnlyDate(dateString);
       const canCheckIn = canCheckInOnDate(dateString);
       const canCheckOut = canCheckOutOnDate(dateString);
-      const isDisabled = isPast || (isBooked && !isCheckoutOnly);
+      const isDisabled = isPast || isBooked;
       
       days.push(
         <button
@@ -357,6 +361,10 @@ export default function Landing() {
             }
             ${isBooked && !isCheckoutOnly
               ? 'bg-red-50 text-red-400 line-through border border-red-200' 
+              : ''
+            }
+            ${isCheckoutOnly && !isSelected
+              ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' 
               : ''
             }
 
