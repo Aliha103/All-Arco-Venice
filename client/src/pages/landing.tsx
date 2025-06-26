@@ -942,38 +942,13 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      {/* —— Guest Reviews (condensed) —— */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto text-center mb-12"><h2 className="text-2xl font-bold text-gray-900">Guest Reviews</h2><p className="text-gray-600">Rated 4.9/5 by 2,400 guests</p></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { name:"Sarah M.", location:"London", text:"Absolutely magical! Perfect location in Venice." },
-            { name:"James R.", location:"New York", text:"Outstanding experience. Beautifully restored apartment." },
-            { name:"Emma L.", location:"Sydney", text:"Perfect romantic getaway with amazing canal views." },
-          ].map(({name,location,text})=> (
-            <div key={name} className="bg-white rounded-xl p-6 shadow-sm smooth-hover touch-interaction cursor-pointer fade-in group">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 gentle-scale">
-                  <span className="text-blue-600 font-semibold text-sm group-hover:text-blue-700 transition-colors duration-200">{name[0]}</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 transition-colors duration-200 group-hover:text-blue-600">{name}</h4>
-                  <p className="text-sm text-gray-600 transition-colors duration-200">{location}</p>
-                </div>
-              </div>
-              <div className="flex mb-3">{[1,2,3,4,5].map(n=> <Star key={n} className="w-4 h-4 text-yellow-400 fill-current gentle-scale cursor-pointer" />)}</div>
-              <p className="text-gray-700 text-sm transition-colors duration-200 group-hover:text-gray-900">"{text}"</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      
       {/* —— Footer —— */}
       <footer className="bg-gray-100 border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             { title:"Support", items:["Help Center","Safety information","Cancellation options","Report a problem"] },
             { title:"Community", items:["All'Arco.com","Referral program","Venice guide","Guest stories"] },
-            { title:"Hosting", items:["Host your home","Host resources","Community forum","Hosting tips"] },
             { title:"All'Arco", items:["Newsroom","New features","Letter from founders","Careers"] },
           ].map(({title,items})=> (
             <div key={title}><h4 className="font-semibold text-gray-900 mb-4">{title}</h4><ul className="space-y-3 text-gray-600 text-sm">{items.map(i=> <li key={i}><a href="#" className="hover:text-gray-900">{i}</a></li>)}</ul></div>
