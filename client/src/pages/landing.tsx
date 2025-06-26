@@ -327,7 +327,7 @@ export default function Landing() {
             <div className="hidden md:block lg:hidden">
               <div className="grid grid-cols-5 gap-8">
                 {/* Select Dates - 60% (3/5) */}
-                <div className="col-span-3">
+                <div className="col-span-3 max-w-full overflow-hidden">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                       <Clock className="w-5 h-5 mr-2 text-blue-600"/>
@@ -355,11 +355,13 @@ export default function Landing() {
                     )}
                   </div>
                   
-                  <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
+                  <div className="w-full max-w-full">
+                    <AdvancedCalendar bookedCheckIns={bookedCheckInDates} onValidRangeSelect={handleValidRangeSelect}/>
+                  </div>
                 </div>
 
                 {/* Right column: Guests & Pets + Price - 40% (2/5) */}
-                <div className="col-span-2 space-y-8">
+                <div className="col-span-2 space-y-8 max-w-full overflow-hidden">
                   {/* Guests & Pets */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
@@ -400,7 +402,6 @@ export default function Landing() {
 
                   {/* Price Breakdown - Under Guests & Pets */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                     
                     <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                       <div className="text-center mb-4">
