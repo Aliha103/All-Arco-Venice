@@ -199,35 +199,33 @@ export default function Header() {
                     <UserIcon className="w-5 h-5 text-gray-600" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64 p-0" align="end">
-                  <div className="p-1 space-y-0.5">
+                <DropdownMenuContent className="w-48 p-0 shadow-lg border-0 bg-white rounded-xl" align="end">
+                  <div className="p-3 space-y-1">
                     {/* Sign In Option */}
                     <a href="/login" className="block">
-                      <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <LogIn className="w-4 h-4 text-blue-600" />
+                      <div className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-all duration-200 group">
+                        <div className="w-9 h-9 bg-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+                          <LogIn className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <h3 className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                             Sign In
                           </h3>
                         </div>
-                        <ChevronRight className="w-3 h-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       </div>
                     </a>
 
                     {/* Create Account Option */}
                     <a href="/signup" className="block">
-                      <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <UserPlus className="w-4 h-4 text-green-600" />
+                      <div className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-green-50 transition-all duration-200 group">
+                        <div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center shadow-sm">
+                          <UserPlus className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-sm font-medium text-gray-900 group-hover:text-green-600 transition-colors">
+                          <h3 className="text-sm font-semibold text-gray-800 group-hover:text-green-600 transition-colors">
                             Create Account
                           </h3>
                         </div>
-                        <ChevronRight className="w-3 h-3 text-gray-400 group-hover:text-green-600 transition-colors" />
                       </div>
                     </a>
 
