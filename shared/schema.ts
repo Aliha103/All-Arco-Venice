@@ -38,6 +38,8 @@ export const users = pgTable("users", {
   dateOfBirth: date("date_of_birth"),
   country: varchar("country"),
   mobileNumber: varchar("mobile_number"),
+  referralCode: varchar("referral_code").unique(),
+  referredBy: varchar("referred_by"), // ID of user who referred this user
   authProvider: varchar("auth_provider", { enum: ["replit", "local"] }).default("local"),
   role: varchar("role", { enum: ["guest", "admin"] }).default("guest"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -224,7 +226,8 @@ export const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters")
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain uppercase, lowercase, and number"),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  referralCode: z.string().optional()
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]

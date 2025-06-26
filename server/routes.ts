@@ -52,13 +52,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: validatedData.lastName,
         email: validatedData.email,
         password: hashedPassword,
+        referralCode: validatedData.referralCode,
       });
 
-      // Return user without password
+      // Return user without password, include referral code for confirmation
       const { password, ...userResponse } = user;
       res.status(201).json({ 
         message: "Account created successfully",
-        user: userResponse 
+        user: userResponse,
+        referralCode: user.referralCode
       });
     } catch (error: any) {
       console.error("Signup error:", error);

@@ -28,8 +28,9 @@ export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByReferralCode(referralCode: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User>;
+  createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User>;
   
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -95,6 +96,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.referralCode, referralCode));
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -110,8 +116,30 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User> {
+  async createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User> {
     const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Generate unique referral code for new user
+    let newReferralCode: string;
+    let isUnique = false;
+    
+    while (!isUnique) {
+      newReferralCode = `${userData.firstName.substring(0, 2).toUpperCase()}${userData.lastName.substring(0, 2).toUpperCase()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const existingUser = await this.getUserByReferralCode(newReferralCode);
+      if (!existingUser) {
+        isUnique = true;
+      }
+    }
+
+    // Validate referral code if provided
+    let referredBy: string | undefined;
+    if (userData.referralCode) {
+      const referrer = await this.getUserByReferralCode(userData.referralCode);
+      if (referrer) {
+        referredBy = referrer.id;
+      }
+    }
+
     const [user] = await db
       .insert(users)
       .values({
@@ -120,6 +148,8 @@ export class DatabaseStorage implements IStorage {
         firstName: userData.firstName,
         lastName: userData.lastName,
         password: userData.password,
+        referralCode: newReferralCode!,
+        referredBy,
         authProvider: "local",
         role: "guest",
         createdAt: new Date(),

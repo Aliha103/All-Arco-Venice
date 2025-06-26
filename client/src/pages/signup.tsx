@@ -145,6 +145,23 @@ export default function Signup() {
                 )}
               </div>
 
+              {/* Referral Code */}
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                <Input
+                  id="referralCode"
+                  placeholder="Enter referral code"
+                  {...register("referralCode")}
+                  className="uppercase"
+                  onChange={(e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  Have a referral code? Enter it here for exclusive benefits!
+                </p>
+              </div>
+
               {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
