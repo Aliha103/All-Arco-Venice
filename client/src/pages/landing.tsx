@@ -1562,14 +1562,6 @@ export default function Landing() {
                       </span>
                     </Button>
                   )}
-                  
-                  <div className="text-center mt-3 space-y-1">
-                    <p className="text-xs text-gray-500">You won't be charged yet</p>
-                    <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
-                      <Shield className="w-3 h-3" />
-                      <span>SSL encrypted • Secure payment</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
