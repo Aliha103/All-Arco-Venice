@@ -359,23 +359,13 @@ export default function Landing() {
               ? 'bg-red-50 text-red-400 line-through border border-red-200' 
               : ''
             }
-            ${isCheckoutOnly && !isSelected
-              ? 'bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700 border border-amber-200 hover:bg-amber-100' 
-              : ''
-            }
+
           `}
         >
           {day}
           {isBooked && !isCheckoutOnly && (
             <div className="absolute bottom-1 right-1">
               <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-            </div>
-          )}
-          {isCheckoutOnly && !isSelected && (
-            <div className="absolute -top-0.5 -right-0.5 z-10">
-              <div className="bg-amber-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium shadow-sm">
-                CO
-              </div>
             </div>
           )}
           {isSelected && (
@@ -977,7 +967,7 @@ export default function Landing() {
 
                   {/* Legend */}
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="flex items-center justify-center">
                         <div className="w-3 h-3 bg-blue-600 rounded-full mr-1.5 shadow-sm"></div>
                         <span className="text-gray-700 font-medium">Selected</span>
@@ -989,13 +979,6 @@ export default function Landing() {
                       <div className="flex items-center justify-center">
                         <div className="w-3 h-3 bg-red-100 rounded-full mr-1.5"></div>
                         <span className="text-gray-700 font-medium">Booked</span>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <div className="relative">
-                          <div className="w-3 h-3 bg-amber-100 rounded-full mr-1.5"></div>
-                          <div className="absolute -top-1 -right-0.5 bg-amber-500 text-white text-[6px] px-0.5 rounded-sm">CO</div>
-                        </div>
-                        <span className="text-gray-700 font-medium">Checkout Only</span>
                       </div>
                     </div>
                   </div>
@@ -1309,7 +1292,7 @@ export default function Landing() {
 
                   {/* Legend */}
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex justify-between text-xs">
                       <div className="flex items-center">
                         <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
                         <span className="text-gray-600">Selected</span>
@@ -1321,13 +1304,6 @@ export default function Landing() {
                       <div className="flex items-center">
                         <div className="w-3 h-3 bg-red-100 rounded mr-2"></div>
                         <span className="text-gray-600">Booked</span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="relative">
-                          <div className="w-3 h-3 bg-amber-100 rounded mr-2"></div>
-                          <div className="absolute -top-1 -right-0.5 bg-amber-500 text-white text-[6px] px-0.5 rounded-sm">CO</div>
-                        </div>
-                        <span className="text-gray-600">Checkout Only</span>
                       </div>
                     </div>
                   </div>
