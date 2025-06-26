@@ -1,0 +1,244 @@
+import * as React from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { DayPicker, DateRange } from "react-day-picker"
+import {
+  eachDayOfInterval,
+  isSameDay,
+  startOfDay,
+  format,
+} from "date-fns"
+
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
+
+/**
+ * Dates that already have an existing **check‑in**.
+ * They can still be used as **check‑out** days, but cannot
+ * be chosen as a **check‑in** day for a new range.
+ */
+export type BookedCheckInDates = Date[]
+
+export interface CalendarProps
+  extends Omit<React.ComponentProps<typeof DayPicker>, "mode" | "selected"> {
+  /**
+   * List of calendar days that are already reserved as check‑ins.
+   * They will appear with a tiny “only check‑out” note and will be
+   * disabled when the user is choosing the *start* of a range.
+   */
+  bookedCheckIns?: BookedCheckInDates
+
+  /**
+   * Fires only when the user picks a VALID range that passes
+   * all business‑rules (start day must allow check‑in, end day
+   * must allow check‑out, and no intermediate day is a new
+   * check‑in from someone else).
+   */
+  onValidRangeSelect?: (range: DateRange) => void
+}
+
+export const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
+  (
+    {
+      className,
+      classNames,
+      bookedCheckIns = [],
+      onValidRangeSelect,
+      ...props
+    },
+    ref
+  ) => {
+    /** Normalize to midnight for easier comparisons */
+    const booked = React.useMemo(
+      () => bookedCheckIns.map((d) => startOfDay(d)),
+      [bookedCheckIns]
+    )
+
+    /** Helpers ---------------------------------------------------------------- */
+    const same = (d1: Date, d2: Date) => isSameDay(d1, d2)
+
+    const isCheckInAllowed = React.useCallback(
+      (date: Date) => !booked.some((d) => same(d, date)),
+      [booked]
+    )
+
+    const isCheckOutAllowed = React.useCallback(
+      (date: Date) => true, // we always allow check‑out, including booked starts
+      []
+    )
+
+    const [range, setRange] = React.useState<DateRange | undefined>()
+    const [error, setError] = React.useState<string>("")
+
+    /**
+     * Business‑rule validation --------------------------------------------------
+     *
+     * 1. Start date must allow check‑in (i.e. not in `booked`).
+     * 2. End date (if defined) must allow check‑out.
+     * 3. No date between start+1 and end‑1 can have a *new* check‑in
+     *    from someone else (cannot cross a booking boundary).
+     */
+    const isValidRange = React.useCallback(
+      (sel: DateRange) => {
+        if (!sel.from) return false
+        if (!isCheckInAllowed(sel.from)) {
+          setError("You can’t start a stay on a check‑out‑only day.")
+          return false
+        }
+
+        if (sel.to) {
+          if (!isCheckOutAllowed(sel.to)) {
+            setError("You can’t check‑out on that day.")
+            return false
+          }
+
+          // any intermediate date that is a booked check‑in breaks the range
+          const inBetween = eachDayOfInterval({
+            start: sel.from,
+            end: sel.to,
+          }).slice(1, -1)
+
+          const hasBlocker = inBetween.some(
+            (d) => !isCheckInAllowed(d) /* meaning someone else checks‑in here */
+          )
+          if (hasBlocker) {
+            setError(
+              "Those dates cross over another guest’s check‑in. Please choose a different range."
+            )
+            return false
+          }
+        }
+
+        setError("")
+        return true
+      },
+      [isCheckInAllowed, isCheckOutAllowed]
+    )
+
+    /** Selection handler ------------------------------------------------------- */
+    const handleSelect = React.useCallback(
+      (sel: DateRange | undefined) => {
+        if (!sel) {
+          setRange(undefined)
+          return
+        }
+
+        // DayPicker will call us for every click; only validate when
+        // *from* exists (always) and *to* exists (range finished) OR user
+        // explicitly clicks the same day twice (1‑night stay).
+        if (sel.to || same(sel.from, sel.to ?? sel.from)) {
+          if (isValidRange(sel)) {
+            setRange(sel)
+            onValidRangeSelect?.(sel)
+          } else {
+            // keep partial selection so the user sees what went wrong
+            setRange(sel)
+          }
+        } else {
+          // still picking – allow visual feedback
+          setRange(sel)
+        }
+      },
+      [isValidRange, onValidRangeSelect]
+    )
+
+    /** UI helpers ------------------------------------------------------------- */
+    const navIcons = React.useMemo(
+      () => ({
+        IconLeft: (p: React.ComponentProps<"svg">) => (
+          <ChevronLeft className="h-4 w-4" {...p} />
+        ),
+        IconRight: (p: React.ComponentProps<"svg">) => (
+          <ChevronRight className="h-4 w-4" {...p} />
+        ),
+      }),
+      []
+    )
+
+    // Custom day content: day number + tiny note when it’s check‑out‑only
+    const renderDay = React.useCallback(
+      (date: Date) => {
+        const dayNumber = format(date, "d")
+        const onlyCheckout = !isCheckInAllowed(date)
+        return (
+          <div className="flex flex-col items-center">
+            <span>{dayNumber}</span>
+            {onlyCheckout && (
+              <span className="text-[8px] leading-none mt-0.5">
+                only check‑out
+              </span>
+            )}
+          </div>
+        )
+      },
+      [isCheckInAllowed]
+    )
+
+    /** Render ----------------------------------------------------------------- */
+    return (
+      <>
+        <DayPicker
+          ref={ref}
+          mode="range"
+          selected={range}
+          showOutsideDays
+          disabled={(date) =>
+            !range?.from /* choosing start? */ && !isCheckInAllowed(date)
+          }
+          modifiers={{
+            checkoutOnly: booked,
+          }}
+          modifiersClassNames={{
+            checkoutOnly:
+              "opacity-80 !bg-accent/30 !text-foreground", // subtle tint
+          }}
+          components={navIcons}
+          renderDay={renderDay as any}
+          className={cn("p-3", className)}
+          classNames={{
+            months:
+              "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+            month: "space-y-4",
+            caption: "flex justify-center pt-1 relative items-center",
+            caption_label: "text-sm font-medium",
+            nav: "space-x-1 flex items-center",
+            nav_button: cn(
+              buttonVariants({ variant: "outline" }),
+              "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+            ),
+            nav_button_previous: "absolute left-1",
+            nav_button_next: "absolute right-1",
+            table: "w-full border-collapse space-y-1",
+            head_row: "flex",
+            head_cell:
+              "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+            row: "flex w-full mt-2",
+            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+            day: cn(
+              buttonVariants({ variant: "ghost" }),
+              "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+            ),
+            day_range_end: "day-range-end",
+            day_selected:
+              "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+            day_today: "bg-accent text-accent-foreground",
+            day_outside:
+              "day-outside text-muted-foreground aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
+            day_disabled: "text-muted-foreground opacity-50",
+            day_range_middle:
+              "aria-selected:bg-accent aria-selected:text-accent-foreground",
+            day_hidden: "invisible",
+            ...classNames,
+          }}
+          onSelect={handleSelect}
+          {...props}
+        />
+
+        {!!error && (
+          <p className="mt-2 text-sm text-destructive font-medium">{error}</p>
+        )}
+      </>
+    )
+  }
+)
+
+Calendar.displayName = "Calendar"

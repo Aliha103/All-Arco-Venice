@@ -5,6 +5,9 @@ import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Calendar as AdvancedCalendar } from "@/components/advanced-calendar";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
 export default function Landing() {
   const [checkIn, setCheckIn] = useState("");
@@ -56,25 +59,18 @@ export default function Landing() {
 
   // Advanced booking validation functions
   const canCheckInOnDate = (date: string) => {
-    // 16/07 is booked for check-in, so can't check in again
-    if (date === '2024-07-16') return false;
-    
-    // Can't check in if date is already booked
+    // Can't check in if date is already booked for check-in
     if (bookedDates.includes(date)) return false;
-    
     return true;
   };
 
   const canCheckOutOnDate = (date: string) => {
-    // 16/07 is available for checkout even though it's booked for check-in
-    if (date === '2024-07-16') return true;
-    
-    // Can always check out on any date (including booked dates)
+    // Can always check out on any date (including booked check-in dates)
     return true;
   };
 
   const isCheckoutOnlyDate = (date: string) => {
-    // 16/07 is checkout-only since someone checked in that day
+    // Dates that are booked for check-in are checkout-only for new bookings
     return date === '2024-07-16';
   };
 
