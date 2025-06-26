@@ -7,6 +7,7 @@ import {
   messages,
   aboutContent,
   promotions,
+  heroImages,
   type User,
   type UpsertUser,
   type InsertBooking,
@@ -23,6 +24,8 @@ import {
   type AboutContent,
   type InsertPromotion,
   type Promotion,
+  type InsertHeroImage,
+  type HeroImage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
@@ -103,6 +106,14 @@ export interface IStorage {
   addPromotion(promotion: InsertPromotion): Promise<Promotion>;
   updatePromotionStatus(id: number, isActive: boolean): Promise<void>;
   deletePromotion(id: number): Promise<void>;
+
+  // Hero images operations
+  getHeroImages(): Promise<HeroImage[]>;
+  getActiveHeroImages(): Promise<HeroImage[]>;
+  addHeroImage(image: InsertHeroImage): Promise<HeroImage>;
+  updateHeroImage(id: number, data: Partial<HeroImage>): Promise<void>;
+  deleteHeroImage(id: number): Promise<void>;
+  updateHeroImageOrder(id: number, displayOrder: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

@@ -627,10 +627,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Admin access required" });
       }
 
+      // Validate required fields
+      const { name, tag, discountPercentage, startDate, endDate, description } = req.body;
+      
+      if (!name || !tag || !discountPercentage || !startDate || !endDate) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Validate dates
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      if (start >= end) {
+        return res.status(400).json({ message: "End date must be after start date" });
+      }
+
       const promotionData = {
-        ...req.body,
-        startDate: new Date(req.body.startDate),
-        endDate: new Date(req.body.endDate),
+        name,
+        tag,
+        discountPercentage: parseInt(discountPercentage),
+        startDate: start,
+        endDate: end,
+        description: description || "",
+        isActive: req.body.isActive !== false,
       };
 
       const promotion = await storage.addPromotion(promotionData);

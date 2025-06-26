@@ -884,10 +884,35 @@ export default function AdminDashboard() {
                     
                     <div className="flex gap-3 mt-4">
                       <Button 
-                        onClick={() => createPromotionMutation.mutate({
-                          ...promotionForm,
-                          isActive: true
-                        })}
+                        onClick={() => {
+                          // Validate form fields
+                          if (!promotionForm.name || !promotionForm.tag || !promotionForm.discountPercentage || !promotionForm.startDate || !promotionForm.endDate) {
+                            toast({
+                              title: "Validation Error",
+                              description: "All fields are required",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          // Validate dates
+                          const startDate = new Date(promotionForm.startDate);
+                          const endDate = new Date(promotionForm.endDate);
+                          
+                          if (startDate >= endDate) {
+                            toast({
+                              title: "Validation Error",
+                              description: "End date must be after start date",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          createPromotionMutation.mutate({
+                            ...promotionForm,
+                            isActive: true
+                          });
+                        }}
                         disabled={createPromotionMutation.isPending}
                       >
                         {createPromotionMutation.isPending ? "Creating..." : "Create Promotion"}

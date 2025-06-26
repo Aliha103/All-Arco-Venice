@@ -162,6 +162,19 @@ export const promotions = pgTable("promotions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Hero images
+export const heroImages = pgTable("hero_images", {
+  id: serial("id").primaryKey(),
+  url: varchar("url", { length: 500 }).notNull(),
+  alt: varchar("alt", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  position: varchar("position", { length: 50 }).notNull(), // 'main', 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
@@ -241,6 +254,12 @@ export const insertPromotionSchema = createInsertSchema(promotions).omit({
   discountPercentage: z.number().min(0).max(100),
 });
 
+export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const upsertUserSchema = createInsertSchema(users);
 
 // Local signup schema
@@ -293,3 +312,5 @@ export type InsertAboutContent = z.infer<typeof insertAboutContentSchema>;
 export type AboutContent = typeof aboutContent.$inferSelect;
 export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type Promotion = typeof promotions.$inferSelect;
+export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
+export type HeroImage = typeof heroImages.$inferSelect;
