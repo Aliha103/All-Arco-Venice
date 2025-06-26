@@ -17,7 +17,11 @@ import {
   MessageSquare, 
   Settings, 
   LogOut,
-  BarChart3
+  BarChart3,
+  LogIn,
+  UserPlus,
+  ChevronRight,
+  Shield
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -119,7 +123,7 @@ export default function Header() {
             {user ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Button variant="ghost" className="relative h-12 w-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-blue-600" />
                     </div>
@@ -189,14 +193,60 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
-                  <a href="/api/login">Sign In</a>
-                </Button>
-                <Button asChild>
-                  <a href="/api/login">Sign Up</a>
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-12 w-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <UserIcon className="w-5 h-5 text-gray-600" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80 p-0" align="end">
+                  <div className="p-6 space-y-4">
+                    {/* Sign In Option */}
+                    <a href="/api/login" className="block">
+                      <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
+                          <LogIn className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+                            Sign In
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Access your account securely
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                    </a>
+
+                    {/* Create Account Option */}
+                    <a href="/signup" className="block">
+                      <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+                          <UserPlus className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-green-600 transition-colors">
+                            Create Account
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Join our community today
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                      </div>
+                    </a>
+
+                    {/* Security Notice */}
+                    <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Shield className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <p className="text-sm text-gray-600">
+                        We use secure authentication to protect your personal information
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
