@@ -203,31 +203,31 @@ export default function Header() {
                   <div className="p-2 space-y-1">
                     {/* Sign In Option */}
                     <a href="/api/login" className="block">
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <LogIn className="w-5 h-5 text-blue-600" />
+                      <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <LogIn className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
                             Sign In
                           </h3>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                        <ChevronRight className="w-3 h-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       </div>
                     </a>
 
                     {/* Create Account Option */}
                     <a href="/signup" className="block">
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                          <UserPlus className="w-5 h-5 text-green-600" />
+                      <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <UserPlus className="w-4 h-4 text-green-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">
+                          <h3 className="text-sm font-medium text-gray-900 group-hover:text-green-600 transition-colors">
                             Create Account
                           </h3>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
+                        <ChevronRight className="w-3 h-3 text-gray-400 group-hover:text-green-600 transition-colors" />
                       </div>
                     </a>
 
