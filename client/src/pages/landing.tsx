@@ -1263,10 +1263,10 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Desktop Layout - 100% Width, 50% Calendar, 25% Guests/Pets, 25% Price */}
-            <div className="hidden lg:grid lg:grid-cols-12 gap-8">
-              {/* Column 1: Advanced Calendar Section (50% = 6 cols) */}
-              <div className="col-span-6 space-y-6">
+            {/* Desktop Layout - Better responsive handling */}
+            <div className="hidden lg:grid gap-8 lg:grid-cols-2 xl:grid-cols-12">
+              {/* Column 1: Advanced Calendar Section */}
+              <div className="lg:col-span-1 xl:col-span-6 space-y-6">
                 <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold text-gray-900 flex items-center">
                         <Calendar className="w-5 h-5 mr-2 text-blue-600" />
@@ -1388,8 +1388,8 @@ export default function Landing() {
                     )}
                   </div>
 
-              {/* Column 2: Guests & Pets Section (25% = 3 cols) */}
-              <div className="col-span-3 space-y-6">
+              {/* Column 2: Guests & Pets Section */}
+              <div className="lg:col-span-1 xl:col-span-3 space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900">Guests & Pets</h3>
                 
                 {/* Guests */}
@@ -1457,8 +1457,8 @@ export default function Landing() {
                 </div>
               </div>
 
-              {/* Column 3: Price Breakdown (25% = 3 cols) */}
-              <div className="col-span-3 space-y-6">
+              {/* Column 3: Price Breakdown */}
+              <div className="lg:col-span-2 xl:col-span-3 space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900">Price Breakdown</h3>
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
                   <div className="text-center mb-4">
