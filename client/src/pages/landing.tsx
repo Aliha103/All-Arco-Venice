@@ -644,6 +644,14 @@ export default function Landing() {
         </Card>
       </section>
 
+      {/* —— About This Space —— */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">About This Space</h2>
+          <p className="text-xl text-gray-600">Experience authentic Venetian luxury in the heart of the floating city</p>
+        </div>
+      </section>
+
       {/* —— Property Description —— */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -700,10 +708,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">About This Space</h2>
-            <p className="text-gray-600 text-center text-lg">Experience authentic Venetian luxury in the heart of the floating city</p>
-          </div>
+          
         </div>
       </section>
 
