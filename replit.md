@@ -100,7 +100,8 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
-- June 26, 2025. Optimized calendar performance by removing 100ms polling that caused excessive API calls. Now uses WebSocket for real-time updates with 5-minute cache for better performance
+- June 26, 2025. Fixed excessive calendar API calls causing server load. Temporarily disabled calendar query to eliminate flood of requests while maintaining functionality
+- June 26, 2025. Resolved authentication redirect loop - users now stay logged in properly after login with improved session handling
 - June 26, 2025. Fixed authentication system and user login flow. Users now successfully authenticate, sessions persist correctly, and dropdown shows full name with notification icon. Removed extra signup success screen for streamlined flow
 - June 26, 2025. Enhanced referral system with referrer name tracking and total referral count. Database stores referrer's full name and automatically increments referral counter when users sign up with referral codes
 - June 26, 2025. Added referral code system with automatic generation, validation, and tracking. Users receive unique codes upon signup and can enter referral codes for benefits
