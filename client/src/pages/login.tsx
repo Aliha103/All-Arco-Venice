@@ -40,8 +40,8 @@ export default function Login() {
         description: "You have been successfully logged in.",
       });
       
-      // Force a page reload to ensure proper authentication state
-      window.location.reload();
+      // Redirect to your landing page
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({

@@ -21,11 +21,12 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
+      {/* Always show Landing page at root */}
+      <Route path="/" component={Landing} />
+      
+      {/* Protected routes only accessible when authenticated */}
+      {isAuthenticated && (
         <>
-          <Route path="/" component={Home} />
           <Route path="/dashboard" component={AdminDashboard} />
           <Route path="/checkout" component={Checkout} />
         </>
