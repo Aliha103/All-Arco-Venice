@@ -199,7 +199,7 @@ export default function Landing() {
         
         <Card className="smooth-hover touch-interaction slide-up">
           <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               
               {/* Select Dates Column */}
               <div className="md:col-span-1">
@@ -262,7 +262,7 @@ export default function Landing() {
                       <PawPrint className="w-5 h-5 mr-3 text-gray-400"/>
                       <div>
                         <div className="font-medium text-gray-900">Pets</div>
-                        <div className="text-sm text-gray-500">€20 fee</div>
+                        
                       </div>
                     </div>
                     <div className="w-12 h-6 bg-gray-200 rounded-full p-1 cursor-pointer transition-colors">
@@ -273,7 +273,7 @@ export default function Landing() {
               </div>
 
               {/* Price Breakdown Column */}
-              <div className="md:col-span-1">
+              <div className="md:col-span-2 lg:col-span-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
                 
                 <div className="bg-gray-50 rounded-lg p-6 space-y-4">

@@ -100,7 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
-- June 26, 2025. Updated booking section to use consistent three-column layout for both desktop and tablet devices with md:grid-cols-3 breakpoint
+- June 26, 2025. Refined booking section layout for optimal tablet display: 2-column grid (calendar + guests) with full-width price section below, maintaining 3-column desktop layout
 - June 26, 2025. Implemented comprehensive micro-interactions for smooth mobile responsiveness with touch feedback, loading states, and enhanced visual feedback
 - June 26, 2025. Enhanced responsive behavior for medium screens (under 1024x1121) with smoother two-row layout
 - June 26, 2025. Optimized price section layout with proper width allocation and visual prominence
