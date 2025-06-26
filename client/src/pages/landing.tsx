@@ -1938,50 +1938,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Preview */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Why Choose All'arco?</h2>
-          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto px-4">
-            Discover what makes our apartment the perfect choice for your stay
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          <Card>
-            <CardContent className="p-4 sm:p-6 text-center">
-              <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Prime Location</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Located in the heart of the city, walking distance to major attractions and restaurants.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 sm:p-6 text-center">
-              <Star className="w-10 h-10 sm:w-12 sm:h-12 text-warning mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">5-Star Experience</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Exceptional hospitality with 24/7 support and personalized recommendations.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-success bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Utensils className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">Luxury Comfort</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Spacious 2-bedroom apartment with modern amenities and stunning city views.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
       {/* Amenities Preview */}
       <section className="bg-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
