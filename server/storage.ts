@@ -6,6 +6,7 @@ import {
   reviews,
   messages,
   aboutContent,
+  promotions,
   type User,
   type UpsertUser,
   type InsertBooking,
@@ -20,6 +21,8 @@ import {
   type Message,
   type InsertAboutContent,
   type AboutContent,
+  type InsertPromotion,
+  type Promotion,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
@@ -93,6 +96,13 @@ export interface IStorage {
     referrerName: string | null;
     referralCode: string;
   }>;
+
+  // Promotions operations
+  getPromotions(): Promise<Promotion[]>;
+  getActivePromotions(): Promise<Promotion[]>;
+  addPromotion(promotion: InsertPromotion): Promise<Promotion>;
+  updatePromotionStatus(id: number, isActive: boolean): Promise<void>;
+  deletePromotion(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -540,6 +550,41 @@ export class DatabaseStorage implements IStorage {
       referrerName: user.referrerName,
       referralCode: user.referralCode!,
     };
+  }
+
+  // Promotions operations
+  async getPromotions(): Promise<Promotion[]> {
+    return await db.select().from(promotions).orderBy(desc(promotions.createdAt));
+  }
+
+  async getActivePromotions(): Promise<Promotion[]> {
+    const now = new Date();
+    return await db.select().from(promotions).where(
+      and(
+        eq(promotions.isActive, true),
+        lte(promotions.startDate, now),
+        gte(promotions.endDate, now)
+      )
+    ).orderBy(desc(promotions.createdAt));
+  }
+
+  async addPromotion(promotionData: InsertPromotion): Promise<Promotion> {
+    const [promotion] = await db
+      .insert(promotions)
+      .values(promotionData)
+      .returning();
+    return promotion;
+  }
+
+  async updatePromotionStatus(id: number, isActive: boolean): Promise<void> {
+    await db
+      .update(promotions)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(promotions.id, id));
+  }
+
+  async deletePromotion(id: number): Promise<void> {
+    await db.delete(promotions).where(eq(promotions.id, id));
   }
 }
 

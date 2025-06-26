@@ -152,7 +152,7 @@ export const aboutContent = pgTable("about_content", {
 export const promotions = pgTable("promotions", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).notNull(),
+  discountPercentage: integer("discount_percentage").notNull(),
   tag: varchar("tag", { length: 100 }).notNull(),
   isActive: boolean("is_active").default(true),
   startDate: timestamp("start_date").notNull(),
@@ -237,6 +237,8 @@ export const insertPromotionSchema = createInsertSchema(promotions).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  discountPercentage: z.number().min(0).max(100),
 });
 
 export const upsertUserSchema = createInsertSchema(users);
@@ -289,3 +291,5 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertAboutContent = z.infer<typeof insertAboutContentSchema>;
 export type AboutContent = typeof aboutContent.$inferSelect;
+export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
+export type Promotion = typeof promotions.$inferSelect;
