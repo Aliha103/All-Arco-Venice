@@ -202,7 +202,7 @@ export default function Header() {
                 <DropdownMenuContent className="w-64 p-0" align="end">
                   <div className="p-1 space-y-0.5">
                     {/* Sign In Option */}
-                    <a href="/api/login" className="block">
+                    <a href="/login" className="block">
                       <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
                         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                           <LogIn className="w-4 h-4 text-blue-600" />
