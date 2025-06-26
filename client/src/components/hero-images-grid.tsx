@@ -36,6 +36,11 @@ export default function HeroImagesGrid() {
   const bottomRightImage = getImageByPosition("bottom-right");
   const bottomLeftImage = getImageByPosition("bottom-left");
 
+  // Calculate additional images count for booking.com style display
+  const displayedPositions = ["main", "top-right", "top-left", "bottom-right", "bottom-left"];
+  const displayedImages = activeImages.filter(img => displayedPositions.includes(img.position));
+  const additionalImagesCount = Math.max(0, activeImages.length - displayedImages.length);
+
   // Fallback placeholder content
   const placeholders = {
     main: { title: "Main bedroom", bgColor: "bg-gray-200", textColor: "text-gray-700" },
@@ -45,7 +50,7 @@ export default function HeroImagesGrid() {
     "bottom-left": { title: "Balcony", bgColor: "bg-yellow-100", textColor: "text-yellow-600" }
   };
 
-  const renderImageOrPlaceholder = (image: HeroImage | undefined, position: string, className: string = "") => {
+  const renderImageOrPlaceholder = (image: HeroImage | undefined, position: string, className: string = "", showCounter: boolean = false) => {
     const placeholder = placeholders[position as keyof typeof placeholders];
     
     if (image) {
@@ -70,13 +75,27 @@ export default function HeroImagesGrid() {
           <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-medium">
             {image.title}
           </div>
+          {showCounter && additionalImagesCount > 0 && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <div className="bg-white text-black px-4 py-2 rounded-lg font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                +{additionalImagesCount}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
     return (
-      <div className={`w-full h-full flex items-center justify-center ${placeholder.bgColor} ${placeholder.textColor} font-medium text-sm ${className}`}>
+      <div className={`relative w-full h-full flex items-center justify-center ${placeholder.bgColor} ${placeholder.textColor} font-medium text-sm ${className}`}>
         {placeholder.title}
+        {showCounter && additionalImagesCount > 0 && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="bg-white text-black px-4 py-2 rounded-lg font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+              +{additionalImagesCount}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -110,7 +129,7 @@ export default function HeroImagesGrid() {
         
         {/* Bottom row */}
         {renderImageOrPlaceholder(bottomLeftImage, "bottom-left", "")}
-        {renderImageOrPlaceholder(bottomRightImage, "bottom-right", "rounded-br-xl")}
+        {renderImageOrPlaceholder(bottomRightImage, "bottom-right", "rounded-br-xl", true)}
       </div>
     </div>
   );
