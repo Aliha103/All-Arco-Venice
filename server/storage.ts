@@ -32,6 +32,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User>;
   incrementReferralCount(userId: string): Promise<void>;
+  updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
   
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -181,6 +182,18 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
+  }
+
+  async updateUserProfile(userId: string, data: Partial<User>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
   }
 
   // Booking operations
