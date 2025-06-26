@@ -1938,35 +1938,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Amenities Preview */}
-      <section className="bg-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Premium Amenities</h2>
-            <p className="text-sm sm:text-base text-gray-600">Everything you need for a comfortable stay</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <Wifi className="text-secondary text-lg sm:text-xl flex-shrink-0" />
-              <span className="text-sm sm:text-base text-gray-700 font-medium">Free Wi-Fi</span>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <Car className="text-secondary text-lg sm:text-xl flex-shrink-0" />
-              <span className="text-sm sm:text-base text-gray-700 font-medium">Free Parking</span>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <Wind className="text-secondary text-lg sm:text-xl flex-shrink-0" />
-              <span className="text-sm sm:text-base text-gray-700 font-medium">Air Conditioning</span>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <Utensils className="text-secondary text-lg sm:text-xl flex-shrink-0" />
-              <span className="text-sm sm:text-base text-gray-700 font-medium">Full Kitchen</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Call to Action */}
       <section className="bg-primary py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
