@@ -71,6 +71,17 @@ interface PricingSettings {
   discountMonthly: number;
 }
 
+interface Promotion {
+  id: number;
+  name: string;
+  discountPercentage: number;
+  tag: string;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
 interface Message {
   id: number;
   name: string;
@@ -92,6 +103,17 @@ export default function AdminDashboard() {
     discountWeekly: 0,
     discountMonthly: 0,
   });
+
+  const [promotionForm, setPromotionForm] = useState({
+    name: "",
+    discountPercentage: 0,
+    tag: "",
+    startDate: "",
+    endDate: "",
+    description: "",
+  });
+
+  const [showPromotionForm, setShowPromotionForm] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -136,8 +158,15 @@ export default function AdminDashboard() {
     retry: false,
   });
 
+  // Promotions query
+  const { data: promotions, isLoading: promotionsLoading } = useQuery<Promotion[]>({
+    queryKey: ["/api/promotions"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
   // Update pricing form when data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (pricingSettings) {
       setPricingForm({
         basePrice: pricingSettings.basePrice,
@@ -227,6 +256,89 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to update pricing settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create promotion mutation
+  const createPromotionMutation = useMutation({
+    mutationFn: async (promotionData: Omit<Promotion, 'id'>) => {
+      await apiRequest("POST", "/api/promotions", promotionData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/promotions"] });
+      setPromotionForm({
+        name: "",
+        discountPercentage: 0,
+        tag: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+      });
+      setShowPromotionForm(false);
+      toast({
+        title: "Success",
+        description: "Promotion created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create promotion",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Toggle promotion status mutation
+  const togglePromotionMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      await apiRequest("PUT", `/api/promotions/${id}/status`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/promotions"] });
+      toast({
+        title: "Success",
+        description: "Promotion status updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update promotion status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete promotion mutation
+  const deletePromotionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/promotions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/promotions"] });
+      toast({
+        title: "Success",
+        description: "Promotion deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete promotion",
         variant: "destructive",
       });
     },
@@ -591,21 +703,22 @@ export default function AdminDashboard() {
 
           {/* Pricing Tab */}
           <TabsContent value="pricing" className="space-y-6">
+            {/* Basic Pricing Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Pricing Settings</CardTitle>
-                <CardDescription>Manage property pricing and fees</CardDescription>
+                <CardTitle>Basic Pricing Settings</CardTitle>
+                <CardDescription>Set base prices and fees for your property</CardDescription>
               </CardHeader>
               <CardContent>
                 {pricingLoading ? (
                   <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(3)].map((_, i) => (
                       <div key={i} className="animate-pulse h-16 bg-gray-200 rounded"></div>
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <Label htmlFor="basePrice">Base Price per Night (€)</Label>
                         <Input
@@ -613,7 +726,7 @@ export default function AdminDashboard() {
                           type="number"
                           value={pricingForm.basePrice}
                           onChange={(e) => setPricingForm({ ...pricingForm, basePrice: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.basePrice?.toString() || "0"}
+                          placeholder={pricingSettings?.basePrice?.toString() || "150"}
                         />
                       </div>
                       
@@ -624,7 +737,7 @@ export default function AdminDashboard() {
                           type="number"
                           value={pricingForm.cleaningFee}
                           onChange={(e) => setPricingForm({ ...pricingForm, cleaningFee: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.cleaningFee?.toString() || "0"}
+                          placeholder={pricingSettings?.cleaningFee?.toString() || "25"}
                         />
                       </div>
                       
@@ -635,31 +748,7 @@ export default function AdminDashboard() {
                           type="number"
                           value={pricingForm.petFee}
                           onChange={(e) => setPricingForm({ ...pricingForm, petFee: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.petFee?.toString() || "0"}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="discountWeekly">Weekly Discount (%)</Label>
-                        <Input
-                          id="discountWeekly"
-                          type="number"
-                          value={pricingForm.discountWeekly}
-                          onChange={(e) => setPricingForm({ ...pricingForm, discountWeekly: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.discountWeekly?.toString() || "0"}
-                          max="100"
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <Label htmlFor="discountMonthly">Monthly Discount (%)</Label>
-                        <Input
-                          id="discountMonthly"
-                          type="number"
-                          value={pricingForm.discountMonthly}
-                          onChange={(e) => setPricingForm({ ...pricingForm, discountMonthly: parseFloat(e.target.value) || 0 })}
-                          placeholder={pricingSettings?.discountMonthly?.toString() || "0"}
-                          max="100"
+                          placeholder={pricingSettings?.petFee?.toString() || "35"}
                         />
                       </div>
                     </div>
@@ -670,38 +759,190 @@ export default function AdminDashboard() {
                         disabled={updatePricingMutation.isPending}
                         className="w-full md:w-auto"
                       >
-                        {updatePricingMutation.isPending ? "Updating..." : "Update Pricing"}
+                        {updatePricingMutation.isPending ? "Updating..." : "Update Base Pricing"}
                       </Button>
                     </div>
                     
                     {pricingSettings && (
                       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-3">Current Settings</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                        <h4 className="font-medium mb-3">Current Pricing</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
                             <p className="text-gray-600">Base Price</p>
-                            <p className="font-medium">€{pricingSettings.basePrice}</p>
+                            <p className="text-2xl font-bold text-green-600">€{pricingSettings.basePrice}</p>
                           </div>
                           <div>
                             <p className="text-gray-600">Cleaning Fee</p>
-                            <p className="font-medium">€{pricingSettings.cleaningFee}</p>
+                            <p className="text-2xl font-bold">€{pricingSettings.cleaningFee}</p>
                           </div>
                           <div>
                             <p className="text-gray-600">Pet Fee</p>
-                            <p className="font-medium">€{pricingSettings.petFee}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Weekly Discount</p>
-                            <p className="font-medium">{pricingSettings.discountWeekly}%</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Monthly Discount</p>
-                            <p className="font-medium">{pricingSettings.discountMonthly}%</p>
+                            <p className="text-2xl font-bold">€{pricingSettings.petFee}</p>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Promotions Management */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Promotions & Discounts</CardTitle>
+                    <CardDescription>Create and manage promotional offers with custom discount tags</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowPromotionForm(!showPromotionForm)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Promotion
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Promotion Form */}
+                {showPromotionForm && (
+                  <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                    <h4 className="font-medium mb-4">Create New Promotion</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="promotionName">Promotion Name</Label>
+                        <Input
+                          id="promotionName"
+                          value={promotionForm.name}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, name: e.target.value })}
+                          placeholder="Early Bird Special"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="discountTag">Discount Tag (Frontend Display)</Label>
+                        <Input
+                          id="discountTag"
+                          value={promotionForm.tag}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, tag: e.target.value })}
+                          placeholder="20% OFF"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="discountPercentage">Discount Percentage (%)</Label>
+                        <Input
+                          id="discountPercentage"
+                          type="number"
+                          value={promotionForm.discountPercentage}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, discountPercentage: parseFloat(e.target.value) || 0 })}
+                          placeholder="20"
+                          max="100"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="promotionDescription">Description</Label>
+                        <Input
+                          id="promotionDescription"
+                          value={promotionForm.description}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, description: e.target.value })}
+                          placeholder="Book early and save!"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={promotionForm.startDate}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, startDate: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={promotionForm.endDate}
+                          onChange={(e) => setPromotionForm({ ...promotionForm, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3 mt-4">
+                      <Button 
+                        onClick={() => createPromotionMutation.mutate({
+                          ...promotionForm,
+                          isActive: true
+                        })}
+                        disabled={createPromotionMutation.isPending}
+                      >
+                        {createPromotionMutation.isPending ? "Creating..." : "Create Promotion"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowPromotionForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Active Promotions List */}
+                {promotionsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="animate-pulse h-24 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                ) : (promotions && promotions.length > 0) ? (
+                  <div className="space-y-4">
+                    {promotions!.map((promotion: Promotion) => (
+                      <div key={promotion.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="font-semibold text-lg">{promotion.name}</h4>
+                              <Badge 
+                                className={`${promotion.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                              >
+                                {promotion.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                              <Badge className="bg-blue-100 text-blue-800 font-medium">
+                                {promotion.tag}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 mb-2">{promotion.description}</p>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <span>Discount: {promotion.discountPercentage}%</span>
+                              <span>From: {formatDate(promotion.startDate)}</span>
+                              <span>To: {formatDate(promotion.endDate)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant={promotion.isActive ? "destructive" : "default"}
+                              onClick={() => togglePromotionMutation.mutate({ 
+                                id: promotion.id, 
+                                isActive: !promotion.isActive 
+                              })}
+                            >
+                              {promotion.isActive ? "Deactivate" : "Activate"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deletePromotionMutation.mutate(promotion.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No promotions created yet</p>
                 )}
               </CardContent>
             </Card>

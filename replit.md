@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. COMPLETED: Updated admin dashboard by replacing Property and Amenities tabs with Reviews and Pricing tabs. Reviews tab displays guest ratings with detailed breakdown (cleanliness, location, check-in, value, communication). Pricing tab allows updating base price, cleaning fee, pet fee, and discount percentages with real-time form handling
 - June 26, 2025. COMPLETED: Created comprehensive admin dashboard with 5 tabs (Overview, Bookings, Messages, Property, Amenities) featuring analytics cards, booking status management, message handling, image gallery management, and amenity display. Added all necessary API endpoints with admin authentication and role-based access control
 - June 26, 2025. COMPLETED: Created admin account (admin@allarco.com / admin123) for Hassan Cheema with proper role-based authentication. Admin users are directed to the same home page as regular users upon login
 - June 26, 2025. COMPLETED: Advanced date input system with real-time age calculation, smart age-based notifications (parental consent, restrictions, discounts), interactive visual effects with focus scaling and color transitions, comprehensive validation, and contextual guidance for different age groups
