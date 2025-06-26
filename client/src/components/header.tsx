@@ -200,7 +200,7 @@ export default function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64 p-0" align="end">
-                  <div className="p-2 space-y-1">
+                  <div className="p-1 space-y-0.5">
                     {/* Sign In Option */}
                     <a href="/api/login" className="block">
                       <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
