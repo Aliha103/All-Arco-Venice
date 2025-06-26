@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Star,
   MapPin,
@@ -49,6 +49,18 @@ export default function Landing() {
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState(0)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   /* ------------------------------------------------------------------ */
   //  Mock bookings → arrival dates only
@@ -113,8 +125,41 @@ export default function Landing() {
             <div className="flex items-center space-x-6">
               <span className="text-sm text-gray-600">EN</span>
               <span className="text-sm text-gray-600">IT</span>
-              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors">
-                <User className="w-4 h-4 text-gray-600" />
+              <div className="relative" ref={dropdownRef}>
+                <button 
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-all duration-200 hover:scale-105"
+                >
+                  <User className="w-4 h-4 text-gray-600" />
+                </button>
+                
+                {/* Dropdown Menu */}
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-fadeIn">
+                    <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                      Welcome to All'Arco
+                    </div>
+                    <a 
+                      href="/api/login" 
+                      className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <LogIn className="w-4 h-4 text-blue-600" />
+                      <span>Log in</span>
+                    </a>
+                    <a 
+                      href="/api/login" 
+                      className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <UserPlus className="w-4 h-4 text-green-600" />
+                      <span>Sign up</span>
+                    </a>
+                    <div className="border-t border-gray-100 mt-2 pt-2">
+                      <div className="px-4 py-2 text-xs text-gray-500">
+                        Need help? Contact support
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
