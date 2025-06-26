@@ -210,7 +210,6 @@ export const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
     return (
       <>
         <DayPicker
-          ref={ref}
           mode="range"
           selected={range}
           showOutsideDays
@@ -225,7 +224,6 @@ export const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
             checkoutOnly: "opacity-80 !bg-accent/30 !text-foreground",
           }}
           components={navIcons}
-          renderDay={renderDay as any}
           className={cn("p-3", className)}
           classNames={{
             /* …tailwind class map unchanged… */

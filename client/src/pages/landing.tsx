@@ -5,9 +5,9 @@ import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Calendar as AdvancedCalendar } from "@/components/advanced-calendar";
+import { Calendar as AdvancedCalendar, validateStayRange } from "@/components/advanced-calendar";
 import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 
 export default function Landing() {
   const [checkIn, setCheckIn] = useState("");
@@ -239,6 +239,28 @@ export default function Landing() {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  // Handler for the advanced calendar valid range selection
+  const handleValidRangeSelect = (range: DateRange) => {
+    if (range.from) {
+      setCheckIn(format(range.from, 'yyyy-MM-dd'));
+    }
+    if (range.to) {
+      setCheckOut(format(range.to, 'yyyy-MM-dd'));
+    }
+  };
+
+  // Enhanced validation using the robust validation logic
+  const validateBookingRange = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return { valid: false, reason: "Please select both check-in and check-out dates." };
+    
+    const range: DateRange = {
+      from: new Date(startDate),
+      to: new Date(endDate)
+    };
+    
+    return validateStayRange(range, bookedCheckInDates);
   };
 
   const parseDate = (dateString: string) => {
