@@ -4,8 +4,9 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
-    staleTime: 0, // Always check fresh authentication status
+    staleTime: 0,
     refetchOnWindowFocus: true,
+    refetchInterval: 2000, // Check authentication every 2 seconds to ensure fresh state
   });
 
   return {

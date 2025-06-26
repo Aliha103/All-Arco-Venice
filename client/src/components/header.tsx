@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { 
   Menu, 
-  User, 
+  User as UserIcon, 
   Bell, 
   Calendar, 
   MessageSquare, 
@@ -26,9 +27,11 @@ export default function Header() {
   const { user, isAuthenticated } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const typedUser = user as User | undefined;
+
   const { data: unreadCount } = useQuery({
     queryKey: ["/api/messages/unread-count"],
-    enabled: !!user && user.role === 'admin',
+    enabled: !!typedUser && typedUser.role === 'admin',
     refetchInterval: 1000, // Check every second for notifications
   });
 

@@ -32,15 +32,12 @@ export default function Login() {
       return response.json();
     },
     onSuccess: async () => {
-      // Clear authentication cache and refetch
-      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
-      
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
       
-      // Redirect to your landing page
+      // Complete page reload to ensure authentication state is properly updated
       window.location.href = "/";
     },
     onError: (error: Error) => {
