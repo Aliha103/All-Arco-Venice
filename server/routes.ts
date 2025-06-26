@@ -438,6 +438,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Messages routes
   app.get('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
       const messages = await storage.getMessages();
       res.json(messages);
     } catch (error) {

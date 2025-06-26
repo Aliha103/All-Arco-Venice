@@ -145,12 +145,14 @@ export default function Header() {
                   </div>
                   <DropdownMenuSeparator />
                   
-                  <DropdownMenuItem asChild>
-                    <Link href="/bookings" className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      My Bookings
-                    </Link>
-                  </DropdownMenuItem>
+                  {(user as any)?.role !== 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/bookings" className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        My Bookings
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   
                   <DropdownMenuItem asChild>
                     <Link href="/messages" className="flex items-center">

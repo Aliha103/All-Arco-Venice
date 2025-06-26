@@ -29,6 +29,7 @@ function Router() {
       {isAuthenticated && (
         <>
           <Route path="/dashboard" component={AdminDashboard} />
+          <Route path="/admin" component={AdminDashboard} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/settings" component={Settings} />
         </>
