@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight, Info, Building, Building2, Sparkles, Tv, Thermometer, Key, MessageCircle, X } from "lucide-react";
+import { Star, MapPin, Wifi, Car, Wind, Utensils, Bed, Calendar, Users, PawPrint, Minus, Plus, Shield, CheckCircle, AlertCircle, Lock, Clock, ChevronLeft, ChevronRight, Info, Building, Building2, Sparkles, Tv, Thermometer, Key, MessageCircle, X, ChevronDown, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,7 @@ export default function Landing() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatName, setChatName] = useState("");
   const [chatEmail, setChatEmail] = useState("");
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const basePrice = 110.50;
   const cleaningFee = 25.00;
@@ -356,10 +357,7 @@ export default function Landing() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-out"></div>
                   </div>
                   
-                  {/* Elegant status indicator */}
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                  </div>
+                  
                 </div>
                 
                 {/* Refined Brand Typography */}
@@ -389,11 +387,66 @@ export default function Landing() {
                 <span className="text-gray-400">|</span>
                 <button className="hover:text-gray-900 transition-colors">IT</button>
               </div>
-              <button className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="flex items-center space-x-1 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors group"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* Dropdown Menu */}
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Account</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        window.location.href = '/api/login';
+                      }}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <LogIn className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Sign In</div>
+                        <div className="text-xs text-gray-500">Access your account</div>
+                      </div>
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        window.location.href = '/api/login';
+                      }}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <UserPlus className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Sign Up</div>
+                        <div className="text-xs text-gray-500">Create new account</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+                
+                {/* Backdrop to close dropdown */}
+                {isUserDropdownOpen && (
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
