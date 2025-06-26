@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Added detailed "Recent Reviews" section with four guest testimonials, ratings, dates, and responsive grid layout matching provided screenshot
 - June 26, 2025. Implemented horizontal trust elements layout for all screen sizes using flexbox with percentage-based widths and responsive scaling
 - June 26, 2025. Added comprehensive trust and quality assurance section with verified property badges, guest review ratings, and detailed category scores matching provided screenshot
 - June 26, 2025. Repositioned "About This Space" section above property description with clean centered layout matching provided screenshot
