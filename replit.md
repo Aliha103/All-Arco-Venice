@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Added sophisticated All'Arco Venice logo with custom arch symbol, premium gradients, smooth animations, and matching SVG favicon
 - June 25, 2025. Initial setup
 
 ## User Preferences
