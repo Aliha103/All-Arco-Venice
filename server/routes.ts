@@ -81,14 +81,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referralCode: validatedData.referralCode,
       });
 
-      // Return user without password, include referral info for confirmation
-      const { password, ...userResponse } = user;
-      res.status(201).json({ 
-        message: "Account created successfully",
-        user: userResponse,
-        referralCode: user.referralCode,
-        wasReferred: !!user.referrerName,
-        referrerName: user.referrerName
+      // Create session automatically after signup (same logic as login)
+      const sessionUser = {
+        claims: { sub: user.id },
+        access_token: 'local_session',
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+      };
+
+      req.login(sessionUser, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Account created but session creation failed" });
+        }
+        
+        // Return user without password, include referral info for confirmation
+        const { password, ...userResponse } = user;
+        res.status(201).json({ 
+          message: "Account created successfully",
+          user: userResponse,
+          referralCode: user.referralCode,
+          wasReferred: !!user.referrerName,
+          referrerName: user.referrerName
+        });
       });
     } catch (error: any) {
       console.error("Signup error:", error);
