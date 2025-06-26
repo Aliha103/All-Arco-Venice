@@ -100,6 +100,8 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Created comprehensive signup and login forms with password validation, strength indicators, and secure authentication system supporting both local accounts and Replit Auth
+- June 26, 2025. Enhanced user schema with additional fields (password, dateOfBirth, country, mobileNumber) and authentication provider support for dual auth system
 - June 26, 2025. Enhanced chat widget with advanced animations, interactive messaging system, typing indicators, and professional UI design for improved user engagement
 - June 26, 2025. Implemented distinct responsive layouts for host information: mobile (vertical stack), tablet (2/3 left vertical + 1/3 right price), desktop (three equal horizontal sections)
 - June 26, 2025. Redesigned host information section with horizontal three-column layout (1/3 each) responsive across all screen sizes with proper content optimization

@@ -27,7 +27,9 @@ import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
 export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User>;
   
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -88,6 +90,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -98,6 +105,25 @@ export class DatabaseStorage implements IStorage {
           ...userData,
           updatedAt: new Date(),
         },
+      })
+      .returning();
+    return user;
+  }
+
+  async createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User> {
+    const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const [user] = await db
+      .insert(users)
+      .values({
+        id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        password: userData.password,
+        authProvider: "local",
+        role: "guest",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .returning();
     return user;
