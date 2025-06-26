@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, ArrowLeft, UserPlus, AlertCircle, CheckCircle, Gift, Copy } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, UserPlus, AlertCircle, CheckCircle } from "lucide-react";
 import { signupSchema, type SignupData } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,8 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [generatedReferralCode, setGeneratedReferralCode] = useState<string | null>(null);
-  const [referrerInfo, setReferrerInfo] = useState<{ wasReferred: boolean; referrerName?: string } | null>(null);
   const { toast } = useToast();
 
   const {
@@ -36,17 +34,16 @@ export default function Signup() {
       return response.json();
     },
     onSuccess: (data) => {
-      setGeneratedReferralCode(data.referralCode);
-      setReferrerInfo({
-        wasReferred: data.wasReferred,
-        referrerName: data.referrerName
-      });
       toast({
         title: "Account created successfully!",
         description: data.wasReferred 
           ? `Welcome! You were referred by ${data.referrerName}` 
-          : "Your referral code has been generated. Share it with friends!",
+          : "Your account is ready. Please sign in to continue.",
       });
+      // Redirect to login page after successful signup
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
     },
     onError: (error: Error) => {
       toast({
@@ -75,110 +72,6 @@ export default function Signup() {
   };
 
   const passwordStrength = getPasswordStrength(password || "");
-
-  const copyReferralCode = () => {
-    if (generatedReferralCode) {
-      navigator.clipboard.writeText(generatedReferralCode);
-      toast({
-        title: "Copied!",
-        description: "Referral code copied to clipboard",
-      });
-    }
-  };
-
-  // Success screen with referral code
-  if (generatedReferralCode) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Card className="shadow-lg border-0">
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <CardTitle className="text-xl text-gray-900">Welcome to All'Arco!</CardTitle>
-              <p className="text-gray-600 text-sm">Your account has been created successfully</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {referrerInfo?.wasReferred && (
-                <div className="bg-green-50 rounded-lg p-4 text-center mb-4">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-semibold text-green-900">Referred by {referrerInfo.referrerName}</span>
-                  </div>
-                  <p className="text-xs text-green-700">
-                    You've successfully joined through {referrerInfo.referrerName}'s referral! 
-                    Both of you may be eligible for special rewards.
-                  </p>
-                </div>
-              )}
-
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Gift className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-blue-900">Your Referral Code</span>
-                </div>
-                <div className="bg-white rounded-md p-3 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-lg font-bold text-gray-900">{generatedReferralCode}</span>
-                    <Button
-                      onClick={copyReferralCode}
-                      variant="outline"
-                      size="sm"
-                      className="ml-2"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  Share this code with friends and earn rewards when they book with All'Arco!
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">What's next?</h3>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Account created and ready to use</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Personal referral code generated</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-blue-500 rounded-full"></div>
-                    <span>Start exploring Venice accommodations</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  asChild
-                >
-                  <Link href="/login">
-                    Sign In Now
-                  </Link>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  asChild
-                >
-                  <Link href="/">
-                    Explore Properties
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
