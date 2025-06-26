@@ -20,8 +20,8 @@ import { Button } from "@/components/ui/button"
 import {
   Calendar as AdvancedCalendar,
   validateStayRange,
+  type DateRange,
 } from "@/components/advanced-calendar"
-import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 
 /**
