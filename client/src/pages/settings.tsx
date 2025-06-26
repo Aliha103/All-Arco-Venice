@@ -25,14 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Gift, Users, Eye, EyeOff, ArrowLeft, CreditCard, Shield, Lock, Calendar } from "lucide-react";
+import { User, Gift, Users, ArrowLeft, CreditCard, Shield, Calendar } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Settings() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showReferralCode, setShowReferralCode] = useState(false);
+
   const [dateInputFocused, setDateInputFocused] = useState(false);
   const [ageDisplay, setAgeDisplay] = useState("");
 
