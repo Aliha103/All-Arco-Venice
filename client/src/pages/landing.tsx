@@ -171,7 +171,7 @@ export default function Landing() {
             </div>
 
             {/* Property Details Row */}
-            <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
               <div className="flex items-center space-x-2">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-900 font-medium">5 guests</span>
