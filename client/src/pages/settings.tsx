@@ -33,8 +33,6 @@ export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showReferralCode, setShowReferralCode] = useState(false);
-  const [showPersonalInfo, setShowPersonalInfo] = useState(false);
-  const [dobPrivacy, setDobPrivacy] = useState(true); // Only user can see DOB
   const [dateInputFocused, setDateInputFocused] = useState(false);
   const [ageDisplay, setAgeDisplay] = useState("");
 
@@ -228,51 +226,25 @@ export default function Settings() {
 
                 {/* Current Info Display with Privacy Controls */}
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
-                        <User className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>DOB: {user.dateOfBirth || "Not set"}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <span>Country: {user.country || "Not set"}</span>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowPersonalInfo(!showPersonalInfo)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {showPersonalInfo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
                   </div>
-                  
-                  {showPersonalInfo && (
-                    <div className="mt-3 pt-3 border-t border-blue-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-blue-500" />
-                          <span className="text-gray-600">DOB:</span>
-                          <span className="font-medium text-gray-800">
-                            {dobPrivacy ? "••••••••••" : (user.dateOfBirth || "Not set")}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDobPrivacy(!dobPrivacy)}
-                            className="p-1 h-auto"
-                          >
-                            <Lock className="w-3 h-3 text-gray-500" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-600">Country:</span>
-                          <span className="font-medium text-gray-800">{user.country || "Not set"}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
 
                 <Form {...form}>
@@ -318,58 +290,9 @@ export default function Settings() {
                               </div>
                             </FormControl>
                             
-                            {/* Enhanced Helper Text */}
-                            <div className="flex items-center justify-between mt-2">
-                              <p className="text-xs text-gray-500 flex items-center space-x-1">
-                                <Shield className="w-3 h-3" />
-                                <span>Private - Only visible to you</span>
-                              </p>
-                              {dateInputFocused && (
-                                <p className="text-xs text-blue-600 animate-pulse">
-                                  Age calculated automatically
-                                </p>
-                              )}
-                            </div>
                             
-                            {/* Age Validation Messages */}
-                            {field.value && (
-                              <div className="mt-2">
-                                {(() => {
-                                  const age = parseInt(calculateAge(field.value).split(' ')[0]);
-                                  if (isNaN(age)) return null;
-                                  
-                                  if (age < 13) {
-                                    return (
-                                      <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-2 rounded-lg border border-orange-200">
-                                        <Calendar className="w-4 h-4" />
-                                        <span className="text-xs font-medium">Parental consent may be required for users under 13</span>
-                                      </div>
-                                    );
-                                  } else if (age >= 13 && age < 18) {
-                                    return (
-                                      <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 p-2 rounded-lg border border-blue-200">
-                                        <Calendar className="w-4 h-4" />
-                                        <span className="text-xs font-medium">Young adult account - Some restrictions may apply</span>
-                                      </div>
-                                    );
-                                  } else if (age >= 18 && age < 65) {
-                                    return (
-                                      <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">
-                                        <Calendar className="w-4 h-4" />
-                                        <span className="text-xs font-medium">Full account access available</span>
-                                      </div>
-                                    );
-                                  } else if (age >= 65) {
-                                    return (
-                                      <div className="flex items-center space-x-2 text-purple-600 bg-purple-50 p-2 rounded-lg border border-purple-200">
-                                        <Calendar className="w-4 h-4" />
-                                        <span className="text-xs font-medium">Senior discounts may be available</span>
-                                      </div>
-                                    );
-                                  }
-                                })()}
-                              </div>
-                            )}
+                            
+                            
                             
                             <FormMessage />
                           </FormItem>
@@ -699,21 +622,13 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-                  <div className="flex items-center space-x-2 mb-2">
+                  <div className="mb-2">
                     <Input
                       value={user.referralCode || ""}
                       readOnly
-                      type={showReferralCode ? "text" : "password"}
+                      type="text"
                       className="font-mono text-center border-0 bg-white/70 text-gray-900 font-semibold"
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowReferralCode(!showReferralCode)}
-                      className="shrink-0"
-                    >
-                      {showReferralCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
                   </div>
                   <Button
                     variant="outline"
