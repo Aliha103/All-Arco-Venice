@@ -27,10 +27,7 @@ export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
-  // Debug logging for authentication state
-  console.log('Header - user data:', user);
-  console.log('Header - isAuthenticated:', isAuthenticated);
-  console.log('Header - user exists:', !!user);
+
 
   const { data: unreadCount } = useQuery({
     queryKey: ["/api/messages/unread-count"],
@@ -57,7 +54,7 @@ export default function Header() {
           {/* Navigation & User Menu */}
           <div className="flex items-center space-x-3">
             {/* Notification Icon for all authenticated users */}
-            {user && (
+            {isAuthenticated && (
               <Button variant="ghost" size="sm" className="relative p-2 rounded-full hover:bg-gray-100">
                 <Bell className="h-5 w-5 text-gray-600" />
                 {unreadCount && (
@@ -69,7 +66,7 @@ export default function Header() {
             )}
 
             {/* User Dropdown */}
-            {user ? (
+            {isAuthenticated ? (
               <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 border border-gray-300 rounded-full py-2 px-4 hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95">

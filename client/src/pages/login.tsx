@@ -32,14 +32,11 @@ export default function Login() {
       return response.json();
     },
     onSuccess: async () => {
-      console.log('Login mutation onSuccess called');
-      
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       });
       
-      console.log('About to redirect to /');
       // Complete page reload to ensure authentication state is properly updated
       window.location.href = "/";
     },

@@ -15,12 +15,7 @@ export function useAuth() {
   // More robust authentication detection
   const isAuthenticated = status === 'success' && !!user;
 
-  // Debug logging
-  console.log('useAuth hook - status:', status);
-  console.log('useAuth hook - user:', user);
-  console.log('useAuth hook - isSuccess:', isSuccess);
-  console.log('useAuth hook - error:', error);
-  console.log('useAuth hook - isAuthenticated:', isAuthenticated);
+
 
   return {
     user,

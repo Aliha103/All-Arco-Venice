@@ -1,0 +1,44 @@
+content.js:2 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'checkoutUrls')
+    at content.js:2:210202
+    at async e (content.js:2:210114)
+
+client:536 WebSocket connection to 'wss://cd64522c-1c4f-44db-9137-87b92fc178a8-00-omkksxkqix98.kirk.replit.dev/?token=vRAFvqWQ5bnT' failed: 
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=vRAFvqWQ5bnT' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+useAuth.ts:19 useAuth hook - status: pending
+useAuth.ts:20 useAuth hook - user: undefined
+useAuth.ts:21 useAuth hook - isSuccess: false
+useAuth.ts:22 useAuth hook - error: null
+useAuth.ts:23 useAuth hook - isAuthenticated: false
+feature_extension-pl…ge-plugin-view.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'map')
+    at feature_extension-pl…ugin-view.js:1:5171
+feature_extension-pl…ge-plugin-view.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'checkoutUrls')
+    at chrome-extension://h…ground.js:2:1120354
+useAuth.ts:19 useAuth hook - status: success
+useAuth.ts:20 useAuth hook - user: 
+{id: 'local_1750947297727_1538tndtf', email: 'test@test.com', firstName: 'Ali Hassan', lastName: 'Cheema', profileImageUrl: null, …}
+useAuth.ts:21 useAuth hook - isSuccess: true
+useAuth.ts:22 useAuth hook - error: null
+useAuth.ts:23 useAuth hook - isAuthenticated: true
+jquery-3.5.1.min.js:2 Uncaught Error: Syntax error, unrecognized expression: iframe[src*='https://m.stripe.network/inner.html#url=https%3A%2F%2Fcd64522c-1c4f-44db-91…cf8a848b1b5ad8dee&version=6&preview=false&__shared_params__[version]=basil']
+    at se.error (jquery-3.5.1.min.js:2:13606)
+    at se.tokenize (jquery-3.5.1.min.js:2:21617)
+    at se.select (jquery-3.5.1.min.js:2:22444)
+    at S.se [as find] (jquery-3.5.1.min.js:2:7089)
+    at S.fn.init.find (jquery-3.5.1.min.js:2:25014)
+    at new S.fn.init (jquery-3.5.1.min.js:2:25503)
+    at S (jquery-3.5.1.min.js:2:1024)
+    at iframeListener.js:8:30
+jquery-3.5.1.min.js:2 Uncaught Error: Syntax error, unrecognized expression: iframe[src*='https://js.stripe.com/v3/m-outer-3437aad….html#url=…cf8a848b1b5ad8dee&version=6&preview=false&__shared_params__[version]=basil']
+    at se.error (jquery-3.5.1.min.js:2:13606)
+    at se.tokenize (jquery-3.5.1.min.js:2:21617)
+    at se.select (jquery-3.5.1.min.js:2:22444)
+    at S.se [as find] (jquery-3.5.1.min.js:2:7089)
+    at S.fn.init.find (jquery-3.5.1.min.js:2:25014)
+    at new S.fn.init (jquery-3.5.1.min.js:2:25503)
+    at S (jquery-3.5.1.min.js:2:1024)
+    at iframeListener.js:8:30
+﻿
+
