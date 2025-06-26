@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
@@ -6,6 +7,10 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertBookingSchema, insertAmenitySchema, insertPropertyImageSchema, insertReviewSchema, insertMessageSchema, signupSchema, loginSchema, updateUserProfileSchema } from "@shared/schema";
 import Stripe from "stripe";
 import bcrypt from "bcryptjs";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -15,9 +20,52 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-05-28.basil",
 });
 
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage_multer = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = crypto.randomUUID() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage_multer,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // Serve uploaded files statically
+  app.use('/uploads', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+  }, (req, res, next) => {
+    const filePath = path.join(uploadDir, req.path);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  });
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -727,6 +775,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching active hero images:", error);
       res.status(500).json({ message: "Failed to fetch active hero images" });
+    }
+  });
+
+  // File upload endpoint for hero images
+  app.post('/api/hero-images/upload', isAuthenticated, upload.single('image'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file uploaded" });
+      }
+
+      const { title, alt, position, isActive, displayOrder } = req.body;
+      
+      if (!title || !alt || !position) {
+        return res.status(400).json({ message: "Title, alt text, and position are required" });
+      }
+
+      // Create the image URL for serving
+      const imageUrl = `/uploads/${req.file.filename}`;
+      
+      const imageData = {
+        url: imageUrl,
+        title,
+        alt,
+        position,
+        isActive: isActive === 'true',
+        displayOrder: parseInt(displayOrder) || 0,
+      };
+
+      const image = await storage.addHeroImage(imageData);
+      res.json(image);
+    } catch (error) {
+      console.error("Error uploading hero image:", error);
+      
+      // Clean up uploaded file if database save failed
+      if (req.file) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (cleanupError) {
+          console.error("Error cleaning up file:", cleanupError);
+        }
+      }
+      
+      res.status(500).json({ message: "Failed to upload hero image" });
     }
   });
 
