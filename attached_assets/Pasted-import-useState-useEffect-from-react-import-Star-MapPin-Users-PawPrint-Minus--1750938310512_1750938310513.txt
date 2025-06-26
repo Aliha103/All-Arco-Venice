@@ -26,8 +26,8 @@ import { Button } from "@/components/ui/button"
 import {
   Calendar as AdvancedCalendar,
   validateStayRange,
+  type DateRange,
 } from "@/components/advanced-calendar"
-import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 
 /**
@@ -133,7 +133,7 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Hero images grid (placeholders) */}
+          {/*           Hero images grid (placeholders)            */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
             <div className="bg-gray-200 flex items-center justify-center rounded-l-xl lg:rounded-none">
               <span className="text-gray-500">Main bedroom img</span>
@@ -247,61 +247,37 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* —————————————————————————  Property Details  ————————————————————————— */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">About All'Arco</h2>
-            <p className="text-xl text-gray-600">Experience authentic Venice in our beautifully restored apartment</p>
-          </div>
+      {/* —————————————————————————  Chat widget (unchanged) ————————————————————————— */}
+      <ChatWidget />
+    </div>
+  )
+}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">What makes this place special</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <Building className="w-5 h-5 text-blue-600 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Historic Building</h4>
-                    <p className="text-gray-600 text-sm">Authentic Venetian architecture with original features</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <MapPin className="w-5 h-5 text-blue-600 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Prime Location</h4>
-                    <p className="text-gray-600 text-sm">Walking distance to St. Mark's Square and Rialto Bridge</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Sparkles className="w-5 h-5 text-blue-600 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Recently Renovated</h4>
-                    <p className="text-gray-600 text-sm">Modern amenities while preserving historic charm</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Amenities</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: <Wifi className="w-5 h-5" />, label: "Free WiFi" },
-                  { icon: <Bed className="w-5 h-5" />, label: "2 Bedrooms" },
-                  { icon: <Users className="w-5 h-5" />, label: "Sleeps 4" },
-                  { icon: <Utensils className="w-5 h-5" />, label: "Full Kitchen" },
-                ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center space-x-2 text-gray-700">
-                    <div className="text-blue-600">{icon}</div>
-                    <span className="text-sm">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+/* ------------------------------------------------------------------ */
+//  Quick‑chat floating widget (kept minimal)
+/* ------------------------------------------------------------------ */
+function ChatWidget() {
+  const [open,setOpen]=useState(false)
+  const [name,setName]=useState("")
+  const [email,setEmail]=useState("")
+  return (
+    <>
+      {!open && (
+        <button onClick={()=>setOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center z-50">
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
+      {open && (
+        <div className="fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="bg-blue-600 text-white p-4 flex items-center justify-between"><h3 className="font-semibold">All'Arco</h3><button onClick={()=>setOpen(false)}><Lock className="w-4 h-4" /></button></div>
+          <div className="p-4 text-gray-700 text-sm">👋 How can we help you?</div>
+          <div className="p-4 space-y-3 border-t">
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name" className="w-full p-2 border rounded" />
+            <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" className="w-full p-2 border rounded" />
+            <Button onClick={()=>setOpen(false)} className="w-full">Start chat</Button>
           </div>
         </div>
-      </section>
-    </div>
+      )}
+    </>
   )
 }
