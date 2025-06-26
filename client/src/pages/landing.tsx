@@ -334,7 +334,6 @@ export default function Landing() {
           </div>
         </div>
       </header>
-
       {/* Hero Section */}
       <section className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="max-w-7xl mx-auto">
@@ -449,7 +448,6 @@ export default function Landing() {
 
         </div>
       </section>
-
       {/* Apartment Details Section */}
       <section className="bg-gradient-to-b from-gray-50 to-white px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
         <div className="max-w-7xl mx-auto">
@@ -619,7 +617,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Booking Section */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12 lg:mb-16">
@@ -1579,7 +1576,6 @@ export default function Landing() {
           </CardContent>
         </Card>
       </section>
-
       {/* About This Space Section */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -1740,7 +1736,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Guest Reviews Section */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-gray-50">
         <div className="text-center mb-12">
@@ -1940,9 +1935,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Call to Action */}
-      <section className="bg-primary py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-[#f3f4f6] text-[#101827]">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 px-4">
             Ready to Book Your Perfect Stay?
@@ -1955,7 +1949,6 @@ export default function Landing() {
           </Button>
         </div>
       </section>
-
       {/* Footer */}
       <footer className="bg-gray-100 border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2024,7 +2017,6 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-
       {/* Chat Popup */}
       {!isChatOpen && (
         <button
@@ -2034,7 +2026,6 @@ export default function Landing() {
           <MessageCircle className="w-6 h-6" />
         </button>
       )}
-
       {isChatOpen && (
         <div className="fixed bottom-6 right-6 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
           {/* Chat Header */}
