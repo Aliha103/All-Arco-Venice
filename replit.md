@@ -100,6 +100,7 @@ This is a full-stack web application for managing bookings at All'arco luxury ap
 - **Payments**: Requires Stripe API keys (`STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLIC_KEY`)
 
 ## Changelog
+- June 26, 2025. Simplified host information card to be cleaner and more user-friendly with unified responsive layout
 - June 26, 2025. Redesigned host information section with professional responsive layout, gradient styling, and enhanced mobile experience
 - June 26, 2025. Added host information section with property details, pricing, and availability status matching provided design
 - June 26, 2025. Updated header design to match provided screenshot with AllArco branding, single user icon for login/signup area

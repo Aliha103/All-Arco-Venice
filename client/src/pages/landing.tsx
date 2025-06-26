@@ -140,149 +140,53 @@ export default function Landing() {
       </section>
 
       {/* —— Host Information —— */}
-      <section className="bg-gray-50 px-4 py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-            {/* Mobile Layout */}
-            <div className="block lg:hidden">
-              <div className="p-6 space-y-6">
-                {/* Host Profile */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-lg font-bold text-gray-900 mb-2">
-                      Entire apartment hosted by Fatima
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center space-x-1 bg-yellow-50 px-3 py-1 rounded-full">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-semibold text-yellow-700">Superhost</span>
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">5+ years hosting</span>
-                      <span className="text-sm text-gray-600 font-medium">100+ reviews</span>
-                    </div>
-                  </div>
+      <section className="px-4 py-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              {/* Host & Property Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-blue-600" />
                 </div>
-
-                {/* Property Details Grid */}
-                <div className="grid grid-cols-3 gap-4 py-4 border-t border-gray-100">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-2">
-                      <Users className="w-6 h-6 text-blue-600" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Entire apartment hosted by Fatima</h2>
+                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span>Superhost</span>
                     </div>
-                    <div className="font-semibold text-gray-900 text-sm">5 guests</div>
-                    <div className="text-xs text-gray-500">Maximum</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mx-auto mb-2">
-                      <Bed className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="font-semibold text-gray-900 text-sm">2 bedrooms</div>
-                    <div className="text-xs text-gray-500">Private</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-2">
-                      <div className="w-6 h-6 flex items-center justify-center">
-                        <div className="w-4 h-4 bg-purple-600 rounded"></div>
-                      </div>
-                    </div>
-                    <div className="font-semibold text-gray-900 text-sm">1 bathroom</div>
-                    <div className="text-xs text-gray-500">Full bath</div>
-                  </div>
-                </div>
-
-                {/* Price & Availability */}
-                <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
-                  <div className="text-center space-y-3">
-                    <div className="space-y-1">
-                      <div className="text-3xl font-bold text-slate-900 tracking-tight">€110.50</div>
-                      <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">/per night</div>
-                    </div>
-                    <div className="pt-2">
-                      <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-full">
-                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                        <span className="text-sm text-emerald-700 font-semibold">Available</span>
-                      </div>
-                    </div>
+                    <span>5+ years hosting</span>
+                    <span>100+ reviews</span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Desktop Layout */}
-            <div className="hidden lg:block">
-              <div className="flex items-center justify-between p-8">
-                {/* Left: Host Info */}
-                <div className="flex items-center space-x-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-xl">
-                    <User className="w-10 h-10 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                      Entire apartment hosted by Fatima
-                    </h2>
-                    <div className="flex items-center space-x-6">
-                      <div className="flex items-center space-x-2 bg-yellow-50 px-4 py-2 rounded-full">
-                        <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                        <span className="font-semibold text-yellow-700">Superhost</span>
-                      </div>
-                      <span className="text-gray-600 font-medium">5+ years hosting</span>
-                      <span className="text-gray-600 font-medium">100+ reviews</span>
-                    </div>
-                  </div>
+              {/* Property Details */}
+              <div className="flex flex-wrap lg:flex-nowrap items-center gap-6">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-900 font-medium">5 guests</span>
                 </div>
-
-                {/* Center: Property Details */}
-                <div className="flex items-center space-x-8">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                      <Users className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">5 guests</div>
-                      <div className="text-sm text-gray-500">Maximum capacity</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                      <Bed className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">2 bedrooms</div>
-                      <div className="text-sm text-gray-500">Private spaces</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                      <div className="w-6 h-6 flex items-center justify-center">
-                        <div className="w-4 h-4 bg-purple-600 rounded"></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">1 bathroom</div>
-                      <div className="text-sm text-gray-500">Full bathroom</div>
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <Bed className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-900 font-medium">2 bedrooms</span>
                 </div>
-
-                {/* Right: Price */}
-                <div className="text-right">
-                  <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-2xl p-8 border border-slate-200/60 shadow-lg min-w-[200px]">
-                    <div className="text-center space-y-4">
-                      <div className="space-y-2">
-                        <div className="text-4xl font-bold text-slate-900 tracking-tight">€110.50</div>
-                        <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">/per night</div>
-                      </div>
-                      <div className="pt-1">
-                        <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full">
-                          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                          <span className="text-sm text-emerald-700 font-semibold">Available</span>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-gray-400 rounded"></div>
                   </div>
+                  <span className="text-gray-900 font-medium">1 bathroom</span>
+                </div>
+              </div>
+
+              {/* Price */}
+              <div className="text-center lg:text-right">
+                <div className="text-2xl font-bold text-gray-900">€110.50</div>
+                <div className="text-sm text-gray-500">/night</div>
+                <div className="flex items-center justify-center lg:justify-end space-x-1 mt-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-green-600 font-medium">Available</span>
                 </div>
               </div>
             </div>
