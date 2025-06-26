@@ -170,6 +170,34 @@
     }
   }
 
+  /* Mobile-optimized touch feedback */
+  @media (hover: none) and (pointer: coarse) {
+    .touch-interaction:active {
+      @apply scale-90 shadow-sm;
+      background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    .gentle-scale:active {
+      @apply scale-95;
+    }
+    
+    .interactive-button:active {
+      @apply scale-95 shadow-sm;
+    }
+  }
+
+  /* Smooth scrolling for mobile */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Enhanced focus states for accessibility */
+  .touch-interaction:focus-visible {
+    outline: 2px solid hsl(207, 90%, 54%);
+    outline-offset: 2px;
+  }
+
   /* Calendar custom styles */
   .rdp {
     --rdp-cell-size: 40px;
