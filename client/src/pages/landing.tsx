@@ -643,6 +643,70 @@ export default function Landing() {
           </CardContent>
         </Card>
       </section>
+
+      {/* —— Property Description —— */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-start space-x-4 mb-8">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 1.09-.21 2.16-.56 3.16-1.04.14-.06.29-.14.43-.21.04-.02.08-.05.12-.07.17-.1.34-.21.5-.32.08-.06.16-.11.24-.17.14-.11.28-.22.41-.34.07-.06.14-.13.21-.19.12-.11.24-.23.35-.35.06-.06.12-.13.18-.19.11-.13.22-.26.32-.4.05-.07.11-.14.16-.21.09-.13.18-.26.26-.4.04-.07.09-.14.13-.21.07-.13.14-.26.21-.4.03-.07.07-.14.1-.21.06-.14.12-.28.17-.42.02-.07.05-.14.07-.21.04-.14.08-.29.12-.44.01-.07.03-.14.04-.21.03-.15.05-.31.07-.47 0-.07.01-.14.02-.21.01-.16.02-.33.02-.5V7l-10-5z"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">All'Arco Apartment</h2>
+              <p className="text-lg text-blue-600 font-medium">Historic Venice Center</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-8 shadow-sm">
+            <p className="text-gray-700 text-lg leading-relaxed mb-6">
+              Welcome to All'Arco Apartment, a meticulously restored 2-bedroom sanctuary that captures the 
+              timeless elegance of Venice. Nestled just steps from the iconic St. Mark's Square, this exquisite 
+              retreat seamlessly blends centuries-old Venetian charm with contemporary luxury.
+            </p>
+
+            <p className="text-gray-700 text-lg leading-relaxed mb-8">
+              Featuring authentic Venetian architecture, a fully equipped gourmet kitchen, and an enchanting 
+              private balcony with canal views, this apartment offers an unparalleled Venice experience. 
+              Perfectly positioned for cultural immersion, with world-renowned museums, acclaimed 
+              restaurants, and historic landmarks all within a leisurely stroll.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7 14c1.66 0 3-1.34 3-3S8.66 8 7 8s-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm12-3h-8v8H3V5H1v11c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">2 Bedrooms</h3>
+                  <p className="text-gray-600">Sleeps up to 5 guests comfortably</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">3rd Floor</h3>
+                  <p className="text-gray-600">Historic building with authentic charm</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">About This Space</h2>
+            <p className="text-gray-600 text-center text-lg">Experience authentic Venetian luxury in the heart of the floating city</p>
+          </div>
+        </div>
+      </section>
+
       {/* —— Amenities —— */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
