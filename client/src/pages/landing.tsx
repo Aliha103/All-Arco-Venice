@@ -316,7 +316,7 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-4 xl:px-6">
-          <div className="flex justify-between items-center h-12 sm:h-14 lg:h-12">
+          <div className="flex justify-between items-center h-12 sm:h-14 lg:h-12 mt-[5px] mb-[5px]">
             <div className="flex items-center">
               <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-2 group">
                 {/* Elegant Logo Mark */}
