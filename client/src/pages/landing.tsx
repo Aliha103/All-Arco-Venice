@@ -250,11 +250,27 @@ export default function Landing() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                        <button 
+                          onClick={() => setGuests(Math.max(1, guests - 1))}
+                          disabled={guests <= 1}
+                          className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                            guests <= 1 
+                              ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                              : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                          }`}
+                        >
                           <Minus className="w-4 h-4"/>
                         </button>
-                        <span className="font-medium text-gray-900 min-w-[20px] text-center">2</span>
-                        <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                        <span className="font-medium text-gray-900 min-w-[20px] text-center">{guests}</span>
+                        <button 
+                          onClick={() => setGuests(Math.min(5, guests + 1))}
+                          disabled={guests >= 5}
+                          className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                            guests >= 5 
+                              ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                              : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                          }`}
+                        >
                           <Plus className="w-4 h-4"/>
                         </button>
                       </div>
@@ -384,11 +400,27 @@ export default function Landing() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                          <button 
+                            onClick={() => setGuests(Math.max(1, guests - 1))}
+                            disabled={guests <= 1}
+                            className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                              guests <= 1 
+                                ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                                : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                            }`}
+                          >
                             <Minus className="w-4 h-4"/>
                           </button>
-                          <span className="font-medium text-gray-900 min-w-[20px] text-center">2</span>
-                          <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                          <span className="font-medium text-gray-900 min-w-[20px] text-center">{guests}</span>
+                          <button 
+                            onClick={() => setGuests(Math.min(5, guests + 1))}
+                            disabled={guests >= 5}
+                            className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                              guests >= 5 
+                                ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                                : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                            }`}
+                          >
                             <Plus className="w-4 h-4"/>
                           </button>
                         </div>
@@ -513,11 +545,27 @@ export default function Landing() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                      <button 
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        disabled={guests <= 1}
+                        className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                          guests <= 1 
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                            : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                        }`}
+                      >
                         <Minus className="w-4 h-4"/>
                       </button>
-                      <span className="font-medium text-gray-900 min-w-[20px] text-center">2</span>
-                      <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                      <span className="font-medium text-gray-900 min-w-[20px] text-center">{guests}</span>
+                      <button 
+                        onClick={() => setGuests(Math.min(5, guests + 1))}
+                        disabled={guests >= 5}
+                        className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                          guests >= 5 
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                            : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                        }`}
+                      >
                         <Plus className="w-4 h-4"/>
                       </button>
                     </div>
