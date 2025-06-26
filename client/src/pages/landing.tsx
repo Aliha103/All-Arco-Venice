@@ -955,7 +955,7 @@ export default function Landing() {
           ))}
         </div>
         <div className="border-t border-gray-200 py-6 px-4 text-sm text-gray-600 flex flex-col sm:flex-row justify-between max-w-7xl mx-auto">
-          <span>&copy; 2024 All'Arco, Inc.</span>
+          <span>&copy; {new Date().getFullYear()} All'Arco, Inc.</span>
           <span className="mt-2 sm:mt-0">English (US) · € EUR</span>
         </div>
       </footer>
