@@ -194,15 +194,17 @@ export default function Landing() {
                 </div>
 
                 {/* Price & Availability */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-3xl font-bold text-gray-900">€110.50</div>
-                      <div className="text-sm text-gray-600 font-medium">/night</div>
+                <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+                  <div className="text-center space-y-3">
+                    <div className="space-y-1">
+                      <div className="text-3xl font-bold text-slate-900 tracking-tight">€110.50</div>
+                      <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">/per night</div>
                     </div>
-                    <div className="flex items-center space-x-2 bg-green-100 px-4 py-2 rounded-full">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-700 font-semibold">Available Now</span>
+                    <div className="pt-2">
+                      <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-full">
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                        <span className="text-sm text-emerald-700 font-semibold">Available</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -267,12 +269,18 @@ export default function Landing() {
 
                 {/* Right: Price */}
                 <div className="text-right">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 min-w-[180px]">
-                    <div className="text-4xl font-bold text-gray-900 mb-1">€110.50</div>
-                    <div className="text-gray-600 font-medium mb-3">/night</div>
-                    <div className="flex items-center justify-center space-x-2 bg-green-100 px-4 py-2 rounded-full">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-700 font-semibold">Available Now</span>
+                  <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50 rounded-2xl p-8 border border-slate-200/60 shadow-lg min-w-[200px]">
+                    <div className="text-center space-y-4">
+                      <div className="space-y-2">
+                        <div className="text-4xl font-bold text-slate-900 tracking-tight">€110.50</div>
+                        <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">/per night</div>
+                      </div>
+                      <div className="pt-1">
+                        <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full">
+                          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                          <span className="text-sm text-emerald-700 font-semibold">Available</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
