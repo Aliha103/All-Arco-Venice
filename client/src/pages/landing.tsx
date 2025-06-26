@@ -139,6 +139,72 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* —— Host Information —— */}
+      <section className="bg-white px-4 py-8 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              {/* Host Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Entire apartment hosted by Fatima</h2>
+                  <div className="flex items-center space-x-4 mt-1">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span className="text-sm font-medium text-gray-700">Superhost</span>
+                    </div>
+                    <span className="text-sm text-gray-600">5+ years hosting</span>
+                    <span className="text-sm text-gray-600">100+ reviews</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Property Details */}
+              <div className="flex items-center space-x-8">
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-5 h-5 text-gray-400" />
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">5 guests</div>
+                      <div className="text-gray-500">Maximum capacity</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Bed className="w-5 h-5 text-gray-400" />
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">2 bedrooms</div>
+                      <div className="text-gray-500">Private spaces</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-gray-400 rounded"></div>
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">1 bathroom</div>
+                      <div className="text-gray-500">Full bathroom</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900">€110.50</div>
+                  <div className="text-sm text-gray-500">/night</div>
+                  <div className="flex items-center mt-1">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-green-600 font-medium">Available</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* —— Booking —— */}
       <section id="booking-section" className="py-16 px-4 max-w-4xl mx-auto">
         <Card><CardContent className="p-8 space-y-8">
