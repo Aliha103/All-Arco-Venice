@@ -49,19 +49,17 @@ export default function Header() {
           </Link>
 
           {/* Navigation & User Menu */}
-          <div className="flex items-center space-x-4">
-            {/* Admin Notifications */}
-            {user?.role === 'admin' && (
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  {unreadCount?.count > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                      {unreadCount.count}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
+          <div className="flex items-center space-x-3">
+            {/* Notification Icon for all authenticated users */}
+            {isAuthenticated && (
+              <Button variant="ghost" size="sm" className="relative p-2 rounded-full hover:bg-gray-100">
+                <Bell className="h-5 w-5 text-gray-600" />
+                {unreadCount && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
             )}
 
             {/* User Dropdown */}
@@ -76,47 +74,21 @@ export default function Header() {
                 <DropdownMenuContent align="end" className="w-64">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <div className="text-sm font-medium">
-                      {user?.firstName || user?.email || "User"}
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user?.email || "User"}
                     </div>
                     <div className="text-sm text-gray-600">{user?.email}</div>
-                    {user?.role && (
-                      <Badge variant="secondary" className="mt-1">
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </Badge>
-                    )}
                   </div>
                   
-                  {user?.role === 'guest' && (
-                    <>
-                      <DropdownMenuItem>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        My Bookings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Messages
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        Personal Details
-                      </DropdownMenuItem>
-                    </>
-                  )}
-
-                  {user?.role === 'admin' && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard">
-                          <BarChart3 className="mr-2 h-4 w-4" />
-                          Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                  <DropdownMenuItem>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Bookings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Messages
+                  </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
