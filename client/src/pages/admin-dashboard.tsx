@@ -1074,33 +1074,60 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (heroImages && heroImages.length > 0) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {heroImages!.map((image: HeroImage) => (
-                      <div key={image.id} className="border rounded-lg overflow-hidden">
-                        <div className="aspect-video bg-gray-100 relative">
-                          <img 
-                            src={image.url} 
-                            alt={image.alt}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              target.parentElement!.innerHTML = `
-                                <div class="w-full h-full flex items-center justify-center text-gray-500 text-sm">
-                                  Image failed to load
-                                </div>
-                              `;
-                            }}
-                          />
-                          <Badge 
-                            className={`absolute top-2 right-2 ${image.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
-                          >
-                            {image.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold text-lg">{image.title}</h4>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Drag and drop images to reorder them. The order here affects how they appear in the hero gallery.
+                    </p>
+                    {heroImages!
+                      .sort((a, b) => a.displayOrder - b.displayOrder)
+                      .map((image: HeroImage, index) => (
+                      <div 
+                        key={image.id} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, image.id)}
+                        onDragOver={(e) => handleDragOver(e, image.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, image.id)}
+                        className={`border rounded-lg overflow-hidden transition-all duration-200 cursor-move ${
+                          dragOverImageId === image.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                        } ${draggedImageId === image.id ? 'opacity-50' : ''}`}
+                      >
+                        <div className="flex items-center p-4 gap-4">
+                          {/* Drag Handle */}
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <GripVertical className="w-5 h-5" />
+                            <span className="text-sm font-medium">#{index + 1}</span>
+                          </div>
+                          
+                          {/* Image Preview */}
+                          <div className="w-24 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                            <img 
+                              src={image.url} 
+                              alt={image.alt}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.parentElement!.innerHTML = `
+                                  <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                    Failed
+                                  </div>
+                                `;
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Image Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-lg truncate">{image.title}</h4>
+                              <Badge 
+                                className={`${image.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                              >
+                                {image.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 text-sm truncate mb-2">{image.alt}</p>
                             <Badge variant="outline" className="text-xs">
                               {image.position === 'main' ? 'Main Bedroom' : 
                                image.position === 'top-right' ? 'Living Room' :
@@ -1110,7 +1137,8 @@ export default function AdminDashboard() {
                                'Other Space'}
                             </Badge>
                           </div>
-                          <p className="text-gray-600 text-sm mb-3">{image.alt}</p>
+                          
+                          {/* Action Buttons */}
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
