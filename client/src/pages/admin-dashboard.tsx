@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { 
   BarChart3, 
   Users, 
@@ -33,7 +35,14 @@ import {
   X,
   Reply,
   ArrowLeft,
-  GripVertical
+  GripVertical,
+  CreditCard,
+  MapPin,
+  PawPrint,
+  Phone,
+  Mail,
+  User,
+  Home
 } from "lucide-react";
 
 interface Analytics {
@@ -159,6 +168,10 @@ export default function AdminDashboard() {
   // Drag and drop state for hero images
   const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
   const [dragOverImageId, setDragOverImageId] = useState<number | null>(null);
+  
+  // Booking details modal state
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   // Handle file selection and preview
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -784,7 +797,14 @@ export default function AdminDashboard() {
                 ) : (bookings && bookings.length > 0) ? (
                   <div className="space-y-4">
                     {bookings!.map((booking: Booking) => (
-                      <div key={booking.id} className="border rounded-lg p-6">
+                      <div 
+                        key={booking.id} 
+                        className="border rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => {
+                          setSelectedBooking(booking);
+                          setShowBookingDetails(true);
+                        }}
+                      >
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-3">
@@ -808,6 +828,7 @@ export default function AdminDashboard() {
                               onValueChange={(status) => 
                                 updateBookingMutation.mutate({ id: booking.id, status })
                               }
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <SelectTrigger className="w-32">
                                 <SelectValue />
@@ -1184,6 +1205,182 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Booking Details Modal */}
+      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedBooking && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Guest Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Guest Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">First Name</Label>
+                      <p className="font-medium">{selectedBooking.guestFirstName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Last Name</Label>
+                      <p className="font-medium">{selectedBooking.guestLastName}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Email</Label>
+                      <p className="font-medium">{selectedBooking.guestEmail}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                      <p className="font-medium">{selectedBooking.guestPhone}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Country</Label>
+                      <p className="font-medium">{selectedBooking.guestCountry}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Booking Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Booking Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Check-in</Label>
+                      <p className="font-medium">{formatDate(selectedBooking.checkInDate)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Check-out</Label>
+                      <p className="font-medium">{formatDate(selectedBooking.checkOutDate)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Guests</Label>
+                        <p className="font-medium">{selectedBooking.guests}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PawPrint className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Pet</Label>
+                        <p className="font-medium">{selectedBooking.hasPet ? 'Yes' : 'No'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {selectedBooking.paymentMethod === 'online' ? (
+                      <CreditCard className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                    )}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Payment Method</Label>
+                      <p className="font-medium">
+                        {selectedBooking.paymentMethod === 'online' ? 'Pay Online' : 'Pay at Property'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Status</Label>
+                    <div className="mt-1">
+                      <Badge className={getStatusColor(selectedBooking.status)}>
+                        {selectedBooking.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Booking Details */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Booking Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Confirmation Code</Label>
+                      <p className="font-mono text-lg font-bold text-blue-600">{selectedBooking.confirmationCode}</p>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Total Price</Label>
+                      <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedBooking.totalPrice)}</p>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Booking Date</Label>
+                      <p className="font-medium">{formatDate(selectedBooking.createdAt)}</p>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Status Management</h4>
+                    <div className="flex items-center gap-3">
+                      <Select
+                        value={selectedBooking.status}
+                        onValueChange={(status) => {
+                          updateBookingMutation.mutate({ id: selectedBooking.id, status });
+                          setSelectedBooking(prev => prev ? { ...prev, status } : null);
+                        }}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="checked_in">Checked In</SelectItem>
+                          <SelectItem value="checked_out">Checked Out</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-gray-500">Update booking status</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
