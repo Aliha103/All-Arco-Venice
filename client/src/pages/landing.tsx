@@ -90,15 +90,8 @@ export default function Landing() {
 
   // Enhanced validation for Reserve Now button
   const isValidBooking = () => {
-    if (!checkIn || !checkOut) return false;
-    
-    const verdict = validateStayRange(
-      { from: new Date(checkIn), to: new Date(checkOut) }, 
-      bookedCheckInDates, 
-      { maxStayDays: 15 }
-    );
-    
-    return verdict.valid && Object.keys(validationErrors).length === 0;
+    // Must have both dates selected and no validation errors
+    return checkIn && checkOut && Object.keys(validationErrors).length === 0;
   };
 
   const handleReserveNow = async () => {
