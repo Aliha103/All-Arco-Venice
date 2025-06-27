@@ -84,7 +84,8 @@ export default function Landing() {
   // Calculate pricing when dates or guest details change
   const calculatePricingMutation = useMutation({
     mutationFn: async (params: { checkInDate: string; checkOutDate: string; guests: number; hasPet: boolean; referralCode?: string }) => {
-      return await apiRequest('POST', '/api/bookings/calculate-pricing', params);
+      const response = await apiRequest('POST', '/api/bookings/calculate-pricing', params);
+      return response.json();
     },
     onSuccess: (pricing) => {
       setBookingPricing(pricing);

@@ -175,7 +175,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-blue-600" />
                   <div className="text-sm">
-                    <div className="font-medium">{bookingDetails.pricing.totalNights} night{bookingDetails.pricing.totalNights !== 1 ? 's' : ''}</div>
+                    <div className="font-medium">{bookingDetails.pricing?.totalNights || 0} night{(bookingDetails.pricing?.totalNights || 0) !== 1 ? 's' : ''}</div>
                   </div>
                 </div>
 
@@ -201,43 +201,43 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                 {/* Pricing Breakdown */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>€{bookingDetails.pricing.basePrice.toFixed(2)} × {bookingDetails.pricing.totalNights} night{bookingDetails.pricing.totalNights !== 1 ? 's' : ''}</span>
-                    <span>€{bookingDetails.pricing.priceBeforeDiscount.toFixed(2)}</span>
+                    <span>€{(bookingDetails.pricing?.basePrice || 0).toFixed(2)} × {bookingDetails.pricing?.totalNights || 0} night{(bookingDetails.pricing?.totalNights || 0) !== 1 ? 's' : ''}</span>
+                    <span>€{(bookingDetails.pricing?.priceBeforeDiscount || 0).toFixed(2)}</span>
                   </div>
                   
-                  {bookingDetails.pricing.lengthOfStayDiscount > 0 && (
+                  {(bookingDetails.pricing?.lengthOfStayDiscount || 0) > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span>Length of stay discount ({bookingDetails.pricing.lengthOfStayDiscountPercent}%)</span>
-                      <span>-€{bookingDetails.pricing.lengthOfStayDiscount.toFixed(2)}</span>
+                      <span>Length of stay discount ({bookingDetails.pricing?.lengthOfStayDiscountPercent || 0}%)</span>
+                      <span>-€{(bookingDetails.pricing?.lengthOfStayDiscount || 0).toFixed(2)}</span>
                     </div>
                   )}
                   
                   <div className="flex justify-between">
                     <span>Cleaning fee</span>
-                    <span>€{bookingDetails.pricing.cleaningFee.toFixed(2)}</span>
+                    <span>€{(bookingDetails.pricing?.cleaningFee || 0).toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between">
                     <span>Service fee</span>
-                    <span>€{bookingDetails.pricing.serviceFee.toFixed(2)}</span>
+                    <span>€{(bookingDetails.pricing?.serviceFee || 0).toFixed(2)}</span>
                   </div>
                   
-                  {bookingDetails.pricing.petFee > 0 && (
+                  {(bookingDetails.pricing?.petFee || 0) > 0 && (
                     <div className="flex justify-between">
                       <span>Pet fee</span>
-                      <span>€{bookingDetails.pricing.petFee.toFixed(2)}</span>
+                      <span>€{(bookingDetails.pricing?.petFee || 0).toFixed(2)}</span>
                     </div>
                   )}
                   
                   <div className="flex justify-between">
                     <span>City tax</span>
-                    <span>€{bookingDetails.pricing.cityTax.toFixed(2)}</span>
+                    <span>€{(bookingDetails.pricing?.cityTax || 0).toFixed(2)}</span>
                   </div>
                   
-                  {bookingDetails.pricing.referralCredit > 0 && (
+                  {(bookingDetails.pricing?.referralCredit || 0) > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Referral credit</span>
-                      <span>-€{bookingDetails.pricing.referralCredit.toFixed(2)}</span>
+                      <span>-€{(bookingDetails.pricing?.referralCredit || 0).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -246,7 +246,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                 
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>€{bookingDetails.pricing.totalPrice.toFixed(2)}</span>
+                  <span>€{(bookingDetails.pricing?.totalPrice || 0).toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>
