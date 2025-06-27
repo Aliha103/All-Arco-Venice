@@ -1073,20 +1073,32 @@ export default function Landing() {
                   {checkIn && checkOut && (
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span>€110.50 × {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} night</span>
-                        <span>€{(110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</span>
+                        <span>€{discNight.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                        <span>€{(discNight * nights).toFixed(2)}</span>
                       </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Length of stay discount</span>
+                          <span>-€{((base - discNight) * nights).toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span>Cleaning fee</span>
-                        <span>€25.00</span>
+                        <span>€{clean.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Service fee</span>
-                        <span>€15.00</span>
+                        <span>€{service.toFixed(2)}</span>
                       </div>
+                      {hasPet && (
+                        <div className="flex justify-between">
+                          <span>Pet fee</span>
+                          <span>€{pet.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + 15).toFixed(2)}</span>
+                        <span>€{total.toFixed(2)}</span>
                       </div>
                     </div>
                   )}
