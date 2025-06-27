@@ -39,6 +39,7 @@ import {
   Calendar as AdvancedCalendar,
   validateStayRange,
 } from "@/components/advanced-calendar"
+import { DateRange as ReactDateRange } from "react-day-picker"
 import { format } from "date-fns"
 
 /**
@@ -142,7 +143,7 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   //  Calendar wiring
   /* ------------------------------------------------------------------ */
-  const handleValidRangeSelect = (range: DateRange) => {
+  const handleValidRangeSelect = (range: ReactDateRange) => {
     if (range.from) setCheckIn(format(range.from, "yyyy-MM-dd"))
     if (range.to) setCheckOut(format(range.to, "yyyy-MM-dd"))
   }
@@ -545,8 +546,8 @@ export default function Landing() {
                   <div>
                     <label className="text-base font-medium mb-3 block text-gray-700">Check-in Date</label>
                     <div className="border border-gray-300 rounded-lg p-4">
-                      <Calendar
-                        bookedCheckInDates={bookedCheckInDates}
+                      <AdvancedCalendar
+                        bookedCheckIns={bookedCheckInDates}
                         onValidRangeSelect={handleValidRangeSelect}
                         className="w-full"
                       />
@@ -556,8 +557,8 @@ export default function Landing() {
                   <div>
                     <label className="text-base font-medium mb-3 block text-gray-700">Check-out Date</label>
                     <div className="border border-gray-300 rounded-lg p-4">
-                      <Calendar
-                        bookedCheckInDates={bookedCheckInDates}
+                      <AdvancedCalendar
+                        bookedCheckIns={bookedCheckInDates}
                         onValidRangeSelect={handleValidRangeSelect}
                         className="w-full"
                       />
