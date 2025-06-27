@@ -48,6 +48,11 @@ export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationData, setConfirmationData] = useState<any>(null);
+  const [showPayment, setShowPayment] = useState<{
+    type: 'full_payment' | 'authorization';
+    amount: number;
+    bookingData: any;
+  } | null>(null);
   const [appliedDiscount, setAppliedDiscount] = useState<'voucher' | 'referral' | null>(null);
   const [creditsUsed, setCreditsUsed] = useState(0);
   
@@ -154,6 +159,42 @@ export default function BookingPage() {
       amount: 100, // €100 authorization
       bookingData
     });
+  };
+
+  const handlePaymentSuccess = (result: any) => {
+    if (!showPayment) return;
+
+    const { bookingData } = showPayment;
+    
+    if (showPayment.type === 'authorization') {
+      setConfirmationData({
+        ...bookingData,
+        paymentStatus: 'authorized',
+        authorizationAmount: 100,
+        totalDue: finalPricing?.propertyPaymentTotal,
+        authorizationId: result.paymentIntentId
+      });
+    } else {
+      setConfirmationData({
+        ...bookingData,
+        paymentStatus: 'paid',
+        amountPaid: finalPricing?.onlinePaymentTotal,
+        cityTaxDue: finalPricing?.cityTax,
+        paymentIntentId: result.paymentIntentId
+      });
+    }
+    
+    setShowPayment(null);
+    setShowConfirmation(true);
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast({
+      title: "Payment Failed",
+      description: error,
+      variant: "destructive",
+    });
+    setShowPayment(null);
   };
 
   const handleSubmit = () => {
@@ -760,6 +801,125 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">
+                  {showPayment.type === 'authorization' ? 'Card Authorization' : 'Payment'}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPayment(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </Button>
+              </div>
+              
+              <StripePaymentWrapper
+                amount={showPayment.amount}
+                type={showPayment.type}
+                bookingId={showPayment.bookingData.id}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmation && confirmationData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Booking Confirmed!
+                </h2>
+                <p className="text-gray-600">
+                  Your reservation has been successfully created
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Confirmation Code</span>
+                      <p className="font-mono font-bold text-lg">{confirmationData.confirmationCode}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Check-in</span>
+                      <p className="font-medium">{confirmationData.checkInDate} at 15:00</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Check-out</span>
+                      <p className="font-medium">{confirmationData.checkOutDate} at 10:00</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Guests</span>
+                      <p className="font-medium">{confirmationData.guests} guests</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-2">Payment Summary</h3>
+                  {confirmationData.paymentStatus === 'paid' ? (
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Amount Paid</span>
+                        <span className="font-medium">€{confirmationData.amountPaid?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-orange-600">
+                        <span>City Tax (due at property)</span>
+                        <span className="font-medium">€{confirmationData.cityTaxDue?.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Card Authorized</span>
+                        <span className="font-medium">€{confirmationData.authorizationAmount}</span>
+                      </div>
+                      <div className="flex justify-between text-orange-600">
+                        <span>Total Due at Property</span>
+                        <span className="font-medium">€{confirmationData.totalDue?.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  onClick={() => setLocation('/')}
+                  className="flex-1"
+                >
+                  Back to Home
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Print
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
