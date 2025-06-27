@@ -290,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethod = 'online',
         hasPet = false,
         referralCode,
+        creditsUsed = 0,
         createdBy = 'guest',
         bookedForSelf = true
       } = req.body;
@@ -335,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethod: paymentMethod as "online" | "property",
         hasPet,
         referralCode,
+        creditsUsed: creditsUsed ? parseFloat(creditsUsed) : 0,
         createdBy: createdBy as "admin" | "guest",
         bookedForSelf,
         userId: req.isAuthenticated() ? (req.user as any)?.claims?.sub || null : null

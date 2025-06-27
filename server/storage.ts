@@ -281,6 +281,16 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
+  async deductUserCredits(userId: string, amount: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        accountCredits: sql`${users.accountCredits} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
   // Booking operations
   async createBooking(bookingData: {
     guestFirstName: string;
@@ -294,6 +304,7 @@ export class DatabaseStorage implements IStorage {
     paymentMethod: "online" | "property";
     hasPet?: boolean;
     referralCode?: string;
+    creditsUsed?: number;
     createdBy?: "admin" | "guest";
     bookedForSelf?: boolean;
     userId?: string;
@@ -316,6 +327,11 @@ export class DatabaseStorage implements IStorage {
         // Increment referrer's referral count
         await this.incrementReferralCount(referrer.id);
       }
+    }
+
+    // Handle user credits deduction if credits are used
+    if (bookingData.creditsUsed && bookingData.creditsUsed > 0 && bookingData.userId) {
+      await this.deductUserCredits(bookingData.userId, bookingData.creditsUsed);
     }
 
     // Generate unique confirmation code and QR code
