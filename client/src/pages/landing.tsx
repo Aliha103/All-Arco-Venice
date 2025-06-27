@@ -154,7 +154,7 @@ export default function Landing() {
   const RATE_LIMIT_MS = 2000
   useEffect(() => {
     if (!checkIn || !checkOut) return setValidationErrors({})
-    const verdict = validateStayRange({ from:new Date(checkIn), to:new Date(checkOut) }, bookedCheckInDates, { maxStayDays:30 })
+    const verdict = validateStayRange({ from:new Date(checkIn), to:new Date(checkOut) }, bookedCheckInDates, { maxStayDays:15 })
     setValidationErrors(verdict.valid ? {} : { checkOut: verdict.reason! })
     if (verdict.valid && Date.now()-lastAvailabilityCheck>RATE_LIMIT_MS) {
       setIsCheckingAvailability(true)
@@ -168,7 +168,17 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   const base = 110.5, clean=25, service=15
   const nights=(!checkIn||!checkOut)?1:Math.max(1,(new Date(checkOut).getTime()-new Date(checkIn).getTime())/86_400_000)
-  const discNight=nights>=7?base*0.9:nights>=3?base*0.95:base
+  
+  // Discount system: 5% for 7+ days, 10% for 14+ days
+  const getDiscount = (nights: number) => {
+    if (nights >= 14) return 0.10; // 10% discount for 14+ days
+    if (nights >= 7) return 0.05;  // 5% discount for 7+ days
+    return 0;
+  }
+  
+  const discount = getDiscount(nights)
+  const discNight = base * (1 - discount)
+  
   // Pet fee: €25 for 1 night, €35 total for multiple nights
   const pet = hasPet ? (nights === 1 ? 25 : 35) : 0
   const total=discNight*nights+clean+service+pet

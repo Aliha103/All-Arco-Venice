@@ -41,7 +41,7 @@ export function validateStayRange(
   bookedCheckIns: readonly Date[],
   opts: { maxStayDays?: number } = {}
 ): ValidateResult {
-  const { maxStayDays = 366 } = opts
+  const { maxStayDays = 15 } = opts
   try {
     /* --------------------------------------------------------------------- */
     // 1. Basic presence & type safety
@@ -70,7 +70,7 @@ export function validateStayRange(
     if (differenceInCalendarDays(to, from) > maxStayDays) {
       return {
         valid: false,
-        reason: `Stays cannot exceed ${maxStayDays} nights.`,
+        reason: `Maximum stay is ${maxStayDays} days. Please select a shorter period.`,
       }
     }
 
