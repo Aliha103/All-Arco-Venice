@@ -178,7 +178,6 @@ export default function Landing() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Use the proper Header component with authentication */}
       <Header />
-      
       {/* —— Hero —— */}
       <section className="bg-white px-4 py-10 sm:py-14 pl-[10px] pr-[10px]">
         <div className="max-w-7xl mx-auto">
@@ -334,7 +333,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Property Information Section —— */}
       <section className="bg-white px-4 py-8 transform transition-all duration-300">
         <div className="max-w-7xl mx-auto">
@@ -527,7 +525,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Booking Calendar Section —— */}
       <section className="bg-gray-50 px-4 py-8">
         <div className="max-w-5xl mx-auto">
@@ -537,7 +534,7 @@ export default function Landing() {
           </div>
 
           {/* Single Unified Booking Widget */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pl-[10px] pr-[10px]">
             {/* Mobile: Stacked layout */}
             <div className="grid grid-cols-1 md:hidden gap-6">
               {/* Calendar Section */}
@@ -1070,7 +1067,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Property Description —— */}
       <section className="bg-white px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -1107,7 +1103,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Reviews Section —— */}
       <section className="bg-gray-50 px-4 py-12">
         <div className="max-w-7xl mx-auto">
@@ -1174,7 +1169,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* —— Footer —— */}
       <footer className="bg-gray-900 text-white px-4 py-12 transform transition-all duration-300">
         <div className="max-w-7xl mx-auto text-center">
@@ -1187,7 +1181,6 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-
       {/* Image Gallery Modal */}
       <ImageGalleryModal
         images={activeImages}
@@ -1196,5 +1189,5 @@ export default function Landing() {
         onClose={closeModal}
       />
     </div>
-  )
+  );
 }
