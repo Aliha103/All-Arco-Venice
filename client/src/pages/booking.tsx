@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import StripePaymentWrapper from '@/components/stripe-payment-wrapper';
 
 interface BookingPageProps {
   bookingDetails: {
@@ -140,54 +141,19 @@ export default function BookingPage() {
   });
 
   const initiateStripePayment = async (bookingData: any) => {
-    try {
-      // Create payment intent for online payment (excluding city tax)
-      const response = await apiRequest('POST', '/api/create-payment-intent', {
-        amount: finalPricing?.onlinePaymentTotal || 0,
-        bookingId: bookingData.id,
-        type: 'full_payment'
-      });
-      
-      // Redirect to Stripe checkout or handle payment
-      // For now, simulate successful payment
-      setConfirmationData({
-        ...bookingData,
-        paymentStatus: 'paid',
-        amountPaid: finalPricing?.onlinePaymentTotal,
-        cityTaxDue: finalPricing?.cityTax
-      });
-      setShowConfirmation(true);
-    } catch (error: any) {
-      toast({
-        title: "Payment Failed",
-        description: error.message || "Failed to process payment",
-        variant: "destructive",
-      });
-    }
+    setShowPayment({
+      type: 'full_payment',
+      amount: finalPricing?.onlinePaymentTotal || 0,
+      bookingData
+    });
   };
 
   const initiateCardAuthorization = async (bookingData: any) => {
-    try {
-      // Create card authorization for property payment
-      const response = await apiRequest('POST', '/api/authorize-card', {
-        bookingId: bookingData.id,
-        amount: 100 // €100 authorization
-      });
-      
-      setConfirmationData({
-        ...bookingData,
-        paymentStatus: 'authorized',
-        authorizationAmount: 100,
-        totalDue: finalPricing?.propertyPaymentTotal
-      });
-      setShowConfirmation(true);
-    } catch (error: any) {
-      toast({
-        title: "Authorization Failed", 
-        description: error.message || "Failed to authorize card",
-        variant: "destructive",
-      });
-    }
+    setShowPayment({
+      type: 'authorization',
+      amount: 100, // €100 authorization
+      bookingData
+    });
   };
 
   const handleSubmit = () => {

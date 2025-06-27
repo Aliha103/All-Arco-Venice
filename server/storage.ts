@@ -510,6 +510,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id));
   }
 
+  async updateBookingPaymentStatus(id: number, paymentStatus: string): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ paymentStatus: paymentStatus as any, updatedAt: new Date() })
+      .where(eq(bookings.id, id));
+  }
+
   async checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean> {
     const conditions = [
       or(
