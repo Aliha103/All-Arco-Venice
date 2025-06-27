@@ -195,8 +195,11 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   //  Pricing helpers
   /* ------------------------------------------------------------------ */
-  const base = 110.5, clean=25, service=15
+  const base = 110.5, service=15
   const nights=(!checkIn||!checkOut)?1:Math.max(1,(new Date(checkOut).getTime()-new Date(checkIn).getTime())/86_400_000)
+  
+  // Cleaning fee: €25 for 1 night, €35 for 2+ nights
+  const clean = nights === 1 ? 25 : 35
   
   // Discount system: 5% for 7+ days, 10% for 14+ days
   const getDiscount = (nights: number) => {
@@ -208,8 +211,8 @@ export default function Landing() {
   const discount = getDiscount(nights)
   const discNight = base * (1 - discount)
   
-  // Pet fee: €25 for 1 night, €35 total for multiple nights
-  const pet = hasPet ? (nights === 1 ? 25 : 35) : 0
+  // Pet fee: €15 for 1-2 nights, €25 for 3+ nights
+  const pet = hasPet ? (nights <= 2 ? 15 : 25) : 0
   const total=discNight*nights+clean+service+pet
 
   /* ------------------------------------------------------------------ */

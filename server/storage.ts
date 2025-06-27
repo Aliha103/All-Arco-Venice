@@ -406,13 +406,15 @@ export class DatabaseStorage implements IStorage {
     totalPrice: number;
   }> {
     const basePrice = 110.50; // €110.50 per night
-    const cleaningFee = 25.00;
     const serviceFee = 15.00;
     
     // Calculate nights
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
     const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Cleaning fee: €25 for 1 night, €35 for 2+ nights
+    const cleaningFee = totalNights === 1 ? 25.00 : 35.00;
     
     // Base pricing
     const priceBeforeDiscount = basePrice * totalNights;
@@ -428,8 +430,8 @@ export class DatabaseStorage implements IStorage {
     const lengthOfStayDiscount = priceBeforeDiscount * (lengthOfStayDiscountPercent / 100);
     const priceAfterDiscount = priceBeforeDiscount - lengthOfStayDiscount;
     
-    // Pet fee calculation
-    const petFee = hasPet ? (totalNights === 1 ? 25.00 : 35.00) : 0;
+    // Pet fee: €15 for 1-2 nights, €25 for 3+ nights
+    const petFee = hasPet ? (totalNights <= 2 ? 15.00 : 25.00) : 0;
     
     // City tax: 4€ per adult (16+) per night, maximum 5 nights
     const taxableNights = Math.min(totalNights, 5);

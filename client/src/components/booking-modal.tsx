@@ -61,6 +61,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
     guestCountry: '',
     guestPhone: '',
     paymentMethod: 'online' as 'online' | 'property',
+    voucherCode: '',
     referralCode: '',
     specialRequests: ''
   });
@@ -139,12 +140,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
     <Dialog open={isOpen} onOpenChange={resetAndClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Complete Your Booking</span>
-            <Button variant="ghost" size="sm" onClick={resetAndClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Complete Your Booking</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -230,7 +226,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                   )}
                   
                   <div className="flex justify-between">
-                    <span>City tax</span>
+                    <span>City tax <span className="text-xs text-gray-500">(paid at property)</span></span>
                     <span>€{(bookingDetails.pricing?.cityTax || 0).toFixed(2)}</span>
                   </div>
                   
@@ -322,14 +318,25 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-                    <Input
-                      id="referralCode"
-                      value={formData.referralCode}
-                      onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))}
-                      placeholder="Enter referral code for 5€ per night credit"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="voucherCode">Discount Voucher (Optional)</Label>
+                      <Input
+                        id="voucherCode"
+                        value={formData.voucherCode || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, voucherCode: e.target.value }))}
+                        placeholder="Enter discount code"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                      <Input
+                        id="referralCode"
+                        value={formData.referralCode}
+                        onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))}
+                        placeholder="5€ per night credit"
+                      />
+                    </div>
                   </div>
 
                   <div>
