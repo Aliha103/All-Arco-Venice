@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react"
 import { Link } from "wouter"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import Header from "@/components/header"
 import ImageGalleryModal from "@/components/image-gallery-modal"
+import BookingModal from "@/components/booking-modal"
+import { apiRequest } from "@/lib/queryClient"
 import { Calendar, type DateRange } from "@/components/advanced-calendar"
 import {
   Star,
@@ -76,6 +78,32 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialIndex, setModalInitialIndex] = useState(0);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingPricing, setBookingPricing] = useState(null);
+
+  // Calculate pricing when dates or guest details change
+  const calculatePricingMutation = useMutation({
+    mutationFn: async (params: { checkInDate: string; checkOutDate: string; guests: number; hasPet: boolean; referralCode?: string }) => {
+      return await apiRequest('POST', '/api/bookings/calculate-pricing', params);
+    },
+    onSuccess: (pricing) => {
+      setBookingPricing(pricing);
+    },
+  });
+
+  const handleReserveNow = async () => {
+    if (!checkIn || !checkOut) return;
+
+    // Calculate pricing first
+    await calculatePricingMutation.mutateAsync({
+      checkInDate: checkIn,
+      checkOutDate: checkOut,
+      guests,
+      hasPet,
+    });
+
+    setIsBookingModalOpen(true);
+  };
 
   const openModal = (index: number) => {
     setModalInitialIndex(index);
@@ -911,6 +939,7 @@ export default function Landing() {
                     
                     <button
                       disabled={!checkIn || !checkOut}
+                      onClick={handleReserveNow}
                       className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
                         checkIn && checkOut
                           ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
