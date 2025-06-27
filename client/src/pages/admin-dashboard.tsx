@@ -196,17 +196,23 @@ export default function AdminDashboard() {
     e.preventDefault();
     
     if (draggedImageId && draggedImageId !== targetImageId && heroImages) {
-      const draggedImage = heroImages.find(img => img.id === draggedImageId);
-      const targetImage = heroImages.find(img => img.id === targetImageId);
+      const sortedImages = [...heroImages].sort((a, b) => a.displayOrder - b.displayOrder);
+      const draggedIndex = sortedImages.findIndex(img => img.id === draggedImageId);
+      const targetIndex = sortedImages.findIndex(img => img.id === targetImageId);
       
-      if (draggedImage && targetImage) {
-        // Swap display orders
-        reorderHeroImageMutation.mutate({
-          draggedId: draggedImageId,
-          targetId: targetImageId,
-          draggedOrder: draggedImage.displayOrder,
-          targetOrder: targetImage.displayOrder
-        });
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        // Create new array with reordered items
+        const reorderedImages = [...sortedImages];
+        const [draggedItem] = reorderedImages.splice(draggedIndex, 1);
+        reorderedImages.splice(targetIndex, 0, draggedItem);
+        
+        // Update display orders for all affected images
+        const updates = reorderedImages.map((img, index) => ({
+          id: img.id,
+          displayOrder: index + 1
+        }));
+        
+        reorderHeroImageMutation.mutate({ updates });
       }
     }
     
@@ -549,23 +555,22 @@ export default function AdminDashboard() {
   });
 
   const reorderHeroImageMutation = useMutation({
-    mutationFn: async ({ draggedId, targetId, draggedOrder, targetOrder }: {
-      draggedId: number;
-      targetId: number;
-      draggedOrder: number;
-      targetOrder: number;
+    mutationFn: async ({ updates }: {
+      updates: { id: number; displayOrder: number }[];
     }) => {
-      await apiRequest("PUT", `/api/hero-images/${draggedId}`, { displayOrder: targetOrder });
-      await apiRequest("PUT", `/api/hero-images/${targetId}`, { displayOrder: draggedOrder });
+      // Send batch update to reorder all images
+      await apiRequest("PUT", "/api/hero-images/reorder", { updates });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/hero-images/active"] });
       toast({
         title: "Success",
         description: "Image order updated successfully",
       });
     },
     onError: (error: Error) => {
+      console.error("Reorder error:", error);
       toast({
         title: "Error",
         description: "Failed to reorder images",

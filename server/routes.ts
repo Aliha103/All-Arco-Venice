@@ -896,6 +896,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch reorder hero images
+  app.put("/api/hero-images/reorder", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ message: "Updates must be an array" });
+      }
+
+      // Update each image's display order
+      for (const update of updates) {
+        const { id, displayOrder } = update;
+        if (typeof id === 'number' && typeof displayOrder === 'number') {
+          await storage.updateHeroImageOrder(id, displayOrder);
+        }
+      }
+
+      res.json({ message: "Image order updated successfully" });
+    } catch (error: any) {
+      console.error("Error reordering hero images:", error);
+      res.status(500).json({ message: "Failed to reorder images" });
+    }
+  });
+
   // About content routes
   app.get('/api/about-content', async (req, res) => {
     try {
