@@ -31,7 +31,9 @@ import {
   EyeOff,
   Check,
   X,
-  Reply
+  Reply,
+  ArrowLeft,
+  GripVertical
 } from "lucide-react";
 
 interface Analytics {
@@ -148,6 +150,10 @@ export default function AdminDashboard() {
   const [uploadPreview, setUploadPreview] = useState<string>("");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
+  
+  // Drag and drop state for hero images
+  const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
+  const [dragOverImageId, setDragOverImageId] = useState<number | null>(null);
 
   // Handle file selection and preview
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +174,44 @@ export default function AdminDashboard() {
         });
       }
     }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, imageId: number) => {
+    setDraggedImageId(imageId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, imageId: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverImageId(imageId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverImageId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetImageId: number) => {
+    e.preventDefault();
+    
+    if (draggedImageId && draggedImageId !== targetImageId && heroImages) {
+      const draggedImage = heroImages.find(img => img.id === draggedImageId);
+      const targetImage = heroImages.find(img => img.id === targetImageId);
+      
+      if (draggedImage && targetImage) {
+        // Swap display orders
+        reorderHeroImageMutation.mutate({
+          draggedId: draggedImageId,
+          targetId: targetImageId,
+          draggedOrder: draggedImage.displayOrder,
+          targetOrder: targetImage.displayOrder
+        });
+      }
+    }
+    
+    setDraggedImageId(null);
+    setDragOverImageId(null);
   };
 
   // Redirect if not admin
@@ -504,6 +548,32 @@ export default function AdminDashboard() {
     },
   });
 
+  const reorderHeroImageMutation = useMutation({
+    mutationFn: async ({ draggedId, targetId, draggedOrder, targetOrder }: {
+      draggedId: number;
+      targetId: number;
+      draggedOrder: number;
+      targetOrder: number;
+    }) => {
+      await apiRequest("PUT", `/api/hero-images/${draggedId}`, { displayOrder: targetOrder });
+      await apiRequest("PUT", `/api/hero-images/${targetId}`, { displayOrder: draggedOrder });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      toast({
+        title: "Success",
+        description: "Image order updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to reorder images",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
@@ -541,6 +611,17 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2">Welcome back, {user?.firstName}! Manage your All'Arco property.</p>
         </div>
