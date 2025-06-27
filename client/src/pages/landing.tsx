@@ -530,178 +530,187 @@ export default function Landing() {
 
       {/* —— Booking Calendar Section —— */}
       <section className="bg-gray-50 px-4 py-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Check Availability & Book</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Select your dates to see availability and pricing for All'Arco luxury apartment</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Book Your Stay</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Choose your dates and start planning your perfect getaway</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Calendar Section */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Select Your Dates</h3>
+          {/* Single Unified Booking Widget */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              
+              {/* Select Dates Section */}
+              <div className="lg:col-span-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <CalendarIcon className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Dates
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      setCheckIn('');
+                      setCheckOut('');
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Clear
+                  </button>
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-base font-medium mb-3 block text-gray-700">Check-in Date</label>
-                    <div className="border border-gray-300 rounded-lg p-4">
-                      <AdvancedCalendar
-                        bookedCheckIns={bookedCheckInDates}
-                        onValidRangeSelect={handleValidRangeSelect}
-                        className="w-full"
-                      />
-                    </div>
+                <div className="space-y-4">
+                  <div className="border border-gray-300 rounded-lg p-3">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Check-in</label>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
                   </div>
                   
-                  <div>
-                    <label className="text-base font-medium mb-3 block text-gray-700">Check-out Date</label>
-                    <div className="border border-gray-300 rounded-lg p-4">
-                      <AdvancedCalendar
-                        bookedCheckIns={bookedCheckInDates}
-                        onValidRangeSelect={handleValidRangeSelect}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Calendar Legend */}
-                <div className="mt-6 flex flex-wrap items-center gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                    <span className="text-gray-600">Available</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-red-500 rounded"></div>
-                    <span className="text-gray-600">Booked</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-green-500 rounded"></div>
-                    <span className="text-gray-600">Your Selection</span>
+                  <div className="border border-gray-300 rounded-lg p-3">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Check-out</label>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Booking Summary Widget */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-                <div className="mb-6">
-                  <div className="text-3xl font-bold text-gray-900">
-                    €110.50 <span className="text-lg font-normal text-gray-600">/ night</span>
-                  </div>
-                </div>
-
-                {/* Date Selection Summary */}
-                <div className="space-y-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="border border-gray-300 rounded-lg p-3">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">CHECK-IN</label>
-                      <div className="text-sm font-medium text-gray-900">
-                        {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'Add dates'}
-                      </div>
-                    </div>
-                    <div className="border border-gray-300 rounded-lg p-3">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">CHECK-OUT</label>
-                      <div className="text-sm font-medium text-gray-900">
-                        {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'Add dates'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-300 rounded-lg p-3">
-                    <label className="block text-xs font-medium text-gray-500 mb-2">GUESTS</label>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{guests} guests</span>
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => setGuests(Math.max(1, guests - 1))}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setGuests(Math.min(5, guests + 1))}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-300 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
+              {/* Guests & Pets Section */}
+              <div className="lg:col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-gray-600" />
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">PET FRIENDLY</label>
-                        <span className="text-sm font-medium text-gray-900">Bring your pet</span>
+                        <div className="font-medium text-gray-900">Guests</div>
+                        <div className="text-xs text-gray-500">Max 5</div>
                       </div>
-                      <button
-                        onClick={() => setHasPet(!hasPet)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          hasPet ? 'bg-blue-600' : 'bg-gray-200'
-                        }`}
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
                       >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            hasPet ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-semibold text-gray-900 min-w-[20px] text-center">{guests}</span>
+                      <button 
+                        onClick={() => setGuests(Math.min(5, guests + 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                </div>
 
-                {/* Pricing Breakdown */}
-                {checkIn && checkOut && (
-                  <div className="border-t border-gray-200 pt-4 mb-6">
-                    <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PawPrint className="w-5 h-5 mr-2 text-gray-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Pets</div>
+                        <div className="text-xs text-gray-500">€20 fee</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setHasPet(!hasPet)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          hasPet ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Breakdown Section */}
+              <div className="lg:col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900 mb-2">€110.50</div>
+                  <div className="text-sm text-gray-600 mb-4">per night</div>
+                  
+                  {checkIn && checkOut && (
+                    <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span>€110.50 x {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} nights</span>
+                        <span>€110.50 × {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} night</span>
                         <span>€{(110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Cleaning fee</span>
                         <span>€25.00</span>
                       </div>
-                      {hasPet && (
-                        <div className="flex justify-between">
-                          <span>Pet fee</span>
-                          <span>€35.00</span>
-                        </div>
-                      )}
-                      <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
+                      <div className="flex justify-between">
+                        <span>Service fee</span>
+                        <span>€15.00</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + (hasPet ? 35 : 0)).toFixed(2)}</span>
+                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + 15).toFixed(2)}</span>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
 
-                {/* Book Now Button */}
+              {/* Calendar Section */}
+              <div className="lg:col-span-1">
                 <button
                   disabled={!checkIn || !checkOut}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                  className={`w-full py-3 px-4 rounded-lg font-semibold mb-4 transition-all duration-200 ${
                     checkIn && checkOut
                       ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {checkIn && checkOut ? 'Reserve Now' : 'Select Dates'}
+                  {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
                 </button>
+                
+                {!checkIn && !checkOut && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                    ⚠️ Check-in date is required
+                  </div>
+                )}
+              </div>
+            </div>
 
-                <p className="text-xs text-gray-500 text-center mt-3">
-                  You won't be charged yet
-                </p>
+            {/* Calendar Component */}
+            <div className="mt-8 border-t border-gray-200 pt-8">
+              <div className="max-w-md mx-auto">
+                <AdvancedCalendar
+                  bookedCheckIns={bookedCheckInDates}
+                  onValidRangeSelect={handleValidRangeSelect}
+                  className="w-full"
+                />
+                
+                {/* Calendar Legend */}
+                <div className="mt-4 flex justify-center items-center gap-6 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-gray-600">Selected</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-blue-200 rounded-full"></div>
+                    <span className="text-gray-600">In Range</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                    <span className="text-gray-600">Unavailable</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
