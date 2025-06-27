@@ -461,7 +461,7 @@ export default function Landing() {
             <div className="space-y-4">
               {/* Host Info and Price Row */}
               <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
+                <div className="flex items-start space-x-3">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
@@ -480,29 +480,38 @@ export default function Landing() {
                   </div>
                 </div>
                 
-                {/* Property Details - Middle */}
-                <div className="flex items-center space-x-2 px-3">
-                  <div className="flex items-center space-x-1">
-                    <Users className="w-3 h-3 text-gray-600" />
-                    <span className="text-xs font-medium text-gray-900">5</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1">
-                    <Bed className="w-3 h-3 text-gray-600" />
-                    <span className="text-xs font-medium text-gray-900">2</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1">
-                    <Key className="w-3 h-3 text-gray-600" />
-                    <span className="text-xs font-medium text-gray-900">1</span>
-                  </div>
-                </div>
-                
                 <div className="text-right">
                   <div className="text-base sm:text-lg font-semibold text-gray-900">€110.50 <span className="text-xs sm:text-sm font-normal">/night</span></div>
                   <div className="flex items-center justify-end space-x-1 mt-1">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                     <span className="text-xs text-green-600">Available</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Property Details Row */}
+              <div className="flex items-center space-x-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-gray-600" />
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">5 guests</div>
+                    <div className="text-xs text-gray-500">Maximum capacity</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Bed className="w-4 h-4 text-gray-600" />
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">2 bedrooms</div>
+                    <div className="text-xs text-gray-500">Private spaces</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Key className="w-4 h-4 text-gray-600" />
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">1 bathroom</div>
+                    <div className="text-xs text-gray-500">Full bathroom</div>
                   </div>
                 </div>
               </div>
