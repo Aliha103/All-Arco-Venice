@@ -337,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referralCode,
         createdBy: createdBy as "admin" | "guest",
         bookedForSelf,
-        userId: req.user?.claims?.sub || null
+        userId: req.isAuthenticated() ? (req.user as any)?.claims?.sub || null : null
       });
 
       // Broadcast new booking via WebSocket
