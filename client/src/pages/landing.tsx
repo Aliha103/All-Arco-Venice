@@ -339,8 +339,22 @@ export default function Landing() {
               {/* Mobile & Tablet: Stack vertically, Desktop: Side by side */}
               <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 xl:gap-8">
                 
-                {/* Host Information */}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 flex-1">
+                {/* Pricing Section - Now appears first */}
+                <div className="text-center xl:text-left shrink-0 order-1 xl:order-1">
+                  <div className="space-y-2">
+                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                      €110.50 
+                      <span className="text-base sm:text-lg font-medium text-gray-500">/night</span>
+                    </div>
+                    <div className="inline-flex items-center justify-center xl:justify-start space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 px-3 py-1.5 rounded-full border border-green-200/50">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
+                      <span className="text-sm font-semibold text-green-700 whitespace-nowrap">Available now</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Host Information - Now appears second */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 flex-1 order-2 xl:order-2">
                   <div className="relative shrink-0 self-center sm:self-start">
                     <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
                       F
@@ -364,20 +378,6 @@ export default function Landing() {
                       </span>
                       <span className="text-gray-600 font-medium whitespace-nowrap">5+ years hosting</span>
                       <span className="text-gray-600 font-medium whitespace-nowrap">100+ reviews</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pricing Section */}
-                <div className="text-center xl:text-right shrink-0">
-                  <div className="space-y-2">
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                      €110.50 
-                      <span className="text-base sm:text-lg font-medium text-gray-500">/night</span>
-                    </div>
-                    <div className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 px-3 py-1.5 rounded-full border border-green-200/50">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0"></div>
-                      <span className="text-sm font-semibold text-green-700 whitespace-nowrap">Available now</span>
                     </div>
                   </div>
                 </div>
