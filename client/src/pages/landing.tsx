@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { Link } from "wouter"
 import { useQuery } from "@tanstack/react-query"
 import Header from "@/components/header"
+import ImageGalleryModal from "@/components/image-gallery-modal"
 import {
   Star,
   MapPin,
@@ -65,6 +66,21 @@ export default function Landing() {
   // Use the first 5 images for the gallery layout
   const galleryImages = activeImages.slice(0, 5);
   const [mainImage, ...smallImages] = galleryImages;
+
+  /* ------------------------------------------------------------------ */
+  //  Modal state
+  /* ------------------------------------------------------------------ */
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalInitialIndex, setModalInitialIndex] = useState(0);
+
+  const openModal = (index: number) => {
+    setModalInitialIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   /* ------------------------------------------------------------------ */
   //  Booking state
@@ -132,12 +148,12 @@ export default function Landing() {
             {/* Desktop Layout */}
             <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 gap-2 h-96 rounded-xl overflow-hidden">
               {/* Main large image - spans 2 columns and 2 rows */}
-              <div className="col-span-2 row-span-2 relative">
+              <div className="col-span-2 row-span-2 relative cursor-pointer" onClick={() => openModal(0)}>
                 {mainImage ? (
                   <img 
                     src={mainImage.url} 
                     alt={mainImage.alt}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover hover:opacity-95 transition-opacity duration-200"
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
@@ -151,13 +167,14 @@ export default function Landing() {
                 const isTopRight = index === 1;
                 const isBottomRight = index === 3;
                 const cornerClass = isTopRight ? "rounded-tr-xl" : isBottomRight ? "rounded-br-xl" : "";
+                const galleryIndex = index + 1; // +1 because main image is index 0
                 
                 return (
-                  <div key={image.id} className="relative">
+                  <div key={image.id} className="relative cursor-pointer" onClick={() => openModal(galleryIndex)}>
                     <img 
                       src={image.url} 
                       alt={image.alt}
-                      className={`w-full h-full object-cover ${cornerClass}`}
+                      className={`w-full h-full object-cover hover:opacity-95 transition-opacity duration-200 ${cornerClass}`}
                     />
                     {/* Photos counter overlay on last image */}
                     {index === 3 && activeImages.length > 5 && (
@@ -194,7 +211,7 @@ export default function Landing() {
             </div>
 
             {/* Mobile Layout */}
-            <div className="md:hidden relative h-64 rounded-xl overflow-hidden">
+            <div className="md:hidden relative h-64 rounded-xl overflow-hidden cursor-pointer" onClick={() => openModal(0)}>
               {mainImage ? (
                 <img 
                   src={mainImage.url} 
@@ -330,6 +347,14 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Image Gallery Modal */}
+      <ImageGalleryModal
+        images={activeImages}
+        initialIndex={modalInitialIndex}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   )
 }
