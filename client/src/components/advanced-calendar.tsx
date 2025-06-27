@@ -213,10 +213,12 @@ export const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
           mode="range"
           selected={range}
           showOutsideDays
-          disabled={(date) =>
-            !range?.from &&
-            reservedOrdinals.includes(dayToOrdinal(date)) /* choosing start? */
-          }
+          disabled={(date) => {
+            const today = startOfDay(new Date())
+            const isPastDate = date < today
+            const isReservedCheckIn = !range?.from && reservedOrdinals.includes(dayToOrdinal(date))
+            return isPastDate || isReservedCheckIn
+          }}
           modifiers={{
             checkoutOnly: bookedCheckIns,
           }}
@@ -251,13 +253,13 @@ export const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
             ),
             day_range_end: "day-range-end",
             day_selected:
-              "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+              "bg-blue-400 text-white hover:bg-blue-500 hover:text-white focus:bg-blue-500 focus:text-white",
             day_today: "bg-accent text-accent-foreground",
             day_outside:
               "day-outside text-muted-foreground aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
             day_disabled: "text-muted-foreground opacity-50",
             day_range_middle:
-              "aria-selected:bg-accent aria-selected:text-accent-foreground",
+              "aria-selected:bg-blue-200 aria-selected:text-blue-900",
             day_hidden: "invisible",
             ...classNames,
           }}
