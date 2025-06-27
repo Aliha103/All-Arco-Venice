@@ -27,6 +27,8 @@ import {
   LogIn,
   UserPlus,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Calendar as CalendarIcon,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -80,6 +82,46 @@ export default function Landing() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  /* ------------------------------------------------------------------ */
+  //  Mobile carousel state
+  /* ------------------------------------------------------------------ */
+  const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+
+  const goToNextMobile = () => {
+    setCurrentMobileIndex((prev) => (prev + 1) % activeImages.length);
+  };
+
+  const goToPrevMobile = () => {
+    setCurrentMobileIndex((prev) => (prev - 1 + activeImages.length) % activeImages.length);
+  };
+
+  // Touch handlers for swipe functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(0); // Reset touchEnd
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && activeImages.length > 1) {
+      goToNextMobile();
+    }
+    if (isRightSwipe && activeImages.length > 1) {
+      goToPrevMobile();
+    }
   };
 
   /* ------------------------------------------------------------------ */
@@ -210,26 +252,77 @@ export default function Landing() {
               })}
             </div>
 
-            {/* Mobile Layout */}
-            <div className="md:hidden relative h-64 rounded-xl overflow-hidden cursor-pointer" onClick={() => openModal(0)}>
-              {mainImage ? (
-                <img 
-                  src={mainImage.url} 
-                  alt={mainImage.alt}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                  Main Bedroom
-                </div>
-              )}
-              {activeImages.length > 1 && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="bg-white text-black px-4 py-2 rounded-lg font-medium text-sm shadow-lg">
-                    +{activeImages.length - 1} photos
+            {/* Mobile Layout - Swipeable Carousel */}
+            <div 
+              className="md:hidden relative h-64 rounded-xl overflow-hidden"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Image Container */}
+              <div 
+                className="relative w-full h-full flex transition-transform duration-300 ease-in-out"
+                style={{ transform: `translateX(-${currentMobileIndex * 100}%)` }}
+              >
+                {activeImages.map((image, index) => (
+                  <div 
+                    key={image.id} 
+                    className="min-w-full h-full relative cursor-pointer"
+                    onClick={() => openModal(index)}
+                  >
+                    <img 
+                      src={image.url} 
+                      alt={image.alt}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+                ))}
+                {activeImages.length === 0 && (
+                  <div className="min-w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                    No images available
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation Arrows */}
+              {activeImages.length > 1 && (
+                <>
+                  <button
+                    onClick={goToPrevMobile}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={goToNextMobile}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+
+              {/* Dots Indicator */}
+              {activeImages.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {activeImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentMobileIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentMobileIndex 
+                          ? 'bg-white' 
+                          : 'bg-white bg-opacity-50'
+                      }`}
+                    />
+                  ))}
                 </div>
               )}
+
+              {/* Photo Counter */}
+              <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
+                {currentMobileIndex + 1} / {activeImages.length}
+              </div>
             </div>
           </div>
         </div>
