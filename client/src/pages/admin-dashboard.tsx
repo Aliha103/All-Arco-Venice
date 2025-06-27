@@ -823,22 +823,23 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xl font-bold">{formatCurrency(booking.totalPrice)}</span>
-                            <Select
-                              value={booking.status}
-                              onValueChange={(status) => 
-                                updateBookingMutation.mutate({ id: booking.id, status })
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                value={booking.status}
+                                onValueChange={(status) => 
+                                  updateBookingMutation.mutate({ id: booking.id, status })
+                                }
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                       </div>
