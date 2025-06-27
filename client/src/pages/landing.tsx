@@ -20,6 +20,7 @@ import {
   Wifi,
   Utensils,
   Bed,
+  Bath,
   Tv,
   Thermometer,
   Key,
@@ -322,6 +323,67 @@ export default function Landing() {
               {/* Photo Counter */}
               <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
                 {currentMobileIndex + 1} / {activeImages.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* —— Property Information Section —— */}
+      <section className="bg-white px-4 py-6 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              
+              {/* Left: Host Info */}
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                  F
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Entire apartment hosted by Fatima</h3>
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                    <span className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span className="font-medium">Superhost</span>
+                    </span>
+                    <span>5+ years hosting</span>
+                    <span>100+ reviews</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Price */}
+              <div className="text-right lg:text-right">
+                <div className="text-2xl font-bold text-gray-900">€110.50 <span className="text-base font-normal text-gray-600">/night</span></div>
+                <div className="text-sm text-green-600 font-medium mt-1">Available</div>
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="flex items-center space-x-3">
+                  <Users className="w-5 h-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">5 guests</div>
+                    <div className="text-sm text-gray-500">Maximum capacity</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Bed className="w-5 h-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">2 bedrooms</div>
+                    <div className="text-sm text-gray-500">Private spaces</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Key className="w-5 h-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">1 bathroom</div>
+                    <div className="text-sm text-gray-500">Full bathroom</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
