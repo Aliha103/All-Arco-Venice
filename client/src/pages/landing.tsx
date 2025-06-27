@@ -59,17 +59,12 @@ export default function Landing() {
     retry: false,
   });
 
-  // Get images by position for display
-  const activeImages = heroImages?.filter(img => img.isActive) || [];
-  const getImageByPosition = (position: string) => {
-    return activeImages.find(img => img.position === position);
-  };
-
-  const mainImage = getImageByPosition("main");
-  const topRightImage = getImageByPosition("top-right");
-  const topLeftImage = getImageByPosition("top-left");
-  const bottomRightImage = getImageByPosition("bottom-right");
-  const bottomLeftImage = getImageByPosition("bottom-left");
+  // Get all active images sorted by display order
+  const activeImages = heroImages?.filter(img => img.isActive).sort((a, b) => a.displayOrder - b.displayOrder) || [];
+  
+  // Use the first 5 images for the gallery layout
+  const galleryImages = activeImages.slice(0, 5);
+  const [mainImage, ...smallImages] = galleryImages;
 
   /* ------------------------------------------------------------------ */
   //  Booking state
@@ -151,69 +146,51 @@ export default function Landing() {
                 )}
               </div>
               
-              {/* Top right images */}
-              <div className="relative">
-                {topLeftImage ? (
-                  <img 
-                    src={topLeftImage.url} 
-                    alt={topLeftImage.alt}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-green-100 flex items-center justify-center text-green-600 text-sm">
-                    Kitchen
+              {/* Right side images - display uploaded images */}
+              {smallImages.map((image, index) => {
+                const isTopRight = index === 1;
+                const isBottomRight = index === 3;
+                const cornerClass = isTopRight ? "rounded-tr-xl" : isBottomRight ? "rounded-br-xl" : "";
+                
+                return (
+                  <div key={image.id} className="relative">
+                    <img 
+                      src={image.url} 
+                      alt={image.alt}
+                      className={`w-full h-full object-cover ${cornerClass}`}
+                    />
+                    {/* Photos counter overlay on last image */}
+                    {index === 3 && activeImages.length > 5 && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="bg-white text-black px-4 py-2 rounded-lg font-medium text-sm shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                          +{activeImages.length - 5} photos
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="relative">
-                {topRightImage ? (
-                  <img 
-                    src={topRightImage.url} 
-                    alt={topRightImage.alt}
-                    className="w-full h-full object-cover rounded-tr-xl"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm rounded-tr-xl">
-                    Living Room
-                  </div>
-                )}
-              </div>
+                );
+              })}
               
-              {/* Bottom right images */}
-              <div className="relative">
-                {bottomLeftImage ? (
-                  <img 
-                    src={bottomLeftImage.url} 
-                    alt={bottomLeftImage.alt}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-sm">
-                    Balcony/Outdoor
+              {/* Fill remaining slots with placeholders if needed */}
+              {smallImages.length < 4 && [...Array(4 - smallImages.length)].map((_, index) => {
+                const actualIndex = smallImages.length + index;
+                const isTopRight = actualIndex === 1;
+                const isBottomRight = actualIndex === 3;
+                const cornerClass = isTopRight ? "rounded-tr-xl" : isBottomRight ? "rounded-br-xl" : "";
+                const placeholderColors = [
+                  "bg-green-100 text-green-600", // Kitchen
+                  "bg-blue-100 text-blue-600",  // Living Room  
+                  "bg-yellow-100 text-yellow-600", // Balcony
+                  "bg-purple-100 text-purple-600"  // Bathroom
+                ];
+                const placeholderTexts = ["Kitchen", "Living Room", "Balcony", "Bathroom"];
+                
+                return (
+                  <div key={`placeholder-${index}`} className={`relative w-full h-full flex items-center justify-center text-sm ${placeholderColors[actualIndex]} ${cornerClass}`}>
+                    {placeholderTexts[actualIndex]}
                   </div>
-                )}
-              </div>
-              <div className="relative">
-                {bottomRightImage ? (
-                  <img 
-                    src={bottomRightImage.url} 
-                    alt={bottomRightImage.alt}
-                    className="w-full h-full object-cover rounded-br-xl"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm rounded-br-xl">
-                    Bathroom
-                  </div>
-                )}
-                {/* Photos counter overlay */}
-                {activeImages.length > 5 && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="bg-white text-black px-4 py-2 rounded-lg font-medium text-sm shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                      +{activeImages.length - 5} photos
-                    </div>
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
 
             {/* Mobile Layout */}
@@ -244,8 +221,8 @@ export default function Landing() {
       {/* —— Property Description —— */}
       <section className="bg-white px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="max-w-4xl mx-auto">
+            <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Space</h2>
               <p className="text-gray-700 leading-relaxed mb-6">
                 Experience the elegance of Venice in our beautifully restored 16th-century apartment, located in the prestigious All'Arco district. This stunning 2-bedroom, 1-bathroom retreat offers an authentic Venetian experience with modern amenities and breathtaking canal views.
@@ -273,113 +250,7 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Booking Section */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-24">
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-gray-900">€{total.toFixed(2)}</div>
-                    <div className="text-sm text-gray-500">total</div>
-                  </div>
 
-                  {/* Calendar */}
-                  <div className="mb-6">
-                    <AdvancedCalendar
-                      bookedCheckIns={bookedCheckInDates}
-                      onValidRangeSelect={handleValidRangeSelect}
-                      className="w-full"
-                    />
-                    {validationErrors.checkOut && (
-                      <div className="flex items-center space-x-2 mt-2 text-red-600 text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        <span>{validationErrors.checkOut}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Guests & Pets */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Guests</span>
-                      <div className="flex items-center space-x-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setGuests(Math.max(1, guests - 1))}
-                          disabled={guests <= 1}
-                          className="w-8 h-8 p-0"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-8 text-center">{guests}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setGuests(Math.min(5, guests + 1))}
-                          disabled={guests >= 5}
-                          className="w-8 h-8 p-0"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium flex items-center space-x-2">
-                        <PawPrint className="w-4 h-4" />
-                        <span>Pets</span>
-                      </span>
-                      <Button
-                        variant={hasPet ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setHasPet(!hasPet)}
-                        className="px-4"
-                      >
-                        {hasPet ? "Yes" : "No"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Price Breakdown */}
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span>€{discNight.toFixed(2)} × {nights} night{nights !== 1 && "s"}</span>
-                      <span>€{(discNight * nights).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Cleaning fee</span>
-                      <span>€{clean.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Service fee</span>
-                      <span>€{service.toFixed(2)}</span>
-                    </div>
-                    {hasPet && (
-                      <div className="flex justify-between text-sm">
-                        <span>Pet fee</span>
-                        <span>€{pet.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <hr className="border-gray-200"/>
-                    <div className="flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span>€{total.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <Button 
-                    disabled={Object.keys(validationErrors).length > 0 || !checkIn || !checkOut} 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    asChild
-                  >
-                    <a href="/api/login" className="flex items-center justify-center">
-                      <Lock className="w-4 h-4 mr-2"/>
-                      Reserve
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </section>
