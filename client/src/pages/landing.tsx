@@ -538,10 +538,10 @@ export default function Landing() {
 
           {/* Single Unified Booking Widget */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              
-              {/* Left Side: Calendar */}
-              <div className="xl:col-span-1">
+            {/* Mobile: Stacked layout */}
+            <div className="grid grid-cols-1 md:hidden gap-6">
+              {/* Calendar Section */}
+              <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <CalendarIcon className="w-5 h-5 mr-2 text-blue-600" />
@@ -586,7 +586,6 @@ export default function Landing() {
                   </div>
                 </div>
 
-                {/* Calendar Component */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <AdvancedCalendar
                     bookedCheckIns={bookedCheckInDates}
@@ -594,7 +593,181 @@ export default function Landing() {
                     className="w-full"
                   />
                   
-                  {/* Calendar Legend */}
+                  <div className="mt-4 flex justify-center items-center gap-6 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-gray-600">Selected</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-200 rounded-full"></div>
+                      <span className="text-gray-600">In Range</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                      <span className="text-gray-600">Unavailable</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guests & Pets Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Guests</div>
+                        <div className="text-xs text-gray-500">Max 5</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-semibold text-gray-900 min-w-[20px] text-center">{guests}</span>
+                      <button 
+                        onClick={() => setGuests(Math.min(5, guests + 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PawPrint className="w-5 h-5 mr-2 text-gray-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Pets</div>
+                        <div className="text-xs text-gray-500">€20 fee</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setHasPet(!hasPet)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          hasPet ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Breakdown Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900 mb-2">€110.50</div>
+                  <div className="text-sm text-gray-600 mb-4">per night</div>
+                  
+                  {checkIn && checkOut && (
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>€110.50 × {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} night</span>
+                        <span>€{(110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Cleaning fee</span>
+                        <span>€25.00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Service fee</span>
+                        <span>€15.00</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
+                        <span>Total</span>
+                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + 15).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  disabled={!checkIn || !checkOut}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
+                    checkIn && checkOut
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
+                </button>
+              </div>
+
+              {!checkIn && !checkOut && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  ⚠️ Check-in date is required
+                </div>
+              )}
+            </div>
+
+            {/* Tablet: 60% calendar, 40% booking controls */}
+            <div className="hidden md:grid xl:hidden grid-cols-5 gap-8">
+              {/* Calendar - 60% (3/5) */}
+              <div className="col-span-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <CalendarIcon className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Dates
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      setCheckIn('');
+                      setCheckOut('');
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                    <div className="flex items-center mb-2">
+                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" />
+                      <label className="block text-xs font-medium text-gray-700">Check-in</label>
+                    </div>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
+                  </div>
+                  
+                  <div className="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                    <div className="flex items-center mb-2">
+                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" />
+                      <label className="block text-xs font-medium text-gray-700">Check-out</label>
+                    </div>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <AdvancedCalendar
+                    bookedCheckIns={bookedCheckInDates}
+                    onValidRangeSelect={handleValidRangeSelect}
+                    className="w-full"
+                  />
+                  
                   <div className="mt-4 flex justify-center items-center gap-6 text-sm">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -618,10 +791,9 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Right Side: Booking Controls */}
-              <div className="xl:col-span-1">
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 gap-6">
-                  
+              {/* Booking Controls - 40% (2/5) */}
+              <div className="col-span-2">
+                <div className="space-y-6">
                   {/* Guests & Pets Section */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
@@ -718,6 +890,181 @@ export default function Landing() {
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Desktop: 50% calendar, 25% guests & pets, 25% price breakdown */}
+            <div className="hidden xl:grid grid-cols-4 gap-8">
+              {/* Calendar - 50% (2/4) */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <CalendarIcon className="w-5 h-5 mr-2 text-blue-600" />
+                    Select Dates
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      setCheckIn('');
+                      setCheckOut('');
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                    <div className="flex items-center mb-2">
+                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" />
+                      <label className="block text-xs font-medium text-gray-700">Check-in</label>
+                    </div>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkIn ? new Date(checkIn).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
+                  </div>
+                  
+                  <div className="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                    <div className="flex items-center mb-2">
+                      <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" />
+                      <label className="block text-xs font-medium text-gray-700">Check-out</label>
+                    </div>
+                    <button className="w-full text-left text-sm font-medium text-blue-600">
+                      {checkOut ? new Date(checkOut).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      }) : 'Select date'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <AdvancedCalendar
+                    bookedCheckIns={bookedCheckInDates}
+                    onValidRangeSelect={handleValidRangeSelect}
+                    className="w-full"
+                  />
+                  
+                  <div className="mt-4 flex justify-center items-center gap-6 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-gray-600">Selected</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-200 rounded-full"></div>
+                      <span className="text-gray-600">In Range</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                      <span className="text-gray-600">Unavailable</span>
+                    </div>
+                  </div>
+                </div>
+
+                {!checkIn && !checkOut && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mt-4">
+                    ⚠️ Check-in date is required
+                  </div>
+                )}
+              </div>
+
+              {/* Guests & Pets - 25% (1/4) */}
+              <div className="col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Guests & Pets</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-gray-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Guests</div>
+                        <div className="text-xs text-gray-500">Max 5</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-semibold text-gray-900 min-w-[20px] text-center">{guests}</span>
+                      <button 
+                        onClick={() => setGuests(Math.min(5, guests + 1))}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PawPrint className="w-5 h-5 mr-2 text-gray-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Pets</div>
+                        <div className="text-xs text-gray-500">€20 fee</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setHasPet(!hasPet)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        hasPet ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          hasPet ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Breakdown - 25% (1/4) */}
+              <div className="col-span-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</h3>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900 mb-2">€110.50</div>
+                  <div className="text-sm text-gray-600 mb-4">per night</div>
+                  
+                  {checkIn && checkOut && (
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>€110.50 × {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} night</span>
+                        <span>€{(110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Cleaning fee</span>
+                        <span>€25.00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Service fee</span>
+                        <span>€15.00</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
+                        <span>Total</span>
+                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + 15).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  disabled={!checkIn || !checkOut}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
+                    checkIn && checkOut
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
+                </button>
               </div>
             </div>
           </div>
