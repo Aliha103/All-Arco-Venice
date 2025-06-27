@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
+import BookingPage from "@/pages/booking";
 import Signup from "@/pages/signup";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -24,6 +25,9 @@ function Router() {
       
       {/* Always show Landing page at root */}
       <Route path="/" component={Landing} />
+      
+      {/* Public booking page */}
+      <Route path="/booking" component={BookingPage} />
       
       {/* Protected routes only accessible when authenticated */}
       {isAuthenticated && (
