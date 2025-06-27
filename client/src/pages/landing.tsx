@@ -79,7 +79,7 @@ export default function Landing() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialIndex, setModalInitialIndex] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookingPricing, setBookingPricing] = useState(null);
+  const [bookingPricing, setBookingPricing] = useState<any>(null);
 
   // Calculate pricing when dates or guest details change
   const calculatePricingMutation = useMutation({
@@ -1135,6 +1135,7 @@ export default function Landing() {
                 
                 <button
                   disabled={!checkIn || !checkOut}
+                  onClick={handleReserveNow}
                   className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
                     checkIn && checkOut
                       ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
@@ -1269,6 +1270,21 @@ export default function Landing() {
         isOpen={isModalOpen}
         onClose={closeModal}
       />
+      
+      {/* Booking Modal */}
+      {bookingPricing && (
+        <BookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => setIsBookingModalOpen(false)}
+          bookingDetails={{
+            checkIn,
+            checkOut,
+            guests,
+            hasPet,
+            pricing: bookingPricing
+          }}
+        />
+      )}
     </div>
   );
 }

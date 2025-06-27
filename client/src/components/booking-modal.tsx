@@ -67,9 +67,10 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return await apiRequest('POST', '/api/bookings', bookingData);
+      const response = await apiRequest('POST', '/api/bookings', bookingData);
+      return response.json();
     },
-    onSuccess: (booking) => {
+    onSuccess: (booking: any) => {
       toast({
         title: "Booking Confirmed!",
         description: `Your confirmation code is ${booking.confirmationCode}`,
