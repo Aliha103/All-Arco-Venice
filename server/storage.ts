@@ -40,6 +40,7 @@ export interface IStorage {
   createAdminUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User>;
   incrementReferralCount(userId: string): Promise<void>;
   updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
+  deductUserCredits(userId: string, amount: number): Promise<void>;
   
   // Booking operations with comprehensive pricing
   createBooking(bookingData: {

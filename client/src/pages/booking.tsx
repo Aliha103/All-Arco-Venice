@@ -598,9 +598,60 @@ export default function BookingPage() {
                       )}
                     </div>
 
-                    
-
-                    
+                    {/* Account Credits - Only show for authenticated users with credits */}
+                    {isAuthenticated && user?.accountCredits && parseFloat(user.accountCredits) > 0 && (
+                      <div>
+                        <Label htmlFor="credits">Account Credits (Optional)</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            id="credits"
+                            type="number"
+                            min="0"
+                            max={finalPricing ? Math.min(parseFloat(user.accountCredits), finalPricing.finalTotal * 0.5).toFixed(2) : "0"}
+                            step="0.01"
+                            value={creditsUsed || ''}
+                            onChange={(e) => setCreditsUsed(parseFloat(e.target.value) || 0)}
+                            placeholder="Enter credits to use"
+                            disabled={!finalPricing || finalPricing.totalNights < 2}
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              if (finalPricing && user?.accountCredits) {
+                                const maxCredits = Math.min(parseFloat(user.accountCredits), finalPricing.finalTotal * 0.5);
+                                setCreditsUsed(maxCredits);
+                              }
+                            }}
+                            disabled={!finalPricing || finalPricing.totalNights < 2}
+                          >
+                            Use Max
+                          </Button>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Available: €{parseFloat(user.accountCredits).toFixed(2)}</span>
+                          <span>
+                            {finalPricing && finalPricing.totalNights < 2 
+                              ? "Credits require minimum 2 nights"
+                              : `Maximum 50% of total (€${finalPricing ? (finalPricing.finalTotal * 0.5).toFixed(2) : '0'})`
+                            }
+                          </span>
+                        </div>
+                        {creditsUsed > 0 && (
+                          <div className="flex items-center justify-between mt-2">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              €{creditsUsed.toFixed(2)} Credits Applied
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setCreditsUsed(0)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
