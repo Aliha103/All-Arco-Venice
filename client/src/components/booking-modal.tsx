@@ -330,35 +330,7 @@ export default function BookingModal({ isOpen, onClose, bookingDetails }: Bookin
                           placeholder="Enter discount code"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-                        <Input
-                          id="referralCode"
-                          value={formData.referralCode}
-                          onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))}
-                          placeholder="5€ per night credit"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* User Credit Section - only show for logged in users with credits */}
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-green-800">Available Credit</h4>
-                          <p className="text-sm text-green-600">You have €25.00 in account credits</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            id="useCredit" 
-                            className="rounded border-green-300 text-green-600 focus:ring-green-500"
-                          />
-                          <Label htmlFor="useCredit" className="text-sm font-medium text-green-800">
-                            Use credit
-                          </Label>
-                        </div>
-                      </div>
+                      
                     </div>
                   </div>
 

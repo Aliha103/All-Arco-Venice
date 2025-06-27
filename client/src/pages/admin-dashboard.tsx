@@ -45,14 +45,19 @@ interface Analytics {
 
 interface Booking {
   id: number;
-  guestName: string;
-  email: string;
-  checkIn: string;
-  checkOut: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestEmail: string;
+  guestCountry: string;
+  guestPhone: string;
+  checkInDate: string;
+  checkOutDate: string;
   guests: number;
-  pets: boolean;
+  hasPet: boolean;
+  paymentMethod: "online" | "property";
   totalPrice: number;
   status: string;
+  confirmationCode: string;
   createdAt: string;
 }
 
@@ -741,9 +746,9 @@ export default function AdminDashboard() {
                     {bookings.slice(0, 5).map((booking: Booking) => (
                       <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div>
-                          <p className="font-medium">{booking.guestName}</p>
+                          <p className="font-medium">{booking.guestFirstName} {booking.guestLastName}</p>
                           <p className="text-sm text-gray-600">
-                            {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
+                            {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -783,17 +788,17 @@ export default function AdminDashboard() {
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-3">
-                              <h3 className="font-semibold text-lg">{booking.guestName}</h3>
+                              <h3 className="font-semibold text-lg">{booking.guestFirstName} {booking.guestLastName}</h3>
                               <Badge className={getStatusColor(booking.status)}>
                                 {booking.status}
                               </Badge>
                             </div>
-                            <p className="text-gray-600">{booking.email}</p>
+                            <p className="text-gray-600">{booking.guestEmail}</p>
                             <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span>Check-in: {formatDate(booking.checkIn)}</span>
-                              <span>Check-out: {formatDate(booking.checkOut)}</span>
+                              <span>Check-in: {formatDate(booking.checkInDate)}</span>
+                              <span>Check-out: {formatDate(booking.checkOutDate)}</span>
                               <span>{booking.guests} guests</span>
-                              {booking.pets && <span>🐾 Pets allowed</span>}
+                              {booking.hasPet && <span>🐾 Pets allowed</span>}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
