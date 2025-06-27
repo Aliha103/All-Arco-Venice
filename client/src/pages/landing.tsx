@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Link } from "wouter"
+import { useQuery } from "@tanstack/react-query"
 import Header from "@/components/header"
-import HeroImagesGrid from "@/components/hero-images-grid"
 import {
   Star,
   MapPin,
@@ -40,7 +40,37 @@ import { format } from "date-fns"
 /**
  * Landing page – complete UI with hero, booking, amenities, reviews & footer.
  */
+interface HeroImage {
+  id: number;
+  url: string;
+  title: string;
+  alt: string;
+  position: string;
+  isActive: boolean;
+  displayOrder: number;
+}
+
 export default function Landing() {
+  /* ------------------------------------------------------------------ */
+  //  Image gallery state
+  /* ------------------------------------------------------------------ */
+  const { data: heroImages } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images/active"],
+    retry: false,
+  });
+
+  // Get images by position for display
+  const activeImages = heroImages?.filter(img => img.isActive) || [];
+  const getImageByPosition = (position: string) => {
+    return activeImages.find(img => img.position === position);
+  };
+
+  const mainImage = getImageByPosition("main");
+  const topRightImage = getImageByPosition("top-right");
+  const topLeftImage = getImageByPosition("top-left");
+  const bottomRightImage = getImageByPosition("bottom-right");
+  const bottomLeftImage = getImageByPosition("bottom-left");
+
   /* ------------------------------------------------------------------ */
   //  Booking state
   /* ------------------------------------------------------------------ */
@@ -102,8 +132,112 @@ export default function Landing() {
             <span className="flex items-center space-x-1"><Star className="w-4 h-4 text-yellow-400 fill-current" /><span>4.89</span><span>·</span><span>127 reviews</span></span>
             <span className="flex items-center space-x-1"><MapPin className="w-4 h-4" /><span>Venice, Italy</span></span>
           </div>
-          {/* Images grid */}
-          <HeroImagesGrid />
+          {/* Property Images Gallery */}
+          <div className="relative">
+            {/* Desktop Layout */}
+            <div className="hidden md:grid md:grid-cols-4 md:grid-rows-2 gap-2 h-96 rounded-xl overflow-hidden">
+              {/* Main large image - spans 2 columns and 2 rows */}
+              <div className="col-span-2 row-span-2 relative">
+                {mainImage ? (
+                  <img 
+                    src={mainImage.url} 
+                    alt={mainImage.alt}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                    Main Bedroom
+                  </div>
+                )}
+              </div>
+              
+              {/* Top right images */}
+              <div className="relative">
+                {topLeftImage ? (
+                  <img 
+                    src={topLeftImage.url} 
+                    alt={topLeftImage.alt}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-green-100 flex items-center justify-center text-green-600 text-sm">
+                    Kitchen
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                {topRightImage ? (
+                  <img 
+                    src={topRightImage.url} 
+                    alt={topRightImage.alt}
+                    className="w-full h-full object-cover rounded-tr-xl"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm rounded-tr-xl">
+                    Living Room
+                  </div>
+                )}
+              </div>
+              
+              {/* Bottom right images */}
+              <div className="relative">
+                {bottomLeftImage ? (
+                  <img 
+                    src={bottomLeftImage.url} 
+                    alt={bottomLeftImage.alt}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-sm">
+                    Balcony/Outdoor
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                {bottomRightImage ? (
+                  <img 
+                    src={bottomRightImage.url} 
+                    alt={bottomRightImage.alt}
+                    className="w-full h-full object-cover rounded-br-xl"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm rounded-br-xl">
+                    Bathroom
+                  </div>
+                )}
+                {/* Photos counter overlay */}
+                {activeImages.length > 5 && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="bg-white text-black px-4 py-2 rounded-lg font-medium text-sm shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                      +{activeImages.length - 5} photos
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="md:hidden relative h-64 rounded-xl overflow-hidden">
+              {mainImage ? (
+                <img 
+                  src={mainImage.url} 
+                  alt={mainImage.alt}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                  Main Bedroom
+                </div>
+              )}
+              {activeImages.length > 1 && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div className="bg-white text-black px-4 py-2 rounded-lg font-medium text-sm shadow-lg">
+                    +{activeImages.length - 1} photos
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
