@@ -370,6 +370,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get booking dates for calendar (public endpoint for real-time availability)
+  app.get('/api/bookings/dates', async (req, res) => {
+    try {
+      // Get all confirmed bookings for calendar availability
+      const bookings = await storage.getBookings({ status: 'confirmed' });
+      
+      // Return only check-in dates for calendar blocking
+      const bookedDates = bookings.map(booking => ({
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate
+      }));
+      
+      res.json(bookedDates);
+    } catch (error) {
+      console.error("Error fetching booking dates:", error);
+      res.status(500).json({ message: "Failed to fetch booking dates" });
+    }
+  });
+
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

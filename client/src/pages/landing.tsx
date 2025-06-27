@@ -5,7 +5,7 @@ import Header from "@/components/header"
 import ImageGalleryModal from "@/components/image-gallery-modal"
 import BookingModal from "@/components/booking-modal"
 import { apiRequest } from "@/lib/queryClient"
-import { Calendar, type DateRange } from "@/components/advanced-calendar"
+import { Calendar } from "@/components/advanced-calendar"
 import {
   Star,
   MapPin,
@@ -166,8 +166,15 @@ export default function Landing() {
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState(0)
 
-  // Mock booked check-in dates (replace with real API data)
-  const bookedCheckInDates = ["2025-06-15","2025-06-22","2025-07-01","2025-07-10","2025-07-20"].map(d=>new Date(d))
+  // Real-time booking data with 100ms refresh
+  const { data: bookingsData } = useQuery<Array<{checkInDate: string, checkOutDate: string}>>({
+    queryKey: ["/api/bookings/dates"],
+    refetchInterval: 100, // 100ms refresh for real-time updates
+    staleTime: 0, // Always consider data stale for real-time updates
+  });
+
+  // Extract check-in dates from confirmed bookings
+  const bookedCheckInDates = bookingsData?.map(booking => new Date(booking.checkInDate)) || [];
 
   /* ------------------------------------------------------------------ */
   //  Calendar wiring
