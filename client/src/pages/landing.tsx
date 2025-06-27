@@ -330,58 +330,85 @@ export default function Landing() {
       </section>
 
       {/* —— Property Information Section —— */}
-      <section className="bg-white px-4 py-6 border-b border-gray-200">
+      <section className="bg-gradient-to-br from-gray-50 via-white to-blue-50/30 px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              
-              {/* Left: Host Info */}
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                  F
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Entire apartment hosted by Fatima</h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                    <span className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="font-medium">Superhost</span>
-                    </span>
-                    <span>5+ years hosting</span>
-                    <span>100+ reviews</span>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-xl shadow-gray-100/50 overflow-hidden">
+            {/* Main Content */}
+            <div className="p-8">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+                
+                {/* Left: Host Info */}
+                <div className="flex items-start space-x-5">
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      F
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-md">
+                      <Star className="w-3 h-3 text-white fill-current" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-gray-900 leading-tight">
+                      Entire apartment hosted by 
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Fatima</span>
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                      <span className="flex items-center space-x-1.5 bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-1.5 rounded-full border border-yellow-200/50">
+                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
+                        <span className="font-semibold text-yellow-700">Superhost</span>
+                      </span>
+                      <span className="text-gray-600 font-medium">5+ years hosting</span>
+                      <span className="text-gray-600 font-medium">100+ reviews</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right: Price */}
-              <div className="text-right lg:text-right">
-                <div className="text-2xl font-bold text-gray-900">€110.50 <span className="text-base font-normal text-gray-600">/night</span></div>
-                <div className="text-sm text-green-600 font-medium mt-1">Available</div>
+                {/* Right: Price */}
+                <div className="lg:text-right">
+                  <div className="space-y-2">
+                    <div className="text-3xl font-bold text-gray-900">
+                      €110.50 
+                      <span className="text-lg font-medium text-gray-500">/night</span>
+                    </div>
+                    <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 px-3 py-1.5 rounded-full border border-green-200/50">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-semibold text-green-700">Available now</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Property Details */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-t border-gray-100/50 px-8 py-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="flex items-center space-x-3">
-                  <Users className="w-5 h-5 text-gray-600" />
+                <div className="group flex items-center space-x-4 p-4 rounded-xl bg-white/60 hover:bg-white/80 transition-all duration-300 hover:shadow-md">
+                  <div className="w-11 h-11 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
                   <div>
-                    <div className="font-medium text-gray-900">5 guests</div>
-                    <div className="text-sm text-gray-500">Maximum capacity</div>
+                    <div className="font-bold text-gray-900 text-lg">5 guests</div>
+                    <div className="text-sm text-gray-500 font-medium">Maximum capacity</div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Bed className="w-5 h-5 text-gray-600" />
+                
+                <div className="group flex items-center space-x-4 p-4 rounded-xl bg-white/60 hover:bg-white/80 transition-all duration-300 hover:shadow-md">
+                  <div className="w-11 h-11 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Bed className="w-5 h-5 text-purple-600" />
+                  </div>
                   <div>
-                    <div className="font-medium text-gray-900">2 bedrooms</div>
-                    <div className="text-sm text-gray-500">Private spaces</div>
+                    <div className="font-bold text-gray-900 text-lg">2 bedrooms</div>
+                    <div className="text-sm text-gray-500 font-medium">Private spaces</div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Key className="w-5 h-5 text-gray-600" />
+                
+                <div className="group flex items-center space-x-4 p-4 rounded-xl bg-white/60 hover:bg-white/80 transition-all duration-300 hover:shadow-md">
+                  <div className="w-11 h-11 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Key className="w-5 h-5 text-emerald-600" />
+                  </div>
                   <div>
-                    <div className="font-medium text-gray-900">1 bathroom</div>
-                    <div className="text-sm text-gray-500">Full bathroom</div>
+                    <div className="font-bold text-gray-900 text-lg">1 bathroom</div>
+                    <div className="text-sm text-gray-500 font-medium">Full bathroom</div>
                   </div>
                 </div>
               </div>
