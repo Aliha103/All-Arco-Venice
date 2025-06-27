@@ -82,14 +82,35 @@
 }
 
 @layer components {
-  /* Micro-interactions for smooth mobile responsiveness */
+  /* Enhanced Micro-interactions for smooth mobile responsiveness */
   .touch-interaction {
     @apply transition-all duration-200 ease-in-out;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
   }
 
   .touch-interaction:active {
     @apply scale-95;
+  }
+
+  .touch-interaction::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+    pointer-events: none;
+  }
+
+  .touch-interaction:active::before {
+    width: 200px;
+    height: 200px;
   }
 
   .smooth-hover {
@@ -100,6 +121,90 @@
     @apply transform -translate-y-1 shadow-lg;
   }
 
+  /* Mobile-specific animations */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { 
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); 
+    }
+    50% { 
+      box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); 
+    }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-slide-in-up {
+    animation: slideInUp 0.5s ease-out;
+  }
+
+  .animate-fade-in-scale {
+    animation: fadeInScale 0.4s ease-out;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s infinite;
+  }
+
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Touch-friendly enhancements */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Enhanced focus states for accessibility */
+  .focus-visible:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Smooth scrolling behavior */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Additional micro-interaction classes */
   .gentle-scale {
     @apply transition-transform duration-200 ease-out;
   }
@@ -154,324 +259,6 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Pulse animation for loading states */
-  .gentle-pulse {
-    animation: gentlePulse 2s ease-in-out infinite;
-  }
-
-  @keyframes gentlePulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
-  }
-
-  /* Mobile-optimized touch feedback */
-  @media (hover: none) and (pointer: coarse) {
-    .touch-interaction:active {
-      @apply scale-90 shadow-sm;
-      background-color: rgba(59, 130, 246, 0.05);
-    }
-    
-    .gentle-scale:active {
-      @apply scale-95;
-    }
-    
-    .interactive-button:active {
-      @apply scale-95 shadow-sm;
-    }
-  }
-
-  /* Smooth scrolling for mobile */
-  html {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Enhanced focus states for accessibility */
-  .touch-interaction:focus-visible {
-    outline: 2px solid hsl(207, 90%, 54%);
-    outline-offset: 2px;
-  }
-
-  /* Calendar custom styles */
-  .rdp {
-    --rdp-cell-size: 40px;
-    --rdp-accent-color: hsl(351, 83%, 61%);
-    --rdp-background-color: hsl(0, 0%, 100%);
-    margin: 0;
-  }
-
-  .rdp-months {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .rdp-month {
-    margin: 0 0 1rem 0;
-  }
-
-  .rdp-table {
-    width: 100%;
-    max-width: none;
-  }
-
-  .rdp-head_cell {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: hsl(25, 5.3%, 44.7%);
-    text-align: center;
-    padding: 0.5rem;
-  }
-
-  .rdp-cell {
-    text-align: center;
-    position: relative;
-    padding: 0;
-  }
-
-  .rdp-button {
-    width: var(--rdp-cell-size);
-    height: var(--rdp-cell-size);
-    border: none;
-    background: transparent;
-    color: hsl(20, 14.3%, 4.1%);
-    font-size: 0.875rem;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .rdp-button:hover {
-    background-color: hsl(60, 4.8%, 95.9%);
-  }
-
-  .rdp-button_reset {
-    all: unset;
-  }
-
-  .rdp-day_today {
-    font-weight: 600;
-    color: hsl(351, 83%, 61%);
-  }
-
-  .rdp-day_selected {
-    background-color: hsl(351, 83%, 61%) !important;
-    color: hsl(0, 0%, 100%) !important;
-    font-weight: 600;
-  }
-
-  .rdp-day_selected:hover {
-    background-color: hsl(351, 83%, 55%) !important;
-  }
-
-  .rdp-day_disabled {
-    color: hsl(25, 5.3%, 44.7%);
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .rdp-day_disabled:hover {
-    background-color: transparent;
-  }
-
-  .rdp-day_outside {
-    color: hsl(25, 5.3%, 44.7%);
-    opacity: 0.5;
-  }
-
-  .rdp-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-
-  .rdp-nav_button {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    color: hsl(20, 14.3%, 4.1%);
-    transition: background-color 0.2s ease-in-out;
-  }
-
-  .rdp-nav_button:hover {
-    background-color: hsl(60, 4.8%, 95.9%);
-  }
-
-  .rdp-nav_button_previous,
-  .rdp-nav_button_next {
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .rdp-caption_label {
-    font-weight: 600;
-    font-size: 1rem;
-    color: hsl(20, 14.3%, 4.1%);
-  }
-
-  /* Button variants matching design */
-  .btn-primary {
-    background-color: hsl(351, 83%, 61%);
-    color: hsl(0, 0%, 100%);
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-  }
-
-  .btn-primary:hover {
-    background-color: hsl(351, 83%, 55%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsla(351, 83%, 61%, 0.4);
-  }
-
-  .btn-secondary {
-    background-color: hsl(207, 90%, 54%);
-    color: hsl(0, 0%, 100%);
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-  }
-
-  .btn-secondary:hover {
-    background-color: hsl(207, 90%, 48%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsla(207, 90%, 54%, 0.4);
-  }
-
-  /* Card hover effects */
-  .card-hover {
-    transition: all 0.3s ease-in-out;
-  }
-
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px hsla(20, 14.3%, 4.1%, 0.1);
-  }
-
-  /* Image gallery hover effects */
-  .image-gallery-item {
-    transition: all 0.3s ease-in-out;
-    overflow: hidden;
-  }
-
-  .image-gallery-item:hover {
-    transform: scale(1.02);
-    box-shadow: 0 8px 25px hsla(20, 14.3%, 4.1%, 0.15);
-  }
-
-  .image-gallery-item img {
-    transition: transform 0.3s ease-in-out;
-  }
-
-  .image-gallery-item:hover img {
-    transform: scale(1.05);
-  }
-
-  /* Loading animations */
-  .loading-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  /* Notification badge */
-  .notification-badge {
-    background-color: hsl(351, 83%, 61%);
-    color: hsl(0, 0%, 100%);
-    border-radius: 50%;
-    font-size: 0.75rem;
-    font-weight: 600;
-    min-width: 1.25rem;
-    height: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    top: -0.25rem;
-    right: -0.25rem;
-  }
-
-  /* Form focus states */
-  .form-input:focus {
-    outline: none;
-    border-color: hsl(351, 83%, 61%);
-    box-shadow: 0 0 0 3px hsla(351, 83%, 61%, 0.1);
-  }
-
-  /* Rating stars */
-  .rating-star {
-    color: hsl(45, 93%, 47%);
-    fill: currentColor;
-  }
-
-  .rating-star-empty {
-    color: hsl(25, 5.3%, 44.7%);
-  }
-
-  /* Progress bars */
-  .progress-bar {
-    background-color: hsl(142, 76%, 36%);
-    height: 0.5rem;
-    border-radius: 0.25rem;
-    transition: width 0.3s ease-in-out;
-  }
-
-  /* Admin controls styling */
-  .admin-control {
-    background-color: hsla(207, 90%, 54%, 0.1);
-    border: 1px solid hsl(207, 90%, 54%);
-    border-radius: 0.5rem;
-    padding: 1rem;
-  }
-
-  .admin-control h3 {
-    color: hsl(207, 90%, 30%);
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-  }
-
-  /* Success/Error states */
-  .success-state {
-    color: hsl(142, 76%, 36%);
-    background-color: hsla(142, 76%, 36%, 0.1);
-    border: 1px solid hsl(142, 76%, 36%);
-    border-radius: 0.375rem;
-    padding: 0.75rem;
-  }
-
-  .error-state {
-    color: hsl(0, 84.2%, 60.2%);
-    background-color: hsla(0, 84.2%, 60.2%, 0.1);
-    border: 1px solid hsl(0, 84.2%, 60.2%);
-    border-radius: 0.375rem;
-    padding: 0.75rem;
   }
 
   /* Responsive image grid */
