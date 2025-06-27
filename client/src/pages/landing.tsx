@@ -255,7 +255,7 @@ export default function Landing() {
 
             {/* Mobile Layout - Swipeable Carousel */}
             <div 
-              className="md:hidden relative h-64 rounded-xl overflow-hidden"
+              className="md:hidden relative h-64 rounded-xl overflow-hidden transform transition-all duration-200 active:scale-[0.98]"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -268,61 +268,66 @@ export default function Landing() {
                 {activeImages.map((image, index) => (
                   <div 
                     key={image.id} 
-                    className="min-w-full h-full relative cursor-pointer"
+                    className="min-w-full h-full relative cursor-pointer transform transition-all duration-200 active:scale-95"
                     onClick={() => openModal(index)}
                   >
                     <img 
                       src={image.url} 
                       alt={image.alt}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300"
                     />
+                    {/* Touch feedback overlay */}
+                    <div className="absolute inset-0 bg-blue-500/0 active:bg-blue-500/10 transition-colors duration-150"></div>
                   </div>
                 ))}
                 {activeImages.length === 0 && (
-                  <div className="min-w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                    No images available
+                  <div className="min-w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 animate-pulse">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-2 animate-pulse"></div>
+                      <span>Loading images...</span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Navigation Arrows */}
+              {/* Navigation Arrows with enhanced touch feedback */}
               {activeImages.length > 1 && (
                 <>
                   <button
                     onClick={goToPrevMobile}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all duration-200 z-10 active:scale-90 active:bg-opacity-80"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={goToNextMobile}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all duration-200 z-10 active:scale-90 active:bg-opacity-80"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 </>
               )}
 
-              {/* Dots Indicator */}
+              {/* Enhanced Dots Indicator with haptic-like feedback */}
               {activeImages.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
                   {activeImages.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentMobileIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
+                      className={`w-3 h-3 rounded-full transition-all duration-300 transform active:scale-125 ${
                         index === currentMobileIndex 
-                          ? 'bg-white' 
-                          : 'bg-white bg-opacity-50'
+                          ? 'bg-white scale-110 shadow-lg' 
+                          : 'bg-white bg-opacity-60 hover:bg-opacity-80'
                       }`}
                     />
                   ))}
                 </div>
               )}
 
-              {/* Photo Counter */}
-              <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
-                {currentMobileIndex + 1} / {activeImages.length}
+              {/* Photo Counter with smooth animations */}
+              <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm transition-all duration-300 transform hover:scale-105">
+                <span className="transition-all duration-200">{currentMobileIndex + 1}</span> / {activeImages.length}
               </div>
             </div>
           </div>
@@ -330,7 +335,7 @@ export default function Landing() {
       </section>
 
       {/* —— Property Information Section —— */}
-      <section className="bg-white px-4 py-8">
+      <section className="bg-white px-4 py-8 transform transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           
           {/* Desktop Layout */}
@@ -460,58 +465,60 @@ export default function Landing() {
           <div className="block md:hidden">
             <div className="space-y-4">
               {/* Host Info and Price Row */}
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between transform transition-all duration-200 active:scale-[0.98]">
                 <div className="flex items-start space-x-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center transform transition-all duration-200 active:scale-95 active:bg-blue-200">
+                    <Users className="w-6 h-6 text-blue-600 transition-transform duration-200" />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 transition-colors duration-200">
                       Entire apartment hosted by Fatima
                     </h2>
                     <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
-                      <span className="flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                      <span className="flex items-center space-x-1 transform transition-all duration-200 active:scale-95">
+                        <Star className="w-3 h-3 text-yellow-500 fill-current transition-transform duration-200 active:scale-110" />
                         <span>Superhost</span>
                       </span>
-                      <span>5+ years hosting</span>
-                      <span>100+ reviews</span>
+                      <span className="transition-colors duration-200 active:text-gray-800">5+ years hosting</span>
+                      <span className="transition-colors duration-200 active:text-gray-800">100+ reviews</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-base sm:text-lg font-semibold text-gray-900">€110.50 <span className="text-xs sm:text-sm font-normal">/night</span></div>
+                  <div className="text-base sm:text-lg font-semibold text-gray-900 transition-all duration-200 active:scale-105">
+                    €110.50 <span className="text-xs sm:text-sm font-normal">/night</span>
+                  </div>
                   <div className="flex items-center justify-end space-x-1 mt-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-green-600">Available</span>
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600 transition-colors duration-200">Available</span>
                   </div>
                 </div>
               </div>
               
-              {/* Property Details Row */}
-              <div className="flex items-center space-x-6 pt-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-gray-600" />
+              {/* Property Details Row with Enhanced Touch Feedback */}
+              <div className="flex items-center space-x-6 pt-4 border-t border-gray-200 transition-all duration-200">
+                <div className="flex items-center space-x-2 transform transition-all duration-200 active:scale-95 active:bg-gray-50 p-2 rounded-lg -m-2">
+                  <Users className="w-4 h-4 text-gray-600 transition-transform duration-200 active:scale-110" />
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">5 guests</div>
-                    <div className="text-xs text-gray-500">Maximum capacity</div>
+                    <div className="font-semibold text-gray-900 text-sm transition-colors duration-200">5 guests</div>
+                    <div className="text-xs text-gray-500 transition-colors duration-200">Maximum capacity</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Bed className="w-4 h-4 text-gray-600" />
+                <div className="flex items-center space-x-2 transform transition-all duration-200 active:scale-95 active:bg-gray-50 p-2 rounded-lg -m-2">
+                  <Bed className="w-4 h-4 text-gray-600 transition-transform duration-200 active:scale-110" />
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">2 bedrooms</div>
-                    <div className="text-xs text-gray-500">Private spaces</div>
+                    <div className="font-semibold text-gray-900 text-sm transition-colors duration-200">2 bedrooms</div>
+                    <div className="text-xs text-gray-500 transition-colors duration-200">Private spaces</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Key className="w-4 h-4 text-gray-600" />
+                <div className="flex items-center space-x-2 transform transition-all duration-200 active:scale-95 active:bg-gray-50 p-2 rounded-lg -m-2">
+                  <Key className="w-4 h-4 text-gray-600 transition-transform duration-200 active:scale-110" />
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">1 bathroom</div>
-                    <div className="text-xs text-gray-500">Full bathroom</div>
+                    <div className="font-semibold text-gray-900 text-sm transition-colors duration-200">1 bathroom</div>
+                    <div className="text-xs text-gray-500 transition-colors duration-200">Full bathroom</div>
                   </div>
                 </div>
               </div>
@@ -533,21 +540,21 @@ export default function Landing() {
                 The apartment features original exposed wooden beams, hand-painted frescoes, and meticulously preserved architectural details that tell the story of Venice's rich history. The spacious living area flows seamlessly into a fully equipped modern kitchen, perfect for preparing meals with fresh ingredients from the nearby Rialto Market.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center space-x-2">
-                  <Bed className="w-5 h-5 text-blue-600" />
-                  <span>2 bedrooms</span>
+                <div className="flex items-center space-x-2 transform transition-all duration-200 hover:scale-105 active:scale-95 p-3 rounded-lg hover:bg-blue-50 active:bg-blue-100">
+                  <Bed className="w-5 h-5 text-blue-600 transition-transform duration-200 active:scale-110" />
+                  <span className="transition-colors duration-200 active:text-blue-700">2 bedrooms</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  <span>Sleeps up to 5 guests</span>
+                <div className="flex items-center space-x-2 transform transition-all duration-200 hover:scale-105 active:scale-95 p-3 rounded-lg hover:bg-blue-50 active:bg-blue-100">
+                  <Users className="w-5 h-5 text-blue-600 transition-transform duration-200 active:scale-110" />
+                  <span className="transition-colors duration-200 active:text-blue-700">Sleeps up to 5 guests</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <span>2 min walk to Rialto Bridge</span>
+                <div className="flex items-center space-x-2 transform transition-all duration-200 hover:scale-105 active:scale-95 p-3 rounded-lg hover:bg-blue-50 active:bg-blue-100">
+                  <MapPin className="w-5 h-5 text-blue-600 transition-transform duration-200 active:scale-110" />
+                  <span className="transition-colors duration-200 active:text-blue-700">2 min walk to Rialto Bridge</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Wifi className="w-5 h-5 text-blue-600" />
-                  <span>High-speed Wi-Fi</span>
+                <div className="flex items-center space-x-2 transform transition-all duration-200 hover:scale-105 active:scale-95 p-3 rounded-lg hover:bg-blue-50 active:bg-blue-100">
+                  <Wifi className="w-5 h-5 text-blue-600 transition-transform duration-200 active:scale-110" />
+                  <span className="transition-colors duration-200 active:text-blue-700">High-speed Wi-Fi</span>
                 </div>
               </div>
             </div>
@@ -596,23 +603,27 @@ export default function Landing() {
                 date: "September 2024"
               }
             ].map((review, index) => (
-              <Card key={index}>
+              <Card key={index} className="transform transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-xl">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold transform transition-all duration-200 active:scale-110 active:bg-blue-700">
                       {review.name[0]}
                     </div>
                     <div className="ml-3">
-                      <div className="font-semibold">{review.name}</div>
-                      <div className="text-sm text-gray-600">{review.date}</div>
+                      <div className="font-semibold transition-colors duration-200 active:text-blue-600">{review.name}</div>
+                      <div className="text-sm text-gray-600 transition-colors duration-200">{review.date}</div>
                     </div>
                   </div>
                   <div className="flex mb-3">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                      <Star 
+                        key={i} 
+                        className="w-4 h-4 text-yellow-400 fill-current transform transition-all duration-200 hover:scale-110 active:scale-125" 
+                        style={{ animationDelay: `${i * 100}ms` }}
+                      />
                     ))}
                   </div>
-                  <p className="text-gray-700">{review.comment}</p>
+                  <p className="text-gray-700 transition-colors duration-200 active:text-gray-900">{review.comment}</p>
                 </CardContent>
               </Card>
             ))}
@@ -621,14 +632,14 @@ export default function Landing() {
       </section>
 
       {/* —— Footer —— */}
-      <footer className="bg-gray-900 text-white px-4 py-12">
+      <footer className="bg-gray-900 text-white px-4 py-12 transform transition-all duration-300">
         <div className="max-w-7xl mx-auto text-center">
-          <h3 className="text-2xl font-bold mb-4">All'Arco Venice</h3>
-          <p className="text-gray-300 mb-6">Your gateway to authentic Venetian luxury</p>
+          <h3 className="text-2xl font-bold mb-4 transform transition-all duration-200 hover:scale-105 active:scale-95">All'Arco Venice</h3>
+          <p className="text-gray-300 mb-6 transition-colors duration-200 hover:text-white">Your gateway to authentic Venetian luxury</p>
           <div className="flex justify-center space-x-6">
-            <span>© 2024 All'Arco Venice</span>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
+            <span className="transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer hover:text-blue-300">© 2024 All'Arco Venice</span>
+            <span className="transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer hover:text-blue-300">Privacy Policy</span>
+            <span className="transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer hover:text-blue-300">Terms of Service</span>
           </div>
         </div>
       </footer>
