@@ -88,8 +88,21 @@ export default function Landing() {
 
   const [, setLocation] = useLocation();
 
+  // Enhanced validation for Reserve Now button
+  const isValidBooking = () => {
+    if (!checkIn || !checkOut) return false;
+    
+    const verdict = validateStayRange(
+      { from: new Date(checkIn), to: new Date(checkOut) }, 
+      bookedCheckInDates, 
+      { maxStayDays: 15 }
+    );
+    
+    return verdict.valid && Object.keys(validationErrors).length === 0;
+  };
+
   const handleReserveNow = async () => {
-    if (!checkIn || !checkOut) return;
+    if (!isValidBooking()) return;
 
     try {
       // Calculate pricing first
@@ -757,14 +770,16 @@ export default function Landing() {
                 </div>
                 
                 <button
-                  disabled={!checkIn || !checkOut}
+                  disabled={!isValidBooking()}
+                  onClick={handleReserveNow}
                   className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
-                    checkIn && checkOut
+                    isValidBooking()
                       ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
+                  {!checkIn || !checkOut ? 'Select dates to continue' : 
+                   Object.keys(validationErrors).length > 0 ? 'Invalid date selection' : 'Reserve Now'}
                 </button>
               </div>
 
@@ -958,15 +973,16 @@ export default function Landing() {
                     </div>
                     
                     <button
-                      disabled={!checkIn || !checkOut}
+                      disabled={!isValidBooking()}
                       onClick={handleReserveNow}
                       className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
-                        checkIn && checkOut
+                        isValidBooking()
                           ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                     >
-                      {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
+                      {!checkIn || !checkOut ? 'Select dates to continue' : 
+                       Object.keys(validationErrors).length > 0 ? 'Invalid date selection' : 'Reserve Now'}
                     </button>
                   </div>
                 </div>
@@ -1154,15 +1170,16 @@ export default function Landing() {
                 </div>
                 
                 <button
-                  disabled={!checkIn || !checkOut}
+                  disabled={!isValidBooking()}
                   onClick={handleReserveNow}
                   className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
-                    checkIn && checkOut
+                    isValidBooking()
                       ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {!checkIn && !checkOut ? 'Select dates to continue' : 'Reserve Now'}
+                  {!checkIn || !checkOut ? 'Select dates to continue' : 
+                   Object.keys(validationErrors).length > 0 ? 'Invalid date selection' : 'Reserve Now'}
                 </button>
               </div>
             </div>
