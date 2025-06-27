@@ -527,7 +527,7 @@ export default function Landing() {
       </section>
       {/* —— Booking Calendar Section —— */}
       <section className="bg-gray-50 px-4 py-8">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Book Your Stay</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">Choose your dates and start planning your perfect getaway</p>
