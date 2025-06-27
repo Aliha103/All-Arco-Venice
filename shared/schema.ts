@@ -48,42 +48,79 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Bookings table with enhanced payment options
+// Comprehensive bookings table matching frontend functionality
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
-  guestFirstName: varchar("guest_first_name", { length: 100 }).notNull(),
-  guestLastName: varchar("guest_last_name", { length: 100 }).notNull(),
-  guestCountry: varchar("guest_country", { length: 100 }),
-  guestMobile: varchar("guest_mobile", { length: 20 }),
-  guestEmail: varchar("guest_email", { length: 255 }),
   
+  // Booking dates
   checkInDate: date("check_in_date").notNull(),
   checkOutDate: date("check_out_date").notNull(),
   checkInTime: time("check_in_time").default("15:00"),
   checkOutTime: time("check_out_time").default("10:00"),
+  guests: integer("guests").notNull().default(1),
   
-  confirmationNumber: varchar("confirmation_number", { length: 20 }).unique().notNull(),
+  // Guest information
+  guestFirstName: varchar("guest_first_name", { length: 100 }).notNull(),
+  guestLastName: varchar("guest_last_name", { length: 100 }).notNull(),
+  guestEmail: varchar("guest_email", { length: 255 }).notNull(),
+  guestCountry: varchar("guest_country", { length: 100 }).notNull(),
+  guestPhone: varchar("guest_phone", { length: 20 }).notNull(),
   
+  // Pricing breakdown - detailed breakdown matching frontend
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull(), // €110.50 per night
+  totalNights: integer("total_nights").notNull(),
+  priceBeforeDiscount: decimal("price_before_discount", { precision: 10, scale: 2 }).notNull(), // base * nights
+  priceAfterDiscount: decimal("price_after_discount", { precision: 10, scale: 2 }).notNull(), // after length discount
+  
+  // Fees
+  cleaningFee: decimal("cleaning_fee", { precision: 10, scale: 2 }).notNull().default("25.00"),
+  serviceFee: decimal("service_fee", { precision: 10, scale: 2 }).notNull().default("15.00"),
+  petFee: decimal("pet_fee", { precision: 10, scale: 2 }).default("0.00"),
+  cityTax: decimal("city_tax", { precision: 10, scale: 2 }).default("0.00"), // 4€ per adult per night max 5 nights
+  
+  // Discount tracking
+  lengthOfStayDiscount: decimal("length_of_stay_discount", { precision: 10, scale: 2 }).default("0.00"), // 5% (7+ days) or 10% (14+ days)
+  lengthOfStayDiscountPercent: integer("length_of_stay_discount_percent").default(0), // 5 or 10
+  referralCredit: decimal("referral_credit", { precision: 10, scale: 2 }).default("0.00"), // 5€ per night for referrals
+  otherDiscounts: decimal("other_discounts", { precision: 10, scale: 2 }).default("0.00"), // Manual admin discounts
+  totalDiscountAmount: decimal("total_discount_amount", { precision: 10, scale: 2 }).default("0.00"), // Sum of all discounts
+  
+  // Final totals
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(), // Final amount to pay
+  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0.00"),
+  
+  // Payment and booking details
   paymentMethod: varchar("payment_method", { 
-    enum: ["online", "at_property_card_auth", "admin_manual_card", "admin_pay_at_property", "admin_city_tax_only"]
-  }).notNull(),
+    enum: ["online", "property"]
+  }).notNull().default("online"),
   paymentStatus: varchar("payment_status", {
     enum: ["pending", "paid", "authorized", "not_required"]
   }).default("pending"),
   
-  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
-  cityTax: decimal("city_tax", { precision: 10, scale: 2 }).default("0.00"),
-  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0.00"),
+  // Booking creation tracking
+  createdBy: varchar("created_by", { enum: ["admin", "guest"] }).notNull().default("guest"),
+  bookedForSelf: boolean("booked_for_self").default(true), // true if guest booking for themselves
   
+  // User association and referral tracking
+  userId: varchar("user_id").references(() => users.id), // null for non-registered guests
+  referredByUserId: varchar("referred_by_user_id").references(() => users.id), // if booking used referral
+  
+  // Unique identifiers
+  confirmationCode: varchar("confirmation_code", { length: 12 }).unique().notNull(), // Unique booking code
+  qrCode: text("qr_code"), // QR code data for reservation
+  
+  // Status tracking
   status: varchar("status", {
-    enum: ["confirmed", "checked_in", "checked_out", "cancelled"]
-  }).default("confirmed"),
+    enum: ["pending", "confirmed", "checked_in", "checked_out", "cancelled"]
+  }).default("pending"),
   
-  userId: varchar("user_id").references(() => users.id),
+  // Payment integration
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   
+  // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  modificationDate: timestamp("modification_date").defaultNow(),
 });
 
 // Property images
@@ -216,9 +253,32 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 // Insert schemas
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
-  confirmationNumber: true,
+  confirmationCode: true,
+  qrCode: true,
   createdAt: true,
   updatedAt: true,
+  modificationDate: true,
+}).extend({
+  // Required guest information validation
+  guestFirstName: z.string().min(1, "First name is required").max(100, "First name too long"),
+  guestLastName: z.string().min(1, "Last name is required").max(100, "Last name too long"),
+  guestEmail: z.string().email("Valid email is required"),
+  guestCountry: z.string().min(1, "Country is required"),
+  guestPhone: z.string().min(1, "Phone number is required"),
+  
+  // Booking dates validation
+  checkInDate: z.string().min(1, "Check-in date is required"),
+  checkOutDate: z.string().min(1, "Check-out date is required"),
+  guests: z.number().min(1, "At least 1 guest required").max(5, "Maximum 5 guests allowed"),
+  
+  // Pricing validation
+  basePrice: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid base price required"),
+  totalNights: z.number().min(1, "At least 1 night required").max(15, "Maximum 15 nights allowed"),
+  totalPrice: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valid total price required"),
+  
+  // Optional fields
+  referralCode: z.string().optional(),
+  hasPet: z.boolean().optional(),
 });
 
 export const insertPropertyImageSchema = createInsertSchema(propertyImages).omit({

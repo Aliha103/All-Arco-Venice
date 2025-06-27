@@ -41,13 +41,43 @@ export interface IStorage {
   incrementReferralCount(userId: string): Promise<void>;
   updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
   
-  // Booking operations
-  createBooking(booking: InsertBooking): Promise<Booking>;
+  // Booking operations with comprehensive pricing
+  createBooking(bookingData: {
+    guestFirstName: string;
+    guestLastName: string;
+    guestEmail: string;
+    guestCountry: string;
+    guestPhone: string;
+    checkInDate: string;
+    checkOutDate: string;
+    guests: number;
+    paymentMethod: "online" | "property";
+    hasPet?: boolean;
+    referralCode?: string;
+    createdBy?: "admin" | "guest";
+    bookedForSelf?: boolean;
+    userId?: string;
+  }): Promise<Booking>;
   getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]>;
   getBooking(id: number): Promise<Booking | undefined>;
+  getBookingByConfirmationCode(code: string): Promise<Booking | undefined>;
   updateBookingStatus(id: number, status: string): Promise<void>;
   checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean>;
   getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]>;
+  calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string): Promise<{
+    basePrice: number;
+    totalNights: number;
+    priceBeforeDiscount: number;
+    lengthOfStayDiscount: number;
+    lengthOfStayDiscountPercent: number;
+    priceAfterDiscount: number;
+    cleaningFee: number;
+    serviceFee: number;
+    petFee: number;
+    cityTax: number;
+    referralCredit: number;
+    totalPrice: number;
+  }>;
   
   // Property image operations
   getPropertyImages(): Promise<PropertyImage[]>;
@@ -251,17 +281,99 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Booking operations
-  async createBooking(bookingData: InsertBooking): Promise<Booking> {
-    // Generate confirmation number
-    const confirmationNumber = `BK${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.floor(Math.random() * 999999).toString().padStart(6, '0')}`;
-    
+  async createBooking(bookingData: {
+    guestFirstName: string;
+    guestLastName: string;
+    guestEmail: string;
+    guestCountry: string;
+    guestPhone: string;
+    checkInDate: string;
+    checkOutDate: string;
+    guests: number;
+    paymentMethod: "online" | "property";
+    hasPet?: boolean;
+    referralCode?: string;
+    createdBy?: "admin" | "guest";
+    bookedForSelf?: boolean;
+    userId?: string;
+  }): Promise<Booking> {
+    // Calculate comprehensive pricing
+    const pricing = await this.calculateBookingPricing(
+      bookingData.checkInDate,
+      bookingData.checkOutDate,
+      bookingData.guests,
+      bookingData.hasPet || false,
+      bookingData.referralCode
+    );
+
+    // Handle referral user lookup
+    let referredByUserId = null;
+    if (bookingData.referralCode) {
+      const referrer = await this.getUserByReferralCode(bookingData.referralCode);
+      if (referrer) {
+        referredByUserId = referrer.id;
+        // Increment referrer's referral count
+        await this.incrementReferralCount(referrer.id);
+      }
+    }
+
+    // Generate unique confirmation code and QR code
+    const confirmationCode = this.generateConfirmationCode();
+    const qrCode = this.generateQRCode(confirmationCode);
+
     const [booking] = await db
       .insert(bookings)
       .values({
-        ...bookingData,
-        confirmationNumber,
+        // Guest information
+        guestFirstName: bookingData.guestFirstName,
+        guestLastName: bookingData.guestLastName,
+        guestEmail: bookingData.guestEmail,
+        guestCountry: bookingData.guestCountry,
+        guestPhone: bookingData.guestPhone,
+        
+        // Booking details
+        checkInDate: bookingData.checkInDate,
+        checkOutDate: bookingData.checkOutDate,
+        guests: bookingData.guests,
+        
+        // Pricing breakdown
+        basePrice: pricing.basePrice.toString(),
+        totalNights: pricing.totalNights,
+        priceBeforeDiscount: pricing.priceBeforeDiscount.toString(),
+        priceAfterDiscount: pricing.priceAfterDiscount.toString(),
+        cleaningFee: pricing.cleaningFee.toString(),
+        serviceFee: pricing.serviceFee.toString(),
+        petFee: pricing.petFee.toString(),
+        cityTax: pricing.cityTax.toString(),
+        
+        // Discounts and credits
+        lengthOfStayDiscount: pricing.lengthOfStayDiscount.toString(),
+        lengthOfStayDiscountPercent: pricing.lengthOfStayDiscountPercent,
+        referralCredit: pricing.referralCredit.toString(),
+        totalDiscountAmount: (pricing.lengthOfStayDiscount + pricing.referralCredit).toString(),
+        
+        // Final pricing
+        totalPrice: pricing.totalPrice.toString(),
+        
+        // Payment and booking tracking
+        paymentMethod: bookingData.paymentMethod,
+        createdBy: bookingData.createdBy || "guest",
+        bookedForSelf: bookingData.bookedForSelf ?? true,
+        
+        // User associations
+        userId: bookingData.userId || null,
+        referredByUserId,
+        
+        // Unique identifiers
+        confirmationCode,
+        qrCode,
+        
+        // Status
+        status: "pending",
+        paymentStatus: "pending",
       })
       .returning();
+    
     return booking;
   }
 
