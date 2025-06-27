@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import Header from "@/components/header"
 import ImageGalleryModal from "@/components/image-gallery-modal"
-import BookingModal from "@/components/booking-modal"
 import { apiRequest } from "@/lib/queryClient"
 import { Calendar } from "@/components/advanced-calendar"
 import {
@@ -78,32 +77,43 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialIndex, setModalInitialIndex] = useState(0);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookingPricing, setBookingPricing] = useState<any>(null);
 
   // Calculate pricing when dates or guest details change
   const calculatePricingMutation = useMutation({
     mutationFn: async (params: { checkInDate: string; checkOutDate: string; guests: number; hasPet: boolean; referralCode?: string }) => {
       const response = await apiRequest('POST', '/api/bookings/calculate-pricing', params);
       return response.json();
-    },
-    onSuccess: (pricing) => {
-      setBookingPricing(pricing);
-    },
+    }
   });
+
+  const [, setLocation] = useLocation();
 
   const handleReserveNow = async () => {
     if (!checkIn || !checkOut) return;
 
-    // Calculate pricing first
-    await calculatePricingMutation.mutateAsync({
-      checkInDate: checkIn,
-      checkOutDate: checkOut,
-      guests,
-      hasPet,
-    });
+    try {
+      // Calculate pricing first
+      const pricing = await calculatePricingMutation.mutateAsync({
+        checkInDate: checkIn,
+        checkOutDate: checkOut,
+        guests,
+        hasPet,
+      });
 
-    setIsBookingModalOpen(true);
+      // Store booking details and navigate to booking page
+      const bookingDetails = {
+        checkIn,
+        checkOut,
+        guests,
+        hasPet,
+        pricing
+      };
+      
+      localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
+      setLocation('/booking');
+    } catch (error) {
+      console.error('Failed to calculate pricing:', error);
+    }
   };
 
   const openModal = (index: number) => {
@@ -1280,21 +1290,7 @@ export default function Landing() {
         isOpen={isModalOpen}
         onClose={closeModal}
       />
-      
-      {/* Booking Modal */}
-      {bookingPricing && (
-        <BookingModal
-          isOpen={isBookingModalOpen}
-          onClose={() => setIsBookingModalOpen(false)}
-          bookingDetails={{
-            checkIn,
-            checkOut,
-            guests,
-            hasPet,
-            pricing: bookingPricing
-          }}
-        />
-      )}
+
     </div>
   );
 }

@@ -1065,20 +1065,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment routes
+  // Enhanced Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { amount } = req.body;
+      const { amount, bookingId, type = 'full_payment' } = req.body;
+      
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "eur",
+        metadata: {
+          bookingId: bookingId?.toString() || '',
+          type
+        },
         automatic_payment_methods: {
           enabled: true,
         },
       });
-      res.json({ clientSecret: paymentIntent.client_secret });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
     } catch (error: any) {
-      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+      console.error('Payment intent creation failed:', error);
+      res.status(500).json({ 
+        message: 'Failed to create payment intent: ' + error.message 
+      });
+    }
+  });
+
+  // Card authorization for property payment
+  app.post('/api/authorize-card', async (req, res) => {
+    try {
+      const { bookingId, amount = 100 } = req.body;
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // €100 authorization in cents
+        currency: 'eur',
+        capture_method: 'manual', // Only authorize, don't capture
+        metadata: {
+          bookingId: bookingId?.toString() || '',
+          type: 'authorization'
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        authorizationId: paymentIntent.id,
+        amount: amount
+      });
+    } catch (error: any) {
+      console.error('Card authorization failed:', error);
+      res.status(500).json({ 
+        message: 'Failed to authorize card: ' + error.message 
+      });
     }
   });
 
