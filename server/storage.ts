@@ -377,6 +377,107 @@ export class DatabaseStorage implements IStorage {
     return booking;
   }
 
+  async getBookingByConfirmationCode(code: string): Promise<Booking | undefined> {
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.confirmationCode, code));
+    return booking;
+  }
+
+  async calculateBookingPricing(
+    checkIn: string, 
+    checkOut: string, 
+    guests: number, 
+    hasPet: boolean, 
+    referralCode?: string
+  ): Promise<{
+    basePrice: number;
+    totalNights: number;
+    priceBeforeDiscount: number;
+    lengthOfStayDiscount: number;
+    lengthOfStayDiscountPercent: number;
+    priceAfterDiscount: number;
+    cleaningFee: number;
+    serviceFee: number;
+    petFee: number;
+    cityTax: number;
+    referralCredit: number;
+    totalPrice: number;
+  }> {
+    const basePrice = 110.50; // €110.50 per night
+    const cleaningFee = 25.00;
+    const serviceFee = 15.00;
+    
+    // Calculate nights
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Base pricing
+    const priceBeforeDiscount = basePrice * totalNights;
+    
+    // Length of stay discount: 5% for 7+ days, 10% for 14+ days
+    let lengthOfStayDiscountPercent = 0;
+    if (totalNights >= 14) {
+      lengthOfStayDiscountPercent = 10;
+    } else if (totalNights >= 7) {
+      lengthOfStayDiscountPercent = 5;
+    }
+    
+    const lengthOfStayDiscount = priceBeforeDiscount * (lengthOfStayDiscountPercent / 100);
+    const priceAfterDiscount = priceBeforeDiscount - lengthOfStayDiscount;
+    
+    // Pet fee calculation
+    const petFee = hasPet ? (totalNights === 1 ? 25.00 : 35.00) : 0;
+    
+    // City tax: 4€ per adult (16+) per night, maximum 5 nights
+    const taxableNights = Math.min(totalNights, 5);
+    const cityTax = guests * 4.00 * taxableNights;
+    
+    // Referral credit: 5€ per night for referred registered guests
+    let referralCredit = 0;
+    if (referralCode) {
+      const referrer = await this.getUserByReferralCode(referralCode);
+      if (referrer) {
+        referralCredit = totalNights * 5.00; // 5€ per night
+      }
+    }
+    
+    // Final total calculation
+    const totalPrice = priceAfterDiscount + cleaningFee + serviceFee + petFee + cityTax - referralCredit;
+    
+    return {
+      basePrice,
+      totalNights,
+      priceBeforeDiscount,
+      lengthOfStayDiscount,
+      lengthOfStayDiscountPercent,
+      priceAfterDiscount,
+      cleaningFee,
+      serviceFee,
+      petFee,
+      cityTax,
+      referralCredit,
+      totalPrice: Math.max(0, totalPrice) // Ensure non-negative
+    };
+  }
+
+  private generateConfirmationCode(): string {
+    // Generate 8-character alphanumeric confirmation code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  private generateQRCode(confirmationCode: string): string {
+    // Generate QR code data (would typically use a QR code library)
+    return `https://allarco.com/booking/${confirmationCode}`;
+  }
+
   async getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]> {
     let conditions = [];
     

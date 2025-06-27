@@ -251,39 +251,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Booking routes
+  // Calculate booking pricing endpoint
+  app.post('/api/bookings/calculate-pricing', async (req, res) => {
+    try {
+      const { checkInDate, checkOutDate, guests, hasPet, referralCode } = req.body;
+      
+      if (!checkInDate || !checkOutDate || !guests) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const pricing = await storage.calculateBookingPricing(
+        checkInDate,
+        checkOutDate,
+        parseInt(guests),
+        Boolean(hasPet),
+        referralCode || undefined
+      );
+
+      res.json(pricing);
+    } catch (error) {
+      console.error('Error calculating pricing:', error);
+      res.status(500).json({ message: "Failed to calculate pricing" });
+    }
+  });
+
+  // Create comprehensive booking endpoint
   app.post('/api/bookings', async (req, res) => {
     try {
-      const bookingData = insertBookingSchema.parse(req.body);
-      
-      // Check availability
-      const isAvailable = await storage.checkAvailability(
-        bookingData.checkInDate,
-        bookingData.checkOutDate
-      );
-      
+      const {
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCountry,
+        guestPhone,
+        checkInDate,
+        checkOutDate,
+        guests,
+        paymentMethod = 'online',
+        hasPet = false,
+        referralCode,
+        createdBy = 'guest',
+        bookedForSelf = true
+      } = req.body;
+
+      // Validate required fields
+      if (!guestFirstName || !guestLastName || !guestEmail || !guestCountry || !guestPhone || !checkInDate || !checkOutDate || !guests) {
+        return res.status(400).json({ message: "Missing required booking information" });
+      }
+
+      // Check availability first
+      const isAvailable = await storage.checkAvailability(checkInDate, checkOutDate);
       if (!isAvailable) {
         return res.status(400).json({ message: "Selected dates are not available" });
       }
 
-      // Validate payment method based on user role
-      const userRole = req.isAuthenticated() ? 
-        (await storage.getUser((req.user as any)?.claims?.sub))?.role || 'guest' : 'guest';
+      // Validate booking length (max 15 days)
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+      const totalNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
       
-      const guestPaymentMethods = ['online', 'at_property_card_auth'];
-      const adminPaymentMethods = ['admin_manual_card', 'admin_pay_at_property', 'admin_city_tax_only'];
-      
-      if (userRole === 'guest' && !guestPaymentMethods.includes(bookingData.paymentMethod)) {
-        return res.status(400).json({ message: "Invalid payment method for guests" });
+      if (totalNights > 15) {
+        return res.status(400).json({ message: "Maximum booking length is 15 days" });
       }
-      
-      if (userRole === 'admin' && !adminPaymentMethods.includes(bookingData.paymentMethod)) {
-        return res.status(400).json({ message: "Invalid payment method for admin" });
+
+      if (totalNights < 1) {
+        return res.status(400).json({ message: "Invalid booking dates" });
+      }
+
+      // Validate guest count
+      if (guests < 1 || guests > 5) {
+        return res.status(400).json({ message: "Guest count must be between 1 and 5" });
       }
 
       const booking = await storage.createBooking({
-        ...bookingData,
-        userId: req.isAuthenticated() ? (req.user as any)?.claims?.sub : null,
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCountry,
+        guestPhone,
+        checkInDate,
+        checkOutDate,
+        guests: parseInt(guests),
+        paymentMethod: paymentMethod as "online" | "property",
+        hasPet,
+        referralCode,
+        createdBy: createdBy as "admin" | "guest",
+        bookedForSelf,
+        userId: req.user?.claims?.sub || null
       });
 
       // Broadcast new booking via WebSocket
@@ -292,10 +346,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: booking
       });
 
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      res.status(500).json({ message: "Failed to create booking" });
+    }
+  });
+
+  // Get booking by confirmation code
+  app.get('/api/bookings/confirmation/:code', async (req, res) => {
+    try {
+      const { code } = req.params;
+      const booking = await storage.getBookingByConfirmationCode(code);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
       res.json(booking);
-    } catch (error: any) {
-      console.error("Error creating booking:", error);
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      console.error('Error fetching booking:', error);
+      res.status(500).json({ message: "Failed to fetch booking" });
     }
   });
 
