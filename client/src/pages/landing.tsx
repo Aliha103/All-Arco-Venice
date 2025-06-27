@@ -167,14 +167,14 @@ export default function Landing() {
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState(0)
 
   // Real-time booking data with 100ms refresh
-  const { data: bookingsData } = useQuery<Array<{checkInDate: string, checkOutDate: string}>>({
+  const { data: blockedDatesData } = useQuery<string[]>({
     queryKey: ["/api/bookings/dates"],
     refetchInterval: 100, // 100ms refresh for real-time updates
     staleTime: 0, // Always consider data stale for real-time updates
   });
 
-  // Extract check-in dates from confirmed bookings
-  const bookedCheckInDates = bookingsData?.map(booking => new Date(booking.checkInDate)) || [];
+  // Convert blocked date strings to Date objects for calendar
+  const bookedCheckInDates = blockedDatesData?.map(dateStr => new Date(dateStr)) || [];
 
   /* ------------------------------------------------------------------ */
   //  Calendar wiring

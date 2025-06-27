@@ -376,13 +376,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all confirmed bookings for calendar availability
       const bookings = await storage.getBookings({ status: 'confirmed' });
       
-      // Return only check-in dates for calendar blocking
-      const bookedDates = bookings.map(booking => ({
-        checkInDate: booking.checkInDate,
-        checkOutDate: booking.checkOutDate
-      }));
+      // Generate all blocked dates for each booking (check-in through check-out minus 1 day)
+      const allBlockedDates: string[] = [];
       
-      res.json(bookedDates);
+      bookings.forEach(booking => {
+        const checkIn = new Date(booking.checkInDate);
+        const checkOut = new Date(booking.checkOutDate);
+        
+        // Block from check-in date up to (but not including) check-out date
+        const currentDate = new Date(checkIn);
+        while (currentDate < checkOut) {
+          allBlockedDates.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      });
+      
+      // Return unique blocked dates using filter to remove duplicates
+      const uniqueBlockedDates = allBlockedDates.filter((date, index, self) => 
+        self.indexOf(date) === index
+      );
+      
+      res.json(uniqueBlockedDates);
     } catch (error) {
       console.error("Error fetching booking dates:", error);
       res.status(500).json({ message: "Failed to fetch booking dates" });
