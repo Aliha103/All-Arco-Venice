@@ -77,9 +77,9 @@ export default function HeroImagesGrid() {
             {image.title}
           </div>
           {showCounter && additionalImagesCount > 0 && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="bg-white text-black px-4 py-2 rounded-lg font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                +{additionalImagesCount}
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="bg-white text-black px-3 py-2 rounded-md font-medium text-sm shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                +{additionalImagesCount} photos
               </div>
             </div>
           )}
@@ -91,9 +91,9 @@ export default function HeroImagesGrid() {
       <div className={`relative w-full h-full flex items-center justify-center ${placeholder.bgColor} ${placeholder.textColor} font-medium text-sm ${className}`}>
         {placeholder.title}
         {showCounter && additionalImagesCount > 0 && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <div className="bg-white text-black px-4 py-2 rounded-lg font-semibold text-lg shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
-              +{additionalImagesCount}
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white text-black px-3 py-2 rounded-md font-medium text-sm shadow-lg hover:bg-gray-100 transition-colors cursor-pointer">
+              +{additionalImagesCount} photos
             </div>
           </div>
         )}
@@ -103,34 +103,53 @@ export default function HeroImagesGrid() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
-        <div className="bg-gray-200 animate-pulse rounded-l-xl lg:rounded-none"></div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-gray-200 animate-pulse rounded-tr-xl"></div>
+      <div className="relative">
+        {/* Desktop Loading State */}
+        <div className="hidden md:grid md:grid-cols-5 md:grid-rows-2 gap-1 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
+          <div className="col-span-3 row-span-2 bg-gray-200 animate-pulse rounded-l-xl"></div>
           <div className="bg-gray-200 animate-pulse"></div>
+          <div className="bg-gray-200 animate-pulse rounded-tr-xl"></div>
           <div className="bg-gray-200 animate-pulse"></div>
           <div className="bg-gray-200 animate-pulse rounded-br-xl"></div>
         </div>
+        
+        {/* Mobile Loading State */}
+        <div className="md:hidden h-64 bg-gray-200 animate-pulse rounded-xl"></div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
-      {/* Main image - large left panel */}
-      <div className="relative">
-        {renderImageOrPlaceholder(mainImage, "main", "rounded-l-xl lg:rounded-none")}
+    <div className="relative">
+      {/* Desktop and Tablet Layout */}
+      <div className="hidden md:grid md:grid-cols-5 md:grid-rows-2 gap-1 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden">
+        {/* Main large image - spans 3 columns and 2 rows */}
+        <div className="col-span-3 row-span-2 relative">
+          {renderImageOrPlaceholder(mainImage, "main", "rounded-l-xl")}
+        </div>
+        
+        {/* Top right - 2 small images */}
+        <div className="relative">
+          {renderImageOrPlaceholder(topLeftImage, "top-left", "")}
+        </div>
+        <div className="relative">
+          {renderImageOrPlaceholder(topRightImage, "top-right", "rounded-tr-xl")}
+        </div>
+        
+        {/* Bottom right - 2 small images */}
+        <div className="relative">
+          {renderImageOrPlaceholder(bottomLeftImage, "bottom-left", "")}
+        </div>
+        <div className="relative">
+          {renderImageOrPlaceholder(bottomRightImage, "bottom-right", "rounded-br-xl", true)}
+        </div>
       </div>
 
-      {/* Right side grid - 2x2 */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Top row */}
-        {renderImageOrPlaceholder(topLeftImage, "top-left", "")}
-        {renderImageOrPlaceholder(topRightImage, "top-right", "rounded-tr-xl")}
-        
-        {/* Bottom row */}
-        {renderImageOrPlaceholder(bottomLeftImage, "bottom-left", "")}
-        {renderImageOrPlaceholder(bottomRightImage, "bottom-right", "rounded-br-xl", true)}
+      {/* Mobile Layout */}
+      <div className="md:hidden grid grid-cols-1 gap-2 h-64 rounded-xl overflow-hidden">
+        <div className="relative">
+          {renderImageOrPlaceholder(mainImage, "main", "rounded-xl", true)}
+        </div>
       </div>
     </div>
   );
