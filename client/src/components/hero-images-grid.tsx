@@ -43,11 +43,12 @@ export default function HeroImagesGrid() {
 
   // Fallback placeholder content
   const placeholders = {
-    main: { title: "Main bedroom", bgColor: "bg-gray-200", textColor: "text-gray-700" },
-    "top-right": { title: "Living room", bgColor: "bg-blue-100", textColor: "text-blue-600" },
+    main: { title: "Main Bedroom", bgColor: "bg-gray-200", textColor: "text-gray-700" },
+    "top-right": { title: "Living Room", bgColor: "bg-blue-100", textColor: "text-blue-600" },
     "top-left": { title: "Kitchen", bgColor: "bg-green-100", textColor: "text-green-600" },
     "bottom-right": { title: "Bathroom", bgColor: "bg-purple-100", textColor: "text-purple-600" },
-    "bottom-left": { title: "Balcony", bgColor: "bg-yellow-100", textColor: "text-yellow-600" }
+    "bottom-left": { title: "Balcony/Outdoor", bgColor: "bg-yellow-100", textColor: "text-yellow-600" },
+    other: { title: "Other Space", bgColor: "bg-orange-100", textColor: "text-orange-600" }
   };
 
   const renderImageOrPlaceholder = (image: HeroImage | undefined, position: string, className: string = "", showCounter: boolean = false) => {

@@ -934,20 +934,21 @@ export default function AdminDashboard() {
                       </div>
                       
                       <div>
-                        <Label htmlFor="imagePosition">Position</Label>
+                        <Label htmlFor="imageRoom">What is this image about?</Label>
                         <Select 
                           value={heroImageForm.position} 
                           onValueChange={(value) => setHeroImageForm({ ...heroImageForm, position: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select position" />
+                            <SelectValue placeholder="Select room/space type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="main">Main (Large Left)</SelectItem>
-                            <SelectItem value="top-right">Top Right</SelectItem>
-                            <SelectItem value="top-left">Top Left</SelectItem>
-                            <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                            <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                            <SelectItem value="main">Main Bedroom</SelectItem>
+                            <SelectItem value="top-right">Living Room</SelectItem>
+                            <SelectItem value="top-left">Kitchen</SelectItem>
+                            <SelectItem value="bottom-right">Bathroom</SelectItem>
+                            <SelectItem value="bottom-left">Balcony/Outdoor</SelectItem>
+                            <SelectItem value="other">Other Space</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1020,7 +1021,12 @@ export default function AdminDashboard() {
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-semibold text-lg">{image.title}</h4>
                             <Badge variant="outline" className="text-xs">
-                              {image.position}
+                              {image.position === 'main' ? 'Main Bedroom' : 
+                               image.position === 'top-right' ? 'Living Room' :
+                               image.position === 'top-left' ? 'Kitchen' :
+                               image.position === 'bottom-right' ? 'Bathroom' :
+                               image.position === 'bottom-left' ? 'Balcony/Outdoor' :
+                               'Other Space'}
                             </Badge>
                           </div>
                           <p className="text-gray-600 text-sm mb-3">{image.alt}</p>
