@@ -334,7 +334,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           
           {/* Desktop Layout */}
-          <div className="hidden lg:block bg-gray-50 rounded-2xl p-6">
+          <div className="hidden lg:block">
             <div className="flex items-center justify-between mb-6">
               {/* Left: Host Info */}
               <div className="flex items-center space-x-4">
@@ -366,24 +366,30 @@ export default function Landing() {
               </div>
             </div>
             
-            {/* Property Details Row - Centered horizontally */}
-            <div className="flex items-center justify-center space-x-16">
-              <div className="flex flex-col items-center text-center bg-blue-50 rounded-xl p-4 min-w-[100px]">
-                <Users className="w-6 h-6 text-blue-600 mb-2" />
-                <div className="text-xl font-bold text-gray-900">5</div>
-                <div className="text-sm text-gray-500">guests</div>
+            {/* Property Details Row */}
+            <div className="flex items-center space-x-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center space-x-3">
+                <Users className="w-5 h-5 text-gray-600" />
+                <div>
+                  <div className="font-semibold text-gray-900">5 guests</div>
+                  <div className="text-sm text-gray-500">Maximum capacity</div>
+                </div>
               </div>
               
-              <div className="flex flex-col items-center text-center bg-green-50 rounded-xl p-4 min-w-[100px]">
-                <Bed className="w-6 h-6 text-green-600 mb-2" />
-                <div className="text-xl font-bold text-gray-900">2</div>
-                <div className="text-sm text-gray-500">bedrooms</div>
+              <div className="flex items-center space-x-3">
+                <Bed className="w-5 h-5 text-gray-600" />
+                <div>
+                  <div className="font-semibold text-gray-900">2 bedrooms</div>
+                  <div className="text-sm text-gray-500">Private spaces</div>
+                </div>
               </div>
               
-              <div className="flex flex-col items-center text-center bg-purple-50 rounded-xl p-4 min-w-[100px]">
-                <Key className="w-6 h-6 text-purple-600 mb-2" />
-                <div className="text-xl font-bold text-gray-900">1</div>
-                <div className="text-sm text-gray-500">bathroom</div>
+              <div className="flex items-center space-x-3">
+                <Key className="w-5 h-5 text-gray-600" />
+                <div>
+                  <div className="font-semibold text-gray-900">1 bathroom</div>
+                  <div className="text-sm text-gray-500">Full bathroom</div>
+                </div>
               </div>
             </div>
           </div>
