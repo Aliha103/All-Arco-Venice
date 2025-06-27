@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import StripePaymentWrapper from '@/components/stripe-payment-wrapper';
 
@@ -45,6 +46,7 @@ const countries = [
 export default function BookingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationData, setConfirmationData] = useState<any>(null);
@@ -596,81 +598,9 @@ export default function BookingPage() {
                       )}
                     </div>
 
-                    {/* Referral Code */}
-                    <div>
-                      <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="referralCode"
-                          value={formData.referralCode}
-                          onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))}
-                          placeholder="Enter referral code"
-                          disabled={appliedDiscount === 'voucher'}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            if (formData.referralCode && appliedDiscount !== 'voucher') {
-                              setAppliedDiscount('referral');
-                              toast({ title: "Referral Applied", description: "Referral credit applied" });
-                            }
-                          }}
-                          disabled={!formData.referralCode || appliedDiscount === 'voucher'}
-                        >
-                          Apply
-                        </Button>
-                      </div>
-                      {appliedDiscount === 'referral' && (
-                        <div className="flex items-center justify-between mt-2">
-                          <Badge className="bg-green-100 text-green-800">Referral Applied</Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setAppliedDiscount(null);
-                              setFormData(prev => ({ ...prev, referralCode: '' }));
-                            }}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    
 
-                    {/* Account Credits */}
-                    <div>
-                      <Label htmlFor="credits">Account Credits (Optional)</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="credits"
-                          type="number"
-                          min="0"
-                          max={finalPricing ? (finalPricing.finalTotal * 0.5).toFixed(0) : "0"}
-                          value={creditsUsed || ''}
-                          onChange={(e) => setCreditsUsed(parseFloat(e.target.value) || 0)}
-                          placeholder="Enter credits to use"
-                          disabled={!finalPricing || finalPricing.totalNights < 2}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            if (finalPricing) {
-                              const maxCredits = finalPricing.finalTotal * 0.5;
-                              setCreditsUsed(maxCredits);
-                            }
-                          }}
-                          disabled={!finalPricing || finalPricing.totalNights < 2}
-                        >
-                          Max 50%
-                        </Button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {finalPricing && finalPricing.totalNights < 2 
-                          ? "Credits can only be used for stays of 2+ nights"
-                          : `Maximum 50% of total (€${finalPricing ? (finalPricing.finalTotal * 0.5).toFixed(2) : '0'})`
-                        }
-                      </p>
-                    </div>
+                    
                   </div>
 
                   <div>

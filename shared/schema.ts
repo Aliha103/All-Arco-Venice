@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   referredBy: varchar("referred_by"), // referral code of who referred this user
   referrerName: varchar("referrer_name"), // full name of who referred this user
   totalReferrals: integer("total_referrals").default(0), // count of users this person has referred
+  accountCredits: decimal("account_credits", { precision: 10, scale: 2 }).default("0.00"), // user account credits
   authProvider: varchar("auth_provider", { enum: ["replit", "local"] }).default("local"),
   role: varchar("role", { enum: ["guest", "admin"] }).default("guest"),
   createdAt: timestamp("created_at").defaultNow(),
