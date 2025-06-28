@@ -161,10 +161,13 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
           </div>
           {bookingInfo && (
             <div className="relative h-12">
-              {/* Check-in day with spanning to the right */}
+              {/* Check-in day: rounded left, extends to right edge */}
               {bookingInfo.position === 'checkin' && bookingInfo.isSpanning && (
-                <div className={`absolute left-1/2 top-0 right-0 h-8 rounded-r-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-end pr-2 shadow-sm`}>
-                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                <div className={`absolute left-0 top-2 right-0 h-6 rounded-l-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-start pl-3 shadow-sm`}>
+                  <span className="text-xs font-medium text-white">
+                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                  </span>
+                  <div className="ml-auto mr-2 w-4 h-4 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
                     {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
                     {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
                     {bookingInfo.booking.bookingSource === 'direct' && 'D'}
@@ -173,28 +176,34 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
                 </div>
               )}
               
-              {/* Check-out day with spanning from the left */}
+              {/* Check-out day: extends from left edge, rounded right */}
               {bookingInfo.position === 'checkout' && bookingInfo.isSpanning && (
-                <div className={`absolute left-0 top-0 right-1/2 h-8 rounded-l-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-start pl-2 shadow-sm`}>
-                  <span className="text-xs font-medium truncate">
+                <div className={`absolute left-0 top-2 right-0 h-6 rounded-r-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-end pr-3 shadow-sm`}>
+                  <div className="mr-auto ml-2 w-4 h-4 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
+                    {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
+                    {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
+                    {bookingInfo.booking.bookingSource === 'direct' && 'D'}
+                    {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                  </div>
+                  <span className="text-xs font-medium text-white">
                     {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
                   </span>
                 </div>
               )}
               
-              {/* Middle days spanning full width */}
+              {/* Middle days: pipe-like connection (rectangular) */}
               {bookingInfo.position === 'middle' && (
-                <div className={`absolute left-0 top-0 right-0 h-8 border-t border-b ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
-                  <span className="text-xs font-medium">
+                <div className={`absolute left-0 top-2 right-0 h-6 ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                  <span className="text-xs font-medium text-white">
                     {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
                   </span>
                 </div>
               )}
               
-              {/* Single day booking (check-in = check-out) */}
+              {/* Single day booking: fully rounded */}
               {bookingInfo.position === 'checkin' && !bookingInfo.isSpanning && (
-                <div className={`absolute left-0 top-0 right-0 h-8 rounded-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
-                  <span className="text-xs font-medium">
+                <div className={`absolute left-0 top-2 right-0 h-6 rounded-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                  <span className="text-xs font-medium text-white">
                     {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
                   </span>
                 </div>
