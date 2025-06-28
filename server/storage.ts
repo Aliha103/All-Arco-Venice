@@ -64,6 +64,7 @@ export interface IStorage {
   getBookingByConfirmationCode(code: string): Promise<Booking | undefined>;
   updateBookingStatus(id: number, status: string): Promise<void>;
   confirmBooking(id: number): Promise<void>;
+  cleanupAbandonedBookings(): Promise<void>;
   checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean>;
   getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]>;
   calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string): Promise<{
@@ -544,6 +545,20 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date() 
       })
       .where(eq(bookings.id, id));
+  }
+
+  async cleanupAbandonedBookings(): Promise<void> {
+    // Remove pending bookings older than 30 minutes
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    
+    await db
+      .delete(bookings)
+      .where(
+        and(
+          eq(bookings.status, "pending"),
+          sql`${bookings.createdAt} < ${thirtyMinutesAgo.toISOString()}`
+        )
+      );
   }
 
   async checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean> {

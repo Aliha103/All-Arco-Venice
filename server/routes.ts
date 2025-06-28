@@ -1197,6 +1197,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
+  // Periodic cleanup of abandoned pending bookings (every 10 minutes)
+  setInterval(async () => {
+    try {
+      await storage.cleanupAbandonedBookings();
+      console.log('Cleaned up abandoned pending bookings');
+    } catch (error) {
+      console.error('Failed to cleanup abandoned bookings:', error);
+    }
+  }, 10 * 60 * 1000); // 10 minutes
+
   // WebSocket setup for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const adminConnections = new Set<WebSocket>();
