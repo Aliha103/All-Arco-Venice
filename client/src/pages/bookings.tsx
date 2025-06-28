@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Users, PawPrint, Search, Eye } from 'lucide-react';
+import { Calendar, MapPin, Users, PawPrint, Search, Eye, ArrowLeft, Star, Clock, CreditCard, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -140,68 +140,117 @@ export default function BookingsPage() {
   };
 
   const BookingCard = ({ booking }: { booking: Booking }) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
+    <Card className="group hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 hover:ring-blue-300/50 hover:-translate-y-1">
+      <CardHeader className="pb-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-t-lg">
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{booking.guestFirstName} {booking.guestLastName}</CardTitle>
-            <p className="text-sm text-gray-600 font-mono">{booking.confirmationCode}</p>
+          <div className="flex items-start space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {booking.guestFirstName[0]}{booking.guestLastName[0]}
+            </div>
+            <div>
+              <CardTitle className="text-lg text-gray-900">{booking.guestFirstName} {booking.guestLastName}</CardTitle>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge variant="secondary" className="font-mono text-xs bg-gray-100 text-gray-700">
+                  {booking.confirmationCode}
+                </Badge>
+                <div className="flex items-center text-xs text-gray-500">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {new Date(booking.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-2">
             {getStatusBadge(booking.status, booking.paymentStatus)}
             {!booking.bookedForSelf && (
-              <Badge variant="outline" className="ml-2">For Someone Else</Badge>
+              <Badge variant="outline" className="block text-xs bg-amber-50 text-amber-700 border-amber-200">
+                For Someone Else
+              </Badge>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <div>
-              <div className="font-medium">Check-in: {formatDate(booking.checkInDate)}</div>
-              <div className="text-gray-600">15:00 (3:00 PM)</div>
+      <CardContent className="space-y-4 p-6">
+        {/* Date Info with Enhanced Design */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-900">Check-in</div>
+                <div className="text-sm text-gray-600">{formatDate(booking.checkInDate)}</div>
+                <div className="text-xs text-gray-500">15:00 (3:00 PM)</div>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <div>
-              <div className="font-medium">Check-out: {formatDate(booking.checkOutDate)}</div>
-              <div className="text-gray-600">10:00 (10:00 AM)</div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-red-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-900">Check-out</div>
+                <div className="text-sm text-gray-600">{formatDate(booking.checkOutDate)}</div>
+                <div className="text-xs text-gray-500">10:00 (10:00 AM)</div>
+              </div>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Users className="w-4 h-4 text-blue-600" />
-            <span>{booking.guests} guest{booking.guests !== 1 ? 's' : ''}</span>
-          </div>
-
-          {booking.hasPet && (
-            <div className="flex items-center space-x-2">
-              <PawPrint className="w-4 h-4 text-blue-600" />
-              <span>Pet included</span>
-            </div>
-          )}
-
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-blue-600" />
-            <span>{booking.guestCountry}</span>
-          </div>
-
-          <div className="text-right">
-            <div className="font-semibold text-lg">€{Number(booking.totalPrice).toFixed(2)}</div>
-            <div className="text-sm text-gray-600">{booking.paymentMethod === 'online' ? 'Paid Online' : 'Pay at Property'}</div>
           </div>
         </div>
 
-        <div className="flex space-x-2">
+        {/* Details Grid */}
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+            <Users className="w-4 h-4 text-blue-600" />
+            <div>
+              <div className="font-medium">{booking.guests}</div>
+              <div className="text-xs text-gray-500">guest{booking.guests !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+
+          {booking.hasPet && (
+            <div className="flex items-center space-x-2 p-3 bg-amber-50 rounded-lg">
+              <PawPrint className="w-4 h-4 text-amber-600" />
+              <div>
+                <div className="font-medium text-amber-700">Pet</div>
+                <div className="text-xs text-amber-600">included</div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+            <MapPin className="w-4 h-4 text-gray-600" />
+            <div>
+              <div className="font-medium text-xs">{booking.guestCountry}</div>
+              <div className="text-xs text-gray-500">country</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Info */}
+        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <div className="font-semibold text-emerald-900">€{Number(booking.totalPrice).toFixed(2)}</div>
+              <div className="text-xs text-emerald-600">
+                {booking.paymentMethod === 'online' ? 'Paid Online' : 'Pay at Property'}
+              </div>
+            </div>
+          </div>
+          {booking.paymentStatus === 'paid' && (
+            <Shield className="w-5 h-5 text-emerald-600" />
+          )}
+        </div>
+
+        <div className="flex space-x-2 pt-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setSelectedBooking(booking)}
-            className="flex-1"
+            className="flex-1 group-hover:border-blue-300 group-hover:text-blue-600 transition-colors"
           >
             <Eye className="w-4 h-4 mr-2" />
             View Details
@@ -212,46 +261,79 @@ export default function BookingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Bookings</h1>
-          <p className="text-gray-600">View your booking history and look up reservations</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+      {/* Enhanced Header with Back Button */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => window.history.back()}
+              className="group flex items-center space-x-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+              <span className="font-medium">Back</span>
+            </Button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                My Bookings
+              </h1>
+              <p className="text-gray-600 text-sm">Manage your reservations and booking history</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Booking Lookup Section */}
+          {/* Enhanced Booking Lookup Section */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Search className="w-5 h-5 mr-2" />
-                  Lookup Booking
+            <Card className="sticky top-24 bg-white/80 backdrop-blur-sm border-0 shadow-xl shadow-blue-100/50 ring-1 ring-gray-200/50">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg border-b border-blue-100">
+                <CardTitle className="flex items-center text-gray-800">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <Search className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold">Find Reservation</div>
+                    <div className="text-xs text-gray-600 font-normal">Quick booking lookup</div>
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="confirmationCode">Confirmation Code</Label>
+              <CardContent className="space-y-5 p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="confirmationCode" className="text-sm font-medium text-gray-700">
+                    Confirmation Code
+                  </Label>
                   <Input
                     id="confirmationCode"
-                    placeholder="Enter confirmation code"
+                    placeholder="e.g. ABC123"
                     value={lookupCode}
                     onChange={(e) => setLookupCode(e.target.value)}
+                    className="h-11 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                    Email Address
+                  </Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter booking email"
+                    placeholder="guest@example.com"
                     value={lookupEmail}
                     onChange={(e) => setLookupEmail(e.target.value)}
+                    className="h-11 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
                   />
                 </div>
-                <Button onClick={handleLookup} className="w-full">
+                <Button 
+                  onClick={handleLookup} 
+                  className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-200"
+                >
                   <Search className="w-4 h-4 mr-2" />
-                  Find Booking
+                  Find Reservation
                 </Button>
 
                 {lookupResult && (
@@ -297,13 +379,42 @@ export default function BookingsPage() {
             </Card>
           </div>
 
-          {/* User Bookings List */}
-          <div className="lg:col-span-2">
+          {/* Enhanced User Bookings List */}
+          <div className="lg:col-span-2 space-y-6">
             {isAuthenticated ? (
               <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Your Bookings</h2>
-                  <Badge variant="secondary">{userBookings.length} booking{userBookings.length !== 1 ? 's' : ''}</Badge>
+                {/* Enhanced Header with Stats */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border-0 ring-1 ring-gray-200/50 shadow-lg shadow-blue-100/30">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
+                    <div>
+                      <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        Your Reservations
+                      </h2>
+                      <p className="text-gray-600 text-sm mt-1">Manage and track your bookings</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <div className="text-sm">
+                          <div className="font-semibold text-blue-900">{userBookings.length}</div>
+                          <div className="text-blue-600 text-xs">booking{userBookings.length !== 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                      
+                      {userBookings.length > 0 && (
+                        <div className="flex items-center space-x-3 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
+                          <Star className="w-4 h-4 text-emerald-600" />
+                          <div className="text-sm">
+                            <div className="font-semibold text-emerald-900">
+                              €{userBookings.reduce((total, booking) => total + Number(booking.totalPrice), 0).toFixed(0)}
+                            </div>
+                            <div className="text-emerald-600 text-xs">total value</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {isLoading ? (
@@ -328,12 +439,20 @@ export default function BookingsPage() {
                     ))}
                   </div>
                 ) : (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Bookings Found</h3>
-                      <p className="text-gray-600 mb-4">You haven't made any bookings yet.</p>
-                      <Button onClick={() => window.location.href = '/'}>
+                  <Card className="bg-white/80 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg shadow-blue-100/30">
+                    <CardContent className="p-12 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Calendar className="w-10 h-10 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-3">No Reservations Yet</h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Start your journey with All'Arco and create unforgettable memories in the heart of Venice.
+                      </p>
+                      <Button 
+                        onClick={() => window.location.href = '/'}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 px-8 py-3"
+                      >
+                        <Star className="w-4 h-4 mr-2" />
                         Make Your First Booking
                       </Button>
                     </CardContent>
@@ -341,13 +460,30 @@ export default function BookingsPage() {
                 )}
               </>
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Sign In to View Your Bookings</h3>
-                  <p className="text-gray-600 mb-4">Please sign in to access your booking history.</p>
-                  <Button onClick={() => window.location.href = '/api/login'}>
-                    Sign In
-                  </Button>
+              <Card className="bg-white/80 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg shadow-blue-100/30">
+                <CardContent className="p-12 text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Shield className="w-10 h-10 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Sign In to Access Your Bookings</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Create an account or sign in to view your booking history, manage reservations, and enjoy personalized features.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button 
+                      onClick={() => window.location.href = '/api/login'}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+                    >
+                      Sign In
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.location.href = '/signup'}
+                      className="border-gray-300 hover:border-blue-300 hover:text-blue-600"
+                    >
+                      Create Account
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
