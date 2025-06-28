@@ -1,0 +1,197 @@
+// BookingCalendar.tsx – v2 with half‑day split edges & two‑booking same‑day support
+// -----------------------------------------------------------------------------
+//  • Click / tap on a *free* check‑in day → mini‑wizard (Block | Manual)
+//  • Booking bar spans check‑in (inclusive) ⟶ check‑out‑1 (inclusive)
+//  • If one booking ends and another begins on the *same* calendar cell
+//    we show two 50% pills: left = check‑out, right = check‑in.
+//  • Pure front‑end – lift onCreate into your API/service layer.
+
+"use client"
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Calendar as DayPicker } from "react-day-picker"
+import {
+  addDays,
+  format,
+  isSameDay,
+  isWithinInterval,
+  isAfter,
+  isBefore,
+} from "date-fns"
+import { useState } from "react"
+import { cn } from "@/lib/utils"
+import { Check, Slash, CalendarPlus } from "lucide-react"
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+export interface Reservation {
+  id?: string
+  start: Date        // check‑in  (inclusive)
+  end: Date          // check‑out (exclusive)
+  source: "airbnb" | "booking" | "manual" | "block"
+  guest?: string
+  price?: number
+  payment?: "cash" | "card" | "bank" | "other"
+}
+
+interface Props {
+  month?: Date
+  reservations: Reservation[]
+  onCreate: (draft: Reservation) => void
+}
+
+const color: Record<Reservation["source"], string> = {
+  airbnb:   "bg-rose-300 text-rose-900",
+  booking:  "bg-blue-400 text-blue-900",
+  manual:   "bg-emerald-300 text-emerald-900",
+  block:    "bg-gray-200 text-gray-700 [background-image:repeating-linear-gradient(-45deg,theme(colors.gray.200)_0_8px,theme(colors.gray.300)_8px_16px)]",
+}
+
+// ---------------------------------------------------------------------------
+export default function BookingCalendar({ month = new Date(), reservations, onCreate }: Props) {
+  // Wizard state ------------------------------------------------------------
+  const [open,   setOpen]   = useState(false)
+  const [step,   setStep]   = useState<0|1|2>(0)
+  const [startD, setStartD] = useState<Date | null>(null)
+  const [endD,   setEndD]   = useState<Date | null>(null)
+  const [mode,   setMode]   = useState<"block"|"manual">("block")
+  const [guest,  setGuest]  = useState("")
+  const [price,  setPrice]  = useState("")
+  const [pay,    setPay]    = useState<Reservation["payment"]>("cash")
+  const reset = () => { setOpen(false);setStep(0);setStartD(null);setEndD(null);setGuest("");setPrice("") }
+
+  // Helpers -----------------------------------------------------------------
+  const isBusy = (d: Date) =>
+    reservations.some(r => isWithinInterval(d,{start:r.start,end:addDays(r.end,-1)}))
+  const isStart = (d: Date, r: Reservation) => isSameDay(d,r.start)
+  const isEnd   = (d: Date, r: Reservation) => isSameDay(d, addDays(r.end,-1))
+
+  const handleClick = (d: Date) => {
+    if (isBusy(d)) return
+    setStartD(d);setEndD(addDays(d,1));setStep(1);setOpen(true)
+  }
+
+  // Render one calendar cell ------------------------------------------------
+  const renderDay = (d: Date) => {
+    // bookings that touch today
+    const todays = reservations.filter(r =>
+      isWithinInterval(d,{start:r.start,end:addDays(r.end,-1)}) || isSameDay(d,r.start) || isSameDay(d, addDays(r.end,-1))
+    )
+
+    // split left/right if two bookings share the cell (prev checkout + next check‑in)
+    const left  = todays.find(r => isEnd(d,r) && !isStart(d,r))
+    const right = todays.find(r => isStart(d,r))
+
+    return (
+      <div className="relative h-full w-full">
+        <span>{format(d,"d")}</span>
+
+        {left && (
+          <div className={cn("absolute inset-y-1 left-1 right-1/2 rounded-l-full flex items-center px-1 text-[10px] overflow-hidden",color[left.source])}>
+            {left.source === "airbnb" && <span className="mr-1">🏠</span>}
+          </div>
+        )}
+        {right && (
+          <div className={cn("absolute inset-y-1 right-1 left-1/2 rounded-r-full flex items-center justify-end px-1 text-[10px] overflow-hidden",color[right.source])}>
+            {right.source === "booking" && <span className="ml-1">B.</span>}
+          </div>
+        )}
+
+        {/* single booking occupying full cell */}
+        {todays.length===1 && !(left&&right) && (
+          <div className={cn("absolute inset-1 rounded-full flex items-center px-1 text-[10px] overflow-hidden",color[todays[0].source])}>
+            {todays[0].guest && <span className="truncate">{todays[0].guest}</span>}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Mutation submit ---------------------------------------------------------
+  const save = () => {
+    if(!startD) return
+    const payload: Reservation = {
+      start: startD,
+      end: endD!,
+      source: mode==="block"?"block":"manual",
+      guest: mode==="manual"?guest:undefined,
+      price: mode==="manual"?Number(price)||undefined:undefined,
+      payment: mode==="manual"?pay:undefined,
+    }
+    onCreate(payload)
+    reset()
+  }
+
+  // -------------------------------------------------------------------------
+  return (
+    <>
+      <DayPicker
+        month={month}
+        fixedWeeks
+        showOutsideDays
+        disabled={isBusy}
+        onDayClick={handleClick}
+        renderDay={renderDay as any}
+        className="[&_.rdp-table]:w-full"
+      />
+
+      {/* wizard dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          {step===1 && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{format(startD!,'PPPP')}</DialogTitle>
+                <DialogDescription>Select action</DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 flex flex-col gap-3">
+                <Button variant="secondary" onClick={()=>{setMode('block');save()}} className="justify-start gap-2"><Slash className="size-4"/>Block</Button>
+                <Button onClick={()=>{setMode('manual');setStep(2)}} className="justify-start gap-2"><CalendarPlus className="size-4"/>Manual booking</Button>
+              </div>
+            </>
+          )}
+
+          {step===2 && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Manual booking</DialogTitle>
+                <DialogDescription>Fill guest & price</DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm">Check‑out
+                  <input type="date" className="mt-1 w-full border rounded px-2 py-1" value={format(endD!,"yyyy-MM-dd")} onChange={e=>setEndD(new Date(e.target.value))} min={format(addDays(startD!,1),'yyyy-MM-dd')} />
+                </label>
+                <label className="block text-sm">Guest name
+                  <input className="mt-1 w-full border rounded px-2 py-1" value={guest} onChange={e=>setGuest(e.target.value)}/>
+                </label>
+                <label className="block text-sm">Price (€)
+                  <input type="number" className="mt-1 w-full border rounded px-2 py-1" value={price} onChange={e=>setPrice(e.target.value)}/>
+                </label>
+                <label className="block text-sm">Payment
+                  <select className="mt-1 w-full border rounded px-2 py-1" value={pay} onChange={e=>setPay(e.target.value as any)}>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank">Bank</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" onClick={reset}>Cancel</Button>
+                <Button onClick={save} disabled={!guest || !endD}><Check className="size-4 mr-1"/>Save</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
