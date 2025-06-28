@@ -282,6 +282,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual booking endpoint for admin
+  app.post('/api/admin/manual-booking', isAuthenticated, async (req, res) => {
+    try {
+      const {
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        checkInDate,
+        checkOutDate,
+        guests,
+        paymentMethod,
+        customPrice
+      } = req.body;
+
+      if (!guestFirstName || !guestLastName || !guestEmail || !checkInDate || !checkOutDate) {
+        return res.status(400).json({ message: "All guest details and dates are required" });
+      }
+
+      // Check availability
+      const isAvailable = await storage.checkAvailability(checkInDate, checkOutDate);
+      if (!isAvailable) {
+        return res.status(400).json({ message: "Selected dates are not available" });
+      }
+
+      // Calculate pricing with custom price if provided
+      const pricingData = await storage.calculateBookingPricing(
+        checkInDate, 
+        checkOutDate, 
+        guests, 
+        false, // no pet for manual bookings
+        undefined // no referral code
+      );
+
+      // Override base price if custom price provided
+      let finalTotalPrice = pricingData.totalPrice;
+      if (customPrice && parseFloat(customPrice) > 0) {
+        const customBasePrice = parseFloat(customPrice);
+        const nightsTotal = customBasePrice * pricingData.totalNights;
+        finalTotalPrice = nightsTotal + pricingData.cleaningFee + pricingData.serviceFee + pricingData.cityTax;
+      }
+
+      // Create the booking
+      const booking = await storage.createBooking({
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCountry: 'Admin Entry',
+        guestPhone: '000-000-0000',
+        checkInDate,
+        checkOutDate,
+        guests,
+        paymentMethod: paymentMethod || 'property',
+        createdBy: 'admin',
+        bookedForSelf: false,
+        hasPet: false
+      });
+
+      res.json({ 
+        message: "Manual booking created successfully",
+        booking,
+        totalPrice: finalTotalPrice
+      });
+    } catch (error: any) {
+      console.error("Manual booking error:", error);
+      res.status(500).json({ message: "Failed to create manual booking" });
+    }
+  });
+
   // Local logout route
   app.post('/api/auth/logout', (req, res) => {
     req.session.destroy((err) => {
