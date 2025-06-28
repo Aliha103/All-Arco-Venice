@@ -46,6 +46,8 @@ import {
   Home
 } from "lucide-react";
 
+import TimelineCalendar from "@/components/TimelineCalendar";
+
 
 interface Analytics {
   totalBookings: number;
@@ -983,6 +985,19 @@ export default function AdminDashboard() {
                 ) : (
                   <p className="text-gray-500 text-center py-8">No reviews yet</p>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Timeline Tab */}
+          <TabsContent value="timeline" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Timeline Calendar View</CardTitle>
+                <CardDescription>Interactive timeline view for managing bookings and blocked dates</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TimelineCalendar />
               </CardContent>
             </Card>
           </TabsContent>

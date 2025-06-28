@@ -46,6 +46,13 @@ interface Booking {
   paymentMethod?: string;
 }
 
+interface FormState {
+  mode: "blocked" | "manual";
+  guestName: string;
+  price: number;
+  paymentMethod: string;
+}
+
 const CELL_WIDTH = 120; // px — width of one day cell
 const CELL_HEIGHT = 32; // px — height of timeline row
 
@@ -83,7 +90,7 @@ export default function TimelineCalendar({
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<FormState>({
     mode: "blocked", // "blocked" | "manual"
     guestName: "",
     price: 0,
@@ -276,7 +283,7 @@ export default function TimelineCalendar({
                     type="number"
                     value={formState.price}
                     onChange={(e) =>
-                      setFormState((s) => ({ ...s, price: e.target.value }))
+                      setFormState((s) => ({ ...s, price: Number(e.target.value) || 0 }))
                     }
                   />
                 </div>
