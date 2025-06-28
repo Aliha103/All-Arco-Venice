@@ -9,7 +9,7 @@ interface CalendarBooking {
   checkOutDate: string;
   guestFirstName: string;
   guestLastName: string;
-  source: 'airbnb' | 'booking.com' | 'direct' | 'blocked' | string;
+  bookingSource: 'airbnb' | 'booking.com' | 'direct' | 'blocked' | 'custom';
   status: string;
 }
 
@@ -21,9 +21,10 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarBookings, setCalendarBookings] = useState<CalendarBooking[]>([]);
 
-  // Fetch bookings
+  // Fetch bookings with 100ms refresh rate for real-time updates
   const { data: bookings } = useQuery({
     queryKey: ['/api/bookings'],
+    refetchInterval: 100,
   });
 
   // Transform bookings data for calendar display
@@ -31,16 +32,13 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
     if (bookings && Array.isArray(bookings)) {
       const transformedBookings = bookings.map((booking: any) => ({
         ...booking,
-        source: booking.bookingSource || 'direct' // Use bookingSource field from schema
+        bookingSource: booking.bookingSource || 'direct'
       }));
       setCalendarBookings(transformedBookings);
-    } else if (bookings) {
-      // Handle case where bookings is not an array (empty object or single booking)
-      setCalendarBookings([]);
     }
   }, [bookings]);
 
-  const getSourceColor = (source: string, customColor?: string) => {
+  const getSourceColor = (source: string) => {
     switch (source) {
       case 'airbnb':
         return 'bg-red-400 text-white border-red-500';
@@ -50,10 +48,8 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
         return 'bg-green-400 text-white border-green-500';
       case 'blocked':
         return 'bg-gray-300 text-gray-700 border-gray-400';
-      case 'custom':
-        return customColor ? `text-white border-2` : 'bg-purple-400 text-white border-purple-500';
       default:
-        return 'bg-purple-400 text-white border-purple-500'; // Custom sources
+        return 'bg-purple-400 text-white border-purple-500';
     }
   };
 
@@ -69,16 +65,42 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   };
 
-  const isDateInBooking = (dateKey: string, booking: CalendarBooking) => {
-    const checkIn = new Date(booking.checkInDate);
-    const checkOut = new Date(booking.checkOutDate);
+  const getBookingInfoForDate = (dateKey: string) => {
     const currentDate = new Date(dateKey);
     
-    return currentDate >= checkIn && currentDate < checkOut;
-  };
-
-  const getBookingForDate = (dateKey: string) => {
-    return calendarBookings.find(booking => isDateInBooking(dateKey, booking));
+    for (const booking of calendarBookings) {
+      const checkIn = new Date(booking.checkInDate);
+      const checkOut = new Date(booking.checkOutDate);
+      
+      // Check if date is check-in day
+      if (currentDate.toDateString() === checkIn.toDateString()) {
+        return {
+          booking,
+          position: 'checkin',
+          isSpanning: checkOut.toDateString() !== checkIn.toDateString()
+        };
+      }
+      
+      // Check if date is check-out day
+      if (currentDate.toDateString() === checkOut.toDateString()) {
+        return {
+          booking,
+          position: 'checkout',
+          isSpanning: checkOut.toDateString() !== checkIn.toDateString()
+        };
+      }
+      
+      // Check if date is between check-in and check-out
+      if (currentDate > checkIn && currentDate < checkOut) {
+        return {
+          booking,
+          position: 'middle',
+          isSpanning: true
+        };
+      }
+    }
+    
+    return null;
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -126,25 +148,55 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dateKey = formatDateKey(year, month, day);
-      const booking = getBookingForDate(dateKey);
+      const bookingInfo = getBookingInfoForDate(dateKey);
       const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
 
       calendarGrid.push(
         <div 
           key={day} 
-          className={`p-1 h-20 border border-gray-200 ${isToday ? 'bg-blue-50' : ''}`}
+          className={`relative p-1 h-20 border border-gray-200 ${isToday ? 'bg-blue-50' : ''}`}
         >
           <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
             {day}
           </div>
-          {booking && (
-            <div className={`text-xs p-1 rounded-sm border ${getSourceColor(booking.source)} truncate shadow-sm`}>
-              <div className="font-medium">{booking.guestFirstName} {booking.guestLastName.charAt(0)}.</div>
-              {booking.source !== 'blocked' && (
-                <div className="opacity-80 text-xs mt-0.5">
-                  {booking.source === 'airbnb' && '🏠'}
-                  {booking.source === 'booking.com' && '🌐'}
-                  {booking.source === 'direct' && '💻'}
+          {bookingInfo && (
+            <div className="relative h-12">
+              {/* Check-in day with spanning to the right */}
+              {bookingInfo.position === 'checkin' && bookingInfo.isSpanning && (
+                <div className={`absolute left-1/2 top-0 right-0 h-8 rounded-r-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-end pr-2 shadow-sm`}>
+                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
+                    {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
+                    {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
+                    {bookingInfo.booking.bookingSource === 'direct' && 'D'}
+                    {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                  </div>
+                </div>
+              )}
+              
+              {/* Check-out day with spanning from the left */}
+              {bookingInfo.position === 'checkout' && bookingInfo.isSpanning && (
+                <div className={`absolute left-0 top-0 right-1/2 h-8 rounded-l-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-start pl-2 shadow-sm`}>
+                  <span className="text-xs font-medium truncate">
+                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                  </span>
+                </div>
+              )}
+              
+              {/* Middle days spanning full width */}
+              {bookingInfo.position === 'middle' && (
+                <div className={`absolute left-0 top-0 right-0 h-8 border-t border-b ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                  <span className="text-xs font-medium">
+                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                  </span>
+                </div>
+              )}
+              
+              {/* Single day booking (check-in = check-out) */}
+              {bookingInfo.position === 'checkin' && !bookingInfo.isSpanning && (
+                <div className={`absolute left-0 top-0 right-0 h-8 rounded-full border ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                  <span className="text-xs font-medium">
+                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                  </span>
                 </div>
               )}
             </div>
@@ -206,28 +258,28 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
         <div className="text-center">
           <div className="w-4 h-4 bg-red-400 rounded mx-auto mb-1"></div>
           <div className="font-medium">
-            {calendarBookings.filter(b => b.source === 'airbnb').length}
+            {calendarBookings.filter(b => b.bookingSource === 'airbnb').length}
           </div>
           <div className="text-gray-600">Airbnb</div>
         </div>
         <div className="text-center">
           <div className="w-4 h-4 bg-blue-400 rounded mx-auto mb-1"></div>
           <div className="font-medium">
-            {calendarBookings.filter(b => b.source === 'booking.com').length}
+            {calendarBookings.filter(b => b.bookingSource === 'booking.com').length}
           </div>
           <div className="text-gray-600">Booking.com</div>
         </div>
         <div className="text-center">
           <div className="w-4 h-4 bg-green-400 rounded mx-auto mb-1"></div>
           <div className="font-medium">
-            {calendarBookings.filter(b => b.source === 'direct').length}
+            {calendarBookings.filter(b => b.bookingSource === 'direct').length}
           </div>
           <div className="text-gray-600">Direct</div>
         </div>
         <div className="text-center">
           <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
           <div className="font-medium">
-            {calendarBookings.filter(b => b.source === 'blocked').length}
+            {calendarBookings.filter(b => b.bookingSource === 'blocked').length}
           </div>
           <div className="text-gray-600">Blocked</div>
         </div>
