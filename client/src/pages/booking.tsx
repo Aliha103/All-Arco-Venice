@@ -134,8 +134,10 @@ export default function BookingPage() {
         // Redirect to Stripe payment
         initiateStripePayment(data);
       } else {
-        // Show card authorization for property payment
-        initiateCardAuthorization(data);
+        // Property payment - show confirmation directly (no authorization)
+        setConfirmationData(data);
+        setShowConfirmation(true);
+        setStep(1); // Reset to first step for next booking
       }
     },
     onError: (error: any) => {
@@ -155,13 +157,7 @@ export default function BookingPage() {
     });
   };
 
-  const initiateCardAuthorization = async (bookingData: any) => {
-    setShowPayment({
-      type: 'authorization',
-      amount: 100, // €100 authorization
-      bookingData
-    });
-  };
+
 
   const handlePaymentSuccess = (result: any) => {
     if (!showPayment) return;
@@ -745,7 +741,7 @@ export default function BookingPage() {
                         <MapPin className="w-5 h-5 text-blue-600" />
                         <div className="flex-1">
                           <div className="font-medium">Pay at Property</div>
-                          <div className="text-sm text-gray-600">Pay when you arrive (card authorization required)</div>
+                          <div className="text-sm text-gray-600">Pay when you arrive</div>
                           {finalPricing && (
                             <div className="text-sm font-medium text-gray-600 mt-1">
                               Total: €{finalPricing.propertyPaymentTotal.toFixed(2)} (including city tax)
@@ -773,7 +769,7 @@ export default function BookingPage() {
                       disabled={createBookingMutation.isPending}
                     >
                       {createBookingMutation.isPending ? 'Processing...' : 
-                       formData.paymentMethod === 'online' ? 'Pay Now' : 'Authorize Card & Book'}
+                       formData.paymentMethod === 'online' ? 'Pay Now' : 'Book Now'}
                     </Button>
                   </div>
                 </CardContent>
