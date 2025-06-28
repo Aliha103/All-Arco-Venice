@@ -102,6 +102,13 @@ export const bookings = pgTable("bookings", {
   createdBy: varchar("created_by", { enum: ["admin", "guest"] }).notNull().default("guest"),
   bookedForSelf: boolean("booked_for_self").default(true), // true if guest booking for themselves
   
+  // Booking source tracking for calendar color-coding
+  bookingSource: varchar("booking_source", { 
+    enum: ["direct", "airbnb", "booking.com", "blocked", "custom"] 
+  }).default("direct"),
+  customSourceName: varchar("custom_source_name", { length: 100 }), // For custom third-party integrations
+  customSourceColor: varchar("custom_source_color", { length: 7 }), // Hex color code for custom sources
+  
   // User association and referral tracking
   userId: varchar("user_id").references(() => users.id), // null for non-registered guests
   referredByUserId: varchar("referred_by_user_id").references(() => users.id), // if booking used referral

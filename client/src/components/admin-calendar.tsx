@@ -28,27 +28,32 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
 
   // Transform bookings data for calendar display
   useEffect(() => {
-    if (bookings) {
+    if (bookings && Array.isArray(bookings)) {
       const transformedBookings = bookings.map((booking: any) => ({
         ...booking,
-        source: booking.source || 'direct' // Default to direct if no source specified
+        source: booking.bookingSource || 'direct' // Use bookingSource field from schema
       }));
       setCalendarBookings(transformedBookings);
+    } else if (bookings) {
+      // Handle case where bookings is not an array (empty object or single booking)
+      setCalendarBookings([]);
     }
   }, [bookings]);
 
-  const getSourceColor = (source: string) => {
+  const getSourceColor = (source: string, customColor?: string) => {
     switch (source) {
       case 'airbnb':
-        return 'bg-red-400 text-white';
+        return 'bg-red-400 text-white border-red-500';
       case 'booking.com':
-        return 'bg-blue-400 text-white';
+        return 'bg-blue-400 text-white border-blue-500';
       case 'direct':
-        return 'bg-green-400 text-white';
+        return 'bg-green-400 text-white border-green-500';
       case 'blocked':
-        return 'bg-gray-300 text-gray-700';
+        return 'bg-gray-300 text-gray-700 border-gray-400';
+      case 'custom':
+        return customColor ? `text-white border-2` : 'bg-purple-400 text-white border-purple-500';
       default:
-        return 'bg-purple-400 text-white'; // Custom sources
+        return 'bg-purple-400 text-white border-purple-500'; // Custom sources
     }
   };
 
@@ -133,8 +138,15 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
             {day}
           </div>
           {booking && (
-            <div className={`text-xs p-1 rounded ${getSourceColor(booking.source)} truncate`}>
-              {booking.guestFirstName} {booking.guestLastName.charAt(0)}.
+            <div className={`text-xs p-1 rounded-sm border ${getSourceColor(booking.source)} truncate shadow-sm`}>
+              <div className="font-medium">{booking.guestFirstName} {booking.guestLastName.charAt(0)}.</div>
+              {booking.source !== 'blocked' && (
+                <div className="opacity-80 text-xs mt-0.5">
+                  {booking.source === 'airbnb' && '🏠'}
+                  {booking.source === 'booking.com' && '🌐'}
+                  {booking.source === 'direct' && '💻'}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -825,6 +825,43 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Custom Booking Source Form */}
+                {showBookingSourceForm && (
+                  <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                    <h4 className="font-medium mb-4">Add Custom Booking Source</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="sourceName">Source Name</Label>
+                        <Input
+                          id="sourceName"
+                          placeholder="e.g., Expedia, Vrbo"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="sourceColor">Display Color</Label>
+                        <Input
+                          id="sourceColor"
+                          type="color"
+                          defaultValue="#9333EA"
+                          className="mt-1 h-10"
+                        />
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <Button className="flex-1">
+                          Add Source
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowBookingSourceForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Calendar Component */}
                 <div className="border rounded-lg p-4">
                   <AdminCalendar />
