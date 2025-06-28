@@ -19,6 +19,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -158,13 +159,21 @@ export default function AdvancedCalendar() {
   const goToNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const goToToday = () => setCurrentMonth(new Date());
 
-  // Get bookings for a specific date
+  // Get bookings for a specific date with position info
   const getBookingsForDate = (date: Date) => {
-    return bookings.filter(booking => 
-      isSameDay(booking.checkIn, date) || 
-      isSameDay(booking.checkOut, date) ||
-      isWithinInterval(date, { start: booking.checkIn, end: addDays(booking.checkOut, -1) })
-    );
+    return bookings.map(booking => {
+      const isCheckIn = isSameDay(booking.checkIn, date);
+      const isCheckOut = isSameDay(booking.checkOut, date);
+      const isMiddle = isWithinInterval(date, { start: addDays(booking.checkIn, 1), end: addDays(booking.checkOut, -1) });
+      
+      if (isCheckIn || isCheckOut || isMiddle) {
+        return {
+          ...booking,
+          position: isCheckIn ? 'checkin' : isCheckOut ? 'checkout' : 'middle'
+        } as CalendarBooking & { position: string };
+      }
+      return null;
+    }).filter((item): item is CalendarBooking & { position: string } => item !== null);
   };
 
   // Get booking source color
@@ -330,23 +339,73 @@ export default function AdvancedCalendar() {
                     {format(day, "d")}
                   </div>
                   
-                  {/* Booking indicators */}
-                  <div className="space-y-1">
-                    {dayBookings.slice(0, 2).map((booking) => (
-                      <div
-                        key={booking.id}
-                        className={`
-                          text-xs px-2 py-1 rounded truncate
-                          ${getSourceColor(booking.source)}
-                        `}
-                        title={`${booking.guestName} - ${getSourceLabel(booking.source)} - €${booking.price}`}
-                      >
-                        {booking.guestName}
-                      </div>
-                    ))}
-                    {dayBookings.length > 2 && (
-                      <div className="text-xs text-gray-500 px-2">
-                        +{dayBookings.length - 2} more
+                  {/* Split half-day booking display */}
+                  <div className="relative flex-1 mt-1">
+                    {dayBookings.slice(0, 4).map((booking, bookingIndex) => {
+                      const position = booking.position;
+                      
+                      return (
+                        <div 
+                          key={booking.id} 
+                          className="relative flex mb-0.5"
+                          style={{ zIndex: 10 + bookingIndex }}
+                        >
+                          {/* Left half - Check-in area */}
+                          <div 
+                            className={`
+                              w-1/2 h-3 flex items-center justify-center text-xs font-medium border
+                              ${position === 'checkin' || position === 'middle' ? 
+                                `${getSourceColor(booking.source)}` : 
+                                'bg-gray-50 border-gray-200'
+                              }
+                              ${position === 'checkin' ? 'rounded-l border-l-2' : ''}
+                              ${position === 'middle' ? 'border-l-0 border-r-0' : ''}
+                            `}
+                            title={position === 'checkin' ? `✓ Check-in: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
+                          >
+                            {position === 'checkin' && (
+                              <span className="text-white text-xs truncate">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Right half - Check-out area */}
+                          <div 
+                            className={`
+                              w-1/2 h-3 flex items-center justify-center text-xs font-medium border
+                              ${position === 'checkout' || position === 'middle' ? 
+                                `${getSourceColor(booking.source)}` : 
+                                'bg-gray-50 border-gray-200'
+                              }
+                              ${position === 'checkout' ? 'rounded-r border-r-2' : ''}
+                              ${position === 'middle' ? 'border-l-0 border-r-0' : ''}
+                            `}
+                            title={position === 'checkout' ? `✗ Check-out: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
+                          >
+                            {position === 'checkout' && (
+                              <span className="text-white text-xs truncate">
+                                ✗
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Guest name overlay for check-in/check-out */}
+                          {(position === 'checkin' || position === 'checkout') && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="text-white text-xs font-medium bg-black bg-opacity-50 px-1 rounded truncate max-w-full">
+                                {booking.guestName.split(' ')[0]}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Overflow indicator */}
+                    {dayBookings.length > 4 && (
+                      <div className="text-xs text-gray-500 text-center">
+                        +{dayBookings.length - 4} more
                       </div>
                     )}
                   </div>
@@ -416,6 +475,9 @@ export default function AdvancedCalendar() {
               <CalendarIcon className="w-5 h-5" />
               {selectedBooking ? "Booking Details" : "Create New Booking"}
             </DialogTitle>
+            <DialogDescription>
+              {selectedBooking ? "View and manage booking information" : "Create a new booking or block dates on the calendar"}
+            </DialogDescription>
           </DialogHeader>
 
           {selectedBooking ? (
