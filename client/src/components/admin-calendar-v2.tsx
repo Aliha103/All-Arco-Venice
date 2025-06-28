@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, X, Check, Ban, UserPlus, Home } from 'lucide
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, addDays, isAfter, isBefore } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, addDays, isAfter, isBefore, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 
 interface Booking {
   id: number;
@@ -286,33 +286,79 @@ export function AdminCalendarV2({ className }: CalendarProps) {
                   {format(day, 'd')}
                 </div>
 
-                {/* Booking Display */}
-                {booking && position && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div 
-                      className={`
-                        h-8 flex items-center justify-center text-white text-xs font-medium
-                        ${getSourceColor(booking.bookingSource)}
-                        ${position.isCheckIn && position.isCheckOut ? 'w-full rounded' : ''}
-                        ${position.isCheckIn && !position.isCheckOut ? 'w-full rounded-l' : ''}
-                        ${position.isMiddle ? 'w-full' : ''}
-                        ${position.isCheckOut && !position.isCheckIn ? 'w-full rounded-r' : ''}
-                      `}
-                    >
-                      {position.isCheckIn && (
-                        <div className="flex items-center gap-1">
-                          {getSourceLogo(booking.bookingSource)}
-                          <span className="truncate">
-                            {booking.bookingSource === 'blocked' 
-                              ? 'Blocked' 
-                              : `${booking.guestFirstName} ${booking.guestLastName.charAt(0)}.`
-                            }
-                          </span>
+                {/* Enhanced Booking Display with Split Edge Support */}
+                {(() => {
+                  // Find bookings that touch this day
+                  const todaysBookings = bookings.filter(b => {
+                    const checkIn = parseISO(b.checkInDate);
+                    const checkOut = parseISO(b.checkOutDate);
+                    const checkOutInclusive = addDays(checkOut, -1);
+                    return isWithinInterval(day, { start: checkIn, end: checkOutInclusive }) ||
+                           isSameDay(day, checkIn) ||
+                           isSameDay(day, checkOutInclusive);
+                  });
+
+                  // Split left/right if two bookings share the cell (checkout + checkin)
+                  const leftBooking = todaysBookings.find(b => {
+                    const checkOut = addDays(parseISO(b.checkOutDate), -1);
+                    return isSameDay(day, checkOut) && !isSameDay(day, parseISO(b.checkInDate));
+                  });
+                  
+                  const rightBooking = todaysBookings.find(b => {
+                    return isSameDay(day, parseISO(b.checkInDate));
+                  });
+
+                  if (leftBooking && rightBooking) {
+                    // Two bookings on same day - split display
+                    return (
+                      <div className="absolute inset-0">
+                        {/* Left half - checkout */}
+                        <div className={`absolute inset-y-1 left-1 right-1/2 rounded-l-full flex items-center px-1 text-[10px] font-medium ${getSourceColor(leftBooking.bookingSource)}`}>
+                          {getSourceLogo(leftBooking.bookingSource)}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                        {/* Right half - checkin */}
+                        <div className={`absolute inset-y-1 right-1 left-1/2 rounded-r-full flex items-center justify-end px-1 text-[10px] font-medium ${getSourceColor(rightBooking.bookingSource)}`}>
+                          {getSourceLogo(rightBooking.bookingSource)}
+                        </div>
+                      </div>
+                    );
+                  } else if (todaysBookings.length === 1) {
+                    // Single booking - full cell display
+                    const singleBooking = todaysBookings[0];
+                    const checkIn = parseISO(singleBooking.checkInDate);
+                    const checkOut = addDays(parseISO(singleBooking.checkOutDate), -1);
+                    const isStart = isSameDay(day, checkIn);
+                    const isEnd = isSameDay(day, checkOut);
+                    const isMiddle = !isStart && !isEnd;
+                    
+                    return (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className={`
+                          h-8 flex items-center justify-center text-white text-xs font-medium
+                          ${getSourceColor(singleBooking.bookingSource)}
+                          ${isStart && isEnd ? 'w-full rounded-full' : ''}
+                          ${isStart && !isEnd ? 'w-full rounded-l-full' : ''}
+                          ${isMiddle ? 'w-full' : ''}
+                          ${isEnd && !isStart ? 'w-full rounded-r-full' : ''}
+                        `}>
+                          {isStart && (
+                            <div className="flex items-center gap-1">
+                              {getSourceLogo(singleBooking.bookingSource)}
+                              <span className="truncate">
+                                {singleBooking.bookingSource === 'blocked' 
+                                  ? 'Blocked' 
+                                  : `${singleBooking.guestFirstName} ${singleBooking.guestLastName.charAt(0)}.`
+                                }
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return null;
+                })()}
               </div>
             );
           })}
