@@ -70,6 +70,8 @@ interface Booking {
   status: string;
   confirmationCode: string;
   createdAt: string;
+  bookingSource?: "direct" | "airbnb" | "booking.com" | "blocked" | "custom";
+  blockReason?: string;
 }
 
 interface Review {
@@ -316,6 +318,39 @@ export default function AdminDashboard() {
     queryKey: ["/api/messages"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+  });
+
+  // Create booking mutation for calendar
+  const createBookingMutation = useMutation({
+    mutationFn: async (bookingData: any) => {
+      await apiRequest("POST", "/api/bookings", bookingData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      toast({
+        title: "Success",
+        description: "Booking created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create booking",
+        variant: "destructive",
+      });
+    },
   });
 
   // Update booking status mutation
@@ -787,7 +822,85 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Calendar Tab */}
+          <TabsContent value="calendar" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Calendar</CardTitle>
+                <CardDescription>
+                  Click on available dates to block them or create manual bookings. 
+                  Color-coded by booking source: Red (Airbnb), Blue (Booking.com), Green (Direct), Gray (Blocked).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BookingCalendar
+                  reservations={
+                    bookings
+                      ? bookings.map((booking: any): Reservation => {
+                          // Map booking sources to calendar format
+                          let source: "airbnb" | "booking" | "manual" | "block" = "manual";
+                          if (booking.bookingSource === "airbnb") source = "airbnb";
+                          else if (booking.bookingSource === "booking.com") source = "booking";
+                          else if (booking.bookingSource === "blocked") source = "block";
+                          else source = "manual";
 
+                          return {
+                            id: booking.id.toString(),
+                            start: new Date(booking.checkInDate),
+                            end: new Date(booking.checkOutDate),
+                            source,
+                            guest: `${booking.guestFirstName} ${booking.guestLastName}`,
+                            price: booking.totalPrice,
+                            payment: "card"
+                          };
+                        })
+                      : []
+                  }
+                  onCreate={(reservation) => {
+                    // Create new booking/block via API
+                    if (reservation.source === "block") {
+                      // Create blocked dates
+                      const blockData = {
+                        guestFirstName: "Blocked",
+                        guestLastName: "Period",
+                        guestEmail: "blocked@allarco.com",
+                        guestCountry: "IT",
+                        guestPhone: "+39000000000",
+                        checkInDate: reservation.start.toISOString().split('T')[0],
+                        checkOutDate: reservation.end.toISOString().split('T')[0],
+                        guests: 1,
+                        paymentMethod: "property" as const,
+                        hasPet: false,
+                        createdBy: "admin" as const,
+                        bookedForSelf: false,
+                        blockReason: "Admin blocked period"
+                      };
+                      
+                      createBookingMutation.mutate(blockData);
+                    } else {
+                      // Create manual booking
+                      const bookingData = {
+                        guestFirstName: reservation.guest?.split(' ')[0] || "Manual",
+                        guestLastName: reservation.guest?.split(' ').slice(1).join(' ') || "Booking",
+                        guestEmail: "manual@allarco.com",
+                        guestCountry: "IT",
+                        guestPhone: "+39000000000",
+                        checkInDate: reservation.start.toISOString().split('T')[0],
+                        checkOutDate: reservation.end.toISOString().split('T')[0],
+                        guests: 2,
+                        paymentMethod: reservation.payment === "cash" ? "property" as const : "online" as const,
+                        hasPet: false,
+                        createdBy: "admin" as const,
+                        bookedForSelf: false
+                      };
+                      
+                      createBookingMutation.mutate(bookingData);
+                    }
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Bookings Tab */}
           <TabsContent value="bookings" className="space-y-6">
