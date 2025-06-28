@@ -67,6 +67,7 @@ export interface IStorage {
   cleanupAbandonedBookings(): Promise<void>;
   checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean>;
   getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]>;
+  associateBookingWithUser(bookingId: number, userId: string): Promise<void>;
   calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string): Promise<{
     basePrice: number;
     totalNights: number;
@@ -600,6 +601,13 @@ export class DatabaseStorage implements IStorage {
           )
         )
       );
+  }
+
+  async associateBookingWithUser(bookingId: number, userId: string): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ userId, updatedAt: new Date() })
+      .where(eq(bookings.id, bookingId));
   }
 
   // Property image operations

@@ -439,6 +439,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Associate booking with authenticated user account
+  app.post('/api/bookings/associate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { bookingId } = req.body;
+      
+      if (!bookingId) {
+        return res.status(400).json({ message: "Booking ID is required" });
+      }
+
+      // Get the booking to verify it exists
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Check if booking is already associated with this user
+      if (booking.userId === userId) {
+        return res.status(400).json({ message: "Booking is already in your account" });
+      }
+
+      // Associate booking with user
+      await storage.associateBookingWithUser(bookingId, userId);
+      
+      res.json({ message: "Booking added to your account successfully" });
+    } catch (error) {
+      console.error("Error associating booking:", error);
+      res.status(500).json({ message: "Failed to add booking to account" });
+    }
+  });
+
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

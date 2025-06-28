@@ -91,19 +91,51 @@ export default function BookingsPage() {
           email: lookupEmail
         })
       });
-      const result = await response.json();
-      setLookupResult(result);
-      toast({
-        title: "Booking Found",
-        description: "Booking details retrieved successfully",
-      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setLookupResult(result);
+        toast({
+          title: "Booking Found",
+          description: "Booking details retrieved successfully",
+        });
+      } else {
+        toast({
+          title: "Booking Not Found",
+          description: "No booking found with that confirmation code and email combination",
+          variant: "destructive",
+        });
+        setLookupResult(null);
+      }
     } catch (error) {
       toast({
-        title: "Booking Not Found",
-        description: "No booking found with that confirmation code and email",
+        title: "Error",
+        description: "Failed to search for booking. Please try again.",
         variant: "destructive",
       });
       setLookupResult(null);
+    }
+  };
+
+  const handleAddToMyBookings = async (booking: Booking) => {
+    try {
+      await apiRequest('POST', '/api/bookings/associate', {
+        bookingId: booking.id
+      });
+      
+      toast({
+        title: "Success",
+        description: "Booking added to your account successfully",
+      });
+      
+      // Refresh user bookings list
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add booking to your account",
+        variant: "destructive",
+      });
     }
   };
 
@@ -223,21 +255,42 @@ export default function BookingsPage() {
                 </Button>
 
                 {lookupResult && (
-                  <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                    <h3 className="font-medium text-green-900 mb-2">Booking Found!</h3>
-                    <div className="text-sm space-y-1">
-                      <div>Guest: {lookupResult.guestFirstName} {lookupResult.guestLastName}</div>
-                      <div>Dates: {formatDate(lookupResult.checkInDate)} - {formatDate(lookupResult.checkOutDate)}</div>
-                      <div>Status: {lookupResult.status}</div>
+                  <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h3 className="font-medium text-green-900 mb-3">✓ Booking Found!</h3>
+                    <div className="text-sm space-y-2 mb-4">
+                      <div><span className="text-gray-600">Guest:</span> <span className="font-medium">{lookupResult.guestFirstName} {lookupResult.guestLastName}</span></div>
+                      <div><span className="text-gray-600">Dates:</span> <span className="font-medium">{formatDate(lookupResult.checkInDate)} - {formatDate(lookupResult.checkOutDate)}</span></div>
+                      <div><span className="text-gray-600">Status:</span> <span className="font-medium">{getStatusBadge(lookupResult.status, lookupResult.paymentStatus)}</span></div>
+                      <div><span className="text-gray-600">Total:</span> <span className="font-semibold text-green-700">€{Number(lookupResult.totalPrice).toFixed(2)}</span></div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedBooking(lookupResult)}
-                      className="mt-2 w-full"
-                    >
-                      View Details
-                    </Button>
+                    
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedBooking(lookupResult)}
+                        className="w-full"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Full Details
+                      </Button>
+                      
+                      {isAuthenticated && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddToMyBookings(lookupResult)}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          Add to My Bookings
+                        </Button>
+                      )}
+                      
+                      {!isAuthenticated && (
+                        <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                          <a href="/api/login" className="text-blue-600 hover:underline font-medium">Sign in</a> to add this booking to your account
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>
