@@ -630,26 +630,38 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Booking Details Modal */}
+      {/* Ultra-Enhanced Booking Details Modal */}
       {selectedBooking && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
-                  <p className="text-gray-600 font-mono text-lg">{selectedBooking.confirmationCode}</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-3xl shadow-black/20 max-w-3xl w-full max-h-[95vh] overflow-y-auto border-0 ring-1 ring-gray-200/30 transform transition-all duration-500 animate-slideInUp">
+            {/* Modal Header with Gradient */}
+            <div className="relative bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-violet-50/80 backdrop-blur-sm border-b border-gray-200/30 rounded-t-2xl p-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-indigo-100/30 rounded-t-2xl"></div>
+              <div className="relative flex justify-between items-start">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <Calendar className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                      Booking Details
+                    </h2>
+                    <p className="text-gray-600 font-mono text-lg font-medium bg-gray-100 px-3 py-1 rounded-full mt-1">
+                      {selectedBooking.confirmationCode}
+                    </p>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
                   onClick={() => setSelectedBooking(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 w-10 h-10 rounded-xl transition-all duration-200 hover:scale-110"
                 >
-                  ×
+                  <span className="text-2xl">×</span>
                 </Button>
               </div>
+            </div>
 
-              <div className="space-y-6">
+            <div className="p-8 space-y-8">
                 {/* Guest Information */}
                 <div>
                   <h3 className="font-semibold text-lg mb-3">Guest Information</h3>
