@@ -46,7 +46,7 @@ import {
   Home
 } from "lucide-react";
 
-import TimelineCalendar from "@/components/TimelineCalendar";
+import AdvancedCalendar from "@/components/AdvancedCalendar";
 
 
 interface Analytics {
@@ -669,8 +669,8 @@ export default function AdminDashboard() {
               Bookings
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Timeline
+              <Calendar className="w-4 h-4" />
+              Calendar
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -993,11 +993,11 @@ export default function AdminDashboard() {
           <TabsContent value="timeline" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Timeline Calendar View</CardTitle>
-                <CardDescription>Interactive timeline view for managing bookings and blocked dates</CardDescription>
+                <CardTitle>Advanced Booking Calendar</CardTitle>
+                <CardDescription>Professional calendar view with month/list modes, color-coded booking sources, and interactive booking management</CardDescription>
               </CardHeader>
               <CardContent>
-                <TimelineCalendar />
+                <AdvancedCalendar />
               </CardContent>
             </Card>
           </TabsContent>
