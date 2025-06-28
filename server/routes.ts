@@ -389,6 +389,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Logout redirect endpoint - complete session termination
+  app.get('/api/auth/logout-redirect', (req, res) => {
+    // Clear the user immediately
+    req.user = undefined;
+    
+    // Logout using passport
+    req.logout((err) => {
+      if (err) {
+        console.error("Passport logout error:", err);
+      }
+      
+      // Destroy the session completely
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          console.error("Session destroy error:", sessionErr);
+        }
+        
+        // Clear all cookies
+        res.clearCookie('connect.sid', { path: '/' });
+        res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+        
+        // Set no-cache headers
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+        
+        // Redirect to homepage
+        res.redirect('/');
+      });
+    });
+  });
+
   // Calculate booking pricing endpoint
   app.post('/api/bookings/calculate-pricing', async (req, res) => {
     try {
