@@ -1,0 +1,260 @@
+import React, { useState } from "react";
+import {
+  format,
+  eachDayOfInterval,
+  startOfMonth,
+  endOfMonth,
+  differenceInCalendarDays,
+  addDays,
+  isSameDay,
+} from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+/**
+ * Helper: returns an array of all days within the visible month interval
+ */
+const useMonthDays = (currentMonth) => {
+  return eachDayOfInterval({
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
+  });
+};
+
+/**
+ * Represents one booking / block on the calendar
+ * @typedef {Object} Booking
+ * @property {string} id
+ * @property {string} guestName
+ * @property {Date}   checkIn   // inclusive — guest arrives this day
+ * @property {Date}   checkOut  // exclusive — guest leaves this day (morning)
+ * @property {"manual"|"blocked"} type
+ * @property {number} price
+ * @property {string} paymentMethod
+ */
+
+const CELL_WIDTH = 120; // px — width of one day cell
+const CELL_HEIGHT = 32; // px — height of timeline row
+
+export default function BookingCalendar({
+  month = new Date(),
+}) {
+  const days = useMonthDays(month);
+  /** @type {[Booking[], Function]} */
+  const [bookings, setBookings] = useState([
+    {
+      id: "b1",
+      guestName: "Mariana Raileanu",
+      checkIn: new Date(month.getFullYear(), month.getMonth(), 13),
+      checkOut: new Date(month.getFullYear(), month.getMonth(), 15),
+      type: "manual",
+      price: 240,
+      paymentMethod: "card",
+    },
+    {
+      id: "b2",
+      guestName: "Nhung Tran",
+      checkIn: new Date(month.getFullYear(), month.getMonth(), 23),
+      checkOut: new Date(month.getFullYear(), month.getMonth(), 24),
+      type: "blocked",
+      price: 0,
+    },
+  ]);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [formState, setFormState] = useState({
+    mode: "blocked", // "blocked" | "manual"
+    guestName: "",
+    price: 0,
+    paymentMethod: "cash",
+  });
+
+  const handleCellClick = (day) => {
+    setSelectedDate(day);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!selectedDate) return;
+
+    if (formState.mode === "blocked") {
+      setBookings((prev) => [
+        ...prev,
+        {
+          id: `blk-${Date.now()}`,
+          guestName: "Blocked",
+          checkIn: selectedDate,
+          checkOut: addDays(selectedDate, 1),
+          type: "blocked",
+          price: 0,
+        },
+      ]);
+    } else {
+      setBookings((prev) => [
+        ...prev,
+        {
+          id: `man-${Date.now()}`,
+          guestName: formState.guestName || "Manual booking",
+          checkIn: selectedDate,
+          checkOut: addDays(selectedDate, 1),
+          type: "manual",
+          price: Number(formState.price),
+          paymentMethod: formState.paymentMethod,
+        },
+      ]);
+    }
+    setDialogOpen(false);
+    setFormState({ mode: "blocked", guestName: "", price: 0, paymentMethod: "cash" });
+  };
+
+  /**
+   * Compute inline style for a booking bar — left offset & width
+   */
+  const getBookingStyle = (booking) => {
+    const startIdx = differenceInCalendarDays(booking.checkIn, days[0]);
+    const endIdx = differenceInCalendarDays(booking.checkOut, days[0]);
+    const nights = Math.max(endIdx - startIdx, 0);
+
+    // Half‑width for first day (check‑in) & last day (check‑out)
+    const width = nights * CELL_WIDTH + CELL_WIDTH / 2; // nights full + first half
+    const left = startIdx * CELL_WIDTH + CELL_WIDTH / 2; // start half‑offset
+
+    return {
+      left,
+      width,
+      height: CELL_HEIGHT,
+    };
+  };
+
+  return (
+    <div className="w-full overflow-x-auto">
+      {/* Header: day numbers */}
+      <div className="relative" style={{ height: CELL_HEIGHT + 40 }}>
+        <div className="flex" style={{ height: 40 }}>
+          {days.map((day) => (
+            <div
+              key={format(day, "yyyy-MM-dd")}
+              style={{ width: CELL_WIDTH }}
+              className="flex items-center justify-center text-sm font-medium border-r border-gray-200 last:border-none"
+            >
+              {format(day, "d")}
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline row: one row example */}
+        <div className="absolute top-10 left-0 h-full w-full border-t border-gray-200">
+          <div className="flex h-full">
+            {days.map((day) => (
+              <div
+                key={"cell-" + format(day, "yyyy-MM-dd")}
+                style={{ width: CELL_WIDTH, height: CELL_HEIGHT }}
+                className="border-r border-gray-100 hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleCellClick(day)}
+              />
+            ))}
+          </div>
+
+          {/* Render bookings */}
+          {bookings.map((b) => {
+            const { left, width } = getBookingStyle(b);
+            const isBlocked = b.type === "blocked";
+            return (
+              <div
+                key={b.id}
+                className={`absolute top-1/2 -translate-y-1/2 rounded-full text-xs px-3 truncate shadow-sm ${
+                  isBlocked ? "bg-rose-200 text-rose-900" : "bg-blue-400 text-white"
+                }`}
+                style={{ left, width, height: CELL_HEIGHT - 4 }}
+              >
+                {b.guestName}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dialog for new booking / block */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDate ? format(selectedDate, "PPP") : "Select"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <RadioGroup
+              value={formState.mode}
+              onValueChange={(val) => setFormState((s) => ({ ...s, mode: val }))}
+              className="flex gap-4"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="blocked" id="mode-blocked" />
+                <Label htmlFor="mode-blocked">Block</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="manual" id="mode-manual" />
+                <Label htmlFor="mode-manual">Manual booking</Label>
+              </div>
+            </RadioGroup>
+
+            {formState.mode === "manual" && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="guestName">Guest name</Label>
+                  <Input
+                    id="guestName"
+                    value={formState.guestName}
+                    onChange={(e) =>
+                      setFormState((s) => ({ ...s, guestName: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="price">Total price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={formState.price}
+                    onChange={(e) =>
+                      setFormState((s) => ({ ...s, price: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="paymentMethod">Payment method</Label>
+                  <Input
+                    id="paymentMethod"
+                    placeholder="cash / card / link"
+                    value={formState.paymentMethod}
+                    onChange={(e) =>
+                      setFormState((s) => ({ ...s, paymentMethod: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
