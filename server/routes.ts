@@ -239,6 +239,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Block dates endpoint for admin
+  app.post('/api/admin/block-dates', isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate, reason } = req.body;
+      
+      if (!startDate || !endDate || !reason) {
+        return res.status(400).json({ message: "Start date, end date, and reason are required" });
+      }
+
+      // Create blocked booking entries for each date in the range
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const currentDate = new Date(start);
+
+      while (currentDate <= end) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // Create a blocked booking for this date
+        await storage.createBooking({
+          guestFirstName: 'Blocked',
+          guestLastName: 'Period',
+          guestEmail: 'admin@system.local',
+          guestCountry: 'System',
+          guestPhone: '000-000-0000',
+          checkInDate: dateStr,
+          checkOutDate: dateStr,
+          guests: 0,
+          paymentMethod: 'property',
+          createdBy: 'admin',
+          blockReason: reason,
+          bookedForSelf: false
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      res.json({ message: "Dates blocked successfully" });
+    } catch (error: any) {
+      console.error("Block dates error:", error);
+      res.status(500).json({ message: "Failed to block dates" });
+    }
+  });
+
   // Local logout route
   app.post('/api/auth/logout', (req, res) => {
     req.session.destroy((err) => {
