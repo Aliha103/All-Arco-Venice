@@ -160,7 +160,7 @@ export default function TimelineCalendar({
     }
 
     setDialogOpen(false);
-    setFormState({ mode: "blocked", guestName: "", price: "0", paymentMethod: "cash" });
+    setFormState({ mode: "blocked", guestName: "", price: 0, paymentMethod: "cash" });
   };
 
   /**
@@ -251,7 +251,7 @@ export default function TimelineCalendar({
           <div className="space-y-4">
             <RadioGroup
               value={formState.mode}
-              onValueChange={(val) => setFormState((s) => ({ ...s, mode: val }))}
+              onValueChange={(val: "blocked" | "manual") => setFormState((s) => ({ ...s, mode: val }))}
               className="flex gap-4"
             >
               <div className="flex items-center gap-2">
