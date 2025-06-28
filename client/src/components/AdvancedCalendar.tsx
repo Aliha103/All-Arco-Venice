@@ -340,60 +340,74 @@ export default function AdvancedCalendar() {
                   </div>
                   
                   {/* Split half-day booking display */}
-                  <div className="relative flex-1 mt-1">
+                  <div className="relative flex-1 mt-1 overflow-visible">
                     {dayBookings.slice(0, 4).map((booking, bookingIndex) => {
                       const position = booking.position;
                       
                       return (
                         <div 
                           key={booking.id} 
-                          className="relative flex mb-0.5"
-                          style={{ zIndex: 10 + bookingIndex }}
+                          className="relative flex mb-0.5 overflow-visible"
+                          style={{ 
+                            zIndex: 10 + bookingIndex,
+                          }}
                         >
-                          {/* Left half - Check-in area */}
+                          {/* Left half - Check-out area */}
                           <div 
                             className={`
-                              w-1/2 h-3 flex items-center justify-center text-xs font-medium border
-                              ${position === 'checkin' || position === 'middle' ? 
+                              w-1/2 h-3 flex items-center justify-center text-xs font-medium relative overflow-visible
+                              ${position === 'checkout' || position === 'middle' ? 
                                 `${getSourceColor(booking.source)}` : 
-                                'bg-gray-50 border-gray-200'
+                                'bg-transparent'
                               }
-                              ${position === 'checkin' ? 'rounded-l border-l-2' : ''}
-                              ${position === 'middle' ? 'border-l-0 border-r-0' : ''}
+                              ${position === 'checkout' ? 'rounded-l' : ''}
                             `}
-                            title={position === 'checkin' ? `✓ Check-in: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
+                            style={{
+                              ...(position === 'middle' && {
+                                marginLeft: '-2px',
+                                paddingLeft: '2px',
+                                marginRight: '-1px'
+                              })
+                            }}
+                            title={position === 'checkout' ? `Check-out: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
                           >
-                            {position === 'checkin' && (
-                              <span className="text-white text-xs truncate">
-                                ✓
+                            {position === 'checkout' && (
+                              <span className="text-white text-xs font-bold">
+                                ↑
                               </span>
                             )}
                           </div>
                           
-                          {/* Right half - Check-out area */}
+                          {/* Right half - Check-in area */}
                           <div 
                             className={`
-                              w-1/2 h-3 flex items-center justify-center text-xs font-medium border
-                              ${position === 'checkout' || position === 'middle' ? 
+                              w-1/2 h-3 flex items-center justify-center text-xs font-medium relative overflow-visible
+                              ${position === 'checkin' || position === 'middle' ? 
                                 `${getSourceColor(booking.source)}` : 
-                                'bg-gray-50 border-gray-200'
+                                'bg-transparent'
                               }
-                              ${position === 'checkout' ? 'rounded-r border-r-2' : ''}
-                              ${position === 'middle' ? 'border-l-0 border-r-0' : ''}
+                              ${position === 'checkin' ? 'rounded-r' : ''}
                             `}
-                            title={position === 'checkout' ? `✗ Check-out: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
+                            style={{
+                              ...(position === 'middle' && {
+                                marginRight: '-2px',
+                                paddingRight: '2px',
+                                marginLeft: '-1px'
+                              })
+                            }}
+                            title={position === 'checkin' ? `Check-in: ${booking.guestName}` : position === 'middle' ? `${booking.guestName} staying` : ''}
                           >
-                            {position === 'checkout' && (
-                              <span className="text-white text-xs truncate">
-                                ✗
+                            {position === 'checkin' && (
+                              <span className="text-white text-xs font-bold">
+                                ↓
                               </span>
                             )}
                           </div>
                           
                           {/* Guest name overlay for check-in/check-out */}
                           {(position === 'checkin' || position === 'checkout') && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className="text-white text-xs font-medium bg-black bg-opacity-50 px-1 rounded truncate max-w-full">
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                              <span className="text-white text-xs font-medium bg-black bg-opacity-60 px-1 rounded truncate max-w-full">
                                 {booking.guestName.split(' ')[0]}
                               </span>
                             </div>
@@ -404,7 +418,7 @@ export default function AdvancedCalendar() {
                     
                     {/* Overflow indicator */}
                     {dayBookings.length > 4 && (
-                      <div className="text-xs text-gray-500 text-center">
+                      <div className="text-xs text-gray-500 text-center mt-1">
                         +{dayBookings.length - 4} more
                       </div>
                     )}
