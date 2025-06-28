@@ -108,6 +108,7 @@ export const bookings = pgTable("bookings", {
   }).default("direct"),
   customSourceName: varchar("custom_source_name", { length: 100 }), // For custom third-party integrations
   customSourceColor: varchar("custom_source_color", { length: 7 }), // Hex color code for custom sources
+  blockReason: varchar("block_reason", { length: 500 }), // Reason for blocking dates (only for blocked bookings)
   
   // User association and referral tracking
   userId: varchar("user_id").references(() => users.id), // null for non-registered guests
