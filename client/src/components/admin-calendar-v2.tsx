@@ -48,7 +48,7 @@ export function AdminCalendarV2({ className }: CalendarProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: bookings = [] } = useQuery({
+  const { data: bookings = [] } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
     refetchInterval: 1000
   });
@@ -97,7 +97,7 @@ export function AdminCalendarV2({ className }: CalendarProps) {
 
   const handleDateClick = (dateStr: string) => {
     // Check if date already has booking
-    const existingBooking = bookings.find((booking: Booking) => {
+    const existingBooking = (bookings as Booking[]).find((booking: Booking) => {
       const checkIn = parseISO(booking.checkInDate);
       const checkOut = parseISO(booking.checkOutDate);
       const clickedDate = parseISO(dateStr);
@@ -180,7 +180,7 @@ export function AdminCalendarV2({ className }: CalendarProps) {
 
   const getDayBooking = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return bookings.find((booking: Booking) => {
+    return (bookings as Booking[]).find((booking: Booking) => {
       const checkIn = parseISO(booking.checkInDate);
       const checkOut = parseISO(booking.checkOutDate);
       return (isSameDay(day, checkIn) || 

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { NewAdminCalendar } from "@/components/new-admin-calendar";
+import { AdminCalendarV2 } from "@/components/admin-calendar-v2";
 import { 
   BarChart3, 
   Users, 
@@ -864,7 +864,7 @@ export default function AdminDashboard() {
 
                 {/* Calendar Component */}
                 <div className="border rounded-lg p-4">
-                  <NewAdminCalendar />
+                  <AdminCalendarV2 />
                 </div>
               </CardContent>
             </Card>
