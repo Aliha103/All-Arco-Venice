@@ -5,6 +5,8 @@ import Header from "@/components/header"
 import ImageGalleryModal from "@/components/image-gallery-modal"
 import { apiRequest } from "@/lib/queryClient"
 import { Calendar } from "@/components/advanced-calendar"
+import { useAuth } from "@/hooks/useAuth"
+import { useToast } from "@/hooks/use-toast"
 import {
   Star,
   MapPin,
@@ -58,6 +60,15 @@ interface HeroImage {
 
 export default function Landing() {
   /* ------------------------------------------------------------------ */
+  //  Authentication and Toast
+  /* ------------------------------------------------------------------ */
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Check if user is admin
+  const isAdmin = user?.email === 'admin@allarco.com';
+
+  /* ------------------------------------------------------------------ */
   //  Image gallery state
   /* ------------------------------------------------------------------ */
   const { data: heroImages } = useQuery<HeroImage[]>({
@@ -95,6 +106,16 @@ export default function Landing() {
   };
 
   const handleReserveNow = async () => {
+    // Check if user is admin and prevent booking
+    if (isAdmin) {
+      toast({
+        title: "Admin Access Restricted",
+        description: "To create bookings, please use the Admin Dashboard. This booking interface is for guest viewing only.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!isValidBooking()) return;
 
     try {
@@ -763,22 +784,35 @@ export default function Landing() {
                 </div>
                 
                 <button
-                  disabled={!isValidBooking()}
+                  disabled={!isValidBooking() || isAdmin}
                   onClick={handleReserveNow}
                   className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
-                    isValidBooking()
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    isAdmin 
+                      ? 'bg-orange-100 border-2 border-orange-300 text-orange-700 cursor-not-allowed'
+                      : isValidBooking()
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {!checkIn || !checkOut ? 'Select dates to continue' : 
-                   Object.keys(validationErrors).length > 0 ? 'Invalid date selection' : 'Reserve Now'}
+                  {isAdmin 
+                    ? 'Admin View Only - Use Admin Dashboard to Book'
+                    : !checkIn || !checkOut 
+                      ? 'Select dates to continue' 
+                      : Object.keys(validationErrors).length > 0 
+                        ? 'Invalid date selection' 
+                        : 'Reserve Now'}
                 </button>
               </div>
 
-              {!checkIn && !checkOut && (
+              {!checkIn && !checkOut && !isAdmin && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
                   ⚠️ Check-in date is required
+                </div>
+              )}
+              
+              {isAdmin && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
+                  ℹ️ Admin users can view booking interface but must use Admin Dashboard to create bookings
                 </div>
               )}
             </div>
@@ -966,16 +1000,23 @@ export default function Landing() {
                     </div>
                     
                     <button
-                      disabled={!isValidBooking()}
+                      disabled={!isValidBooking() || isAdmin}
                       onClick={handleReserveNow}
                       className={`w-full py-3 px-4 rounded-lg font-semibold mt-6 transition-all duration-200 ${
-                        isValidBooking()
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        isAdmin 
+                          ? 'bg-orange-100 border-2 border-orange-300 text-orange-700 cursor-not-allowed'
+                          : isValidBooking()
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-[1.02] active:scale-95'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                     >
-                      {!checkIn || !checkOut ? 'Select dates to continue' : 
-                       Object.keys(validationErrors).length > 0 ? 'Invalid date selection' : 'Reserve Now'}
+                      {isAdmin 
+                        ? 'Admin View Only - Use Admin Dashboard to Book'
+                        : !checkIn || !checkOut 
+                          ? 'Select dates to continue' 
+                          : Object.keys(validationErrors).length > 0 
+                            ? 'Invalid date selection' 
+                            : 'Reserve Now'}
                     </button>
                   </div>
                 </div>
