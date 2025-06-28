@@ -385,9 +385,9 @@ export class DatabaseStorage implements IStorage {
         confirmationCode,
         qrCode,
         
-        // Status
-        status: "pending",
-        paymentStatus: "pending",
+        // Status - instant confirmation for both payment methods
+        status: "confirmed",
+        paymentStatus: bookingData.paymentMethod === "online" ? "paid" : "pending",
       })
       .returning();
     
