@@ -1144,6 +1144,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe webhook handler for payment confirmation
+  app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle payment success events
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as any;
+      const bookingId = paymentIntent.metadata.bookingId;
+      
+      if (bookingId && paymentIntent.metadata.type === 'full_payment') {
+        try {
+          // Confirm the booking when payment succeeds
+          await storage.confirmBooking(parseInt(bookingId));
+          console.log(`Booking ${bookingId} confirmed after successful payment`);
+        } catch (error) {
+          console.error(`Failed to confirm booking ${bookingId}:`, error);
+        }
+      }
+    }
+
+    res.json({ received: true });
+  });
+
+  // Payment success confirmation endpoint (client-side confirmation)
+  app.post('/api/confirm-payment', async (req, res) => {
+    try {
+      const { paymentIntentId, bookingId } = req.body;
+      
+      // Verify payment intent with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded' && bookingId) {
+        await storage.confirmBooking(bookingId);
+        res.json({ success: true, message: 'Booking confirmed' });
+      } else {
+        res.status(400).json({ success: false, message: 'Payment not completed' });
+      }
+    } catch (error: any) {
+      console.error('Payment confirmation failed:', error);
+      res.status(500).json({ success: false, message: 'Failed to confirm payment' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup for real-time updates

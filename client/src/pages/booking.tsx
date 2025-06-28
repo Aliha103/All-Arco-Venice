@@ -159,12 +159,36 @@ export default function BookingPage() {
 
 
 
-  const handlePaymentSuccess = (result: any) => {
+  const handlePaymentSuccess = async (result: any) => {
     if (!showPayment) return;
 
     const { bookingData } = showPayment;
     
-    if (showPayment.type === 'authorization') {
+    // For online payments, confirm the booking after payment success
+    if (showPayment.type === 'full_payment') {
+      try {
+        await apiRequest('POST', '/api/confirm-payment', {
+          paymentIntentId: result.paymentIntentId,
+          bookingId: bookingData.id
+        });
+        
+        setConfirmationData({
+          ...bookingData,
+          paymentStatus: 'paid',
+          amountPaid: finalPricing?.onlinePaymentTotal,
+          cityTaxDue: finalPricing?.cityTax,
+          paymentIntentId: result.paymentIntentId
+        });
+      } catch (error) {
+        toast({
+          title: "Booking Confirmation Failed",
+          description: "Payment was successful but booking confirmation failed. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Authorization flow (no longer used for property payments)
       setConfirmationData({
         ...bookingData,
         paymentStatus: 'authorized',
@@ -172,18 +196,11 @@ export default function BookingPage() {
         totalDue: finalPricing?.propertyPaymentTotal,
         authorizationId: result.paymentIntentId
       });
-    } else {
-      setConfirmationData({
-        ...bookingData,
-        paymentStatus: 'paid',
-        amountPaid: finalPricing?.onlinePaymentTotal,
-        cityTaxDue: finalPricing?.cityTax,
-        paymentIntentId: result.paymentIntentId
-      });
     }
     
     setShowPayment(null);
     setShowConfirmation(true);
+    setStep(1); // Reset to first step for next booking
   };
 
   const handlePaymentError = (error: string) => {

@@ -63,6 +63,7 @@ export interface IStorage {
   getBooking(id: number): Promise<Booking | undefined>;
   getBookingByConfirmationCode(code: string): Promise<Booking | undefined>;
   updateBookingStatus(id: number, status: string): Promise<void>;
+  confirmBooking(id: number): Promise<void>;
   checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean>;
   getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]>;
   calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string): Promise<{
@@ -385,9 +386,9 @@ export class DatabaseStorage implements IStorage {
         confirmationCode,
         qrCode,
         
-        // Status - instant confirmation for both payment methods
-        status: "confirmed",
-        paymentStatus: bookingData.paymentMethod === "online" ? "paid" : "pending",
+        // Status - pending for online payment, confirmed for property payment
+        status: bookingData.paymentMethod === "online" ? "pending" : "confirmed",
+        paymentStatus: bookingData.paymentMethod === "online" ? "pending" : "not_required",
       })
       .returning();
     
@@ -531,6 +532,17 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(bookings)
       .set({ paymentStatus: paymentStatus as any, updatedAt: new Date() })
+      .where(eq(bookings.id, id));
+  }
+
+  async confirmBooking(id: number): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ 
+        status: "confirmed", 
+        paymentStatus: "paid",
+        updatedAt: new Date() 
+      })
       .where(eq(bookings.id, id));
   }
 
