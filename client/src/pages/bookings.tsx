@@ -159,7 +159,7 @@ export default function BookingsPage() {
           </div>
 
           <div className="text-right">
-            <div className="font-semibold text-lg">€{booking.totalPrice.toFixed(2)}</div>
+            <div className="font-semibold text-lg">€{Number(booking.totalPrice).toFixed(2)}</div>
             <div className="text-sm text-gray-600">{booking.paymentMethod === 'online' ? 'Paid Online' : 'Pay at Property'}</div>
           </div>
         </div>
@@ -378,30 +378,30 @@ export default function BookingsPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Base Price:</span>
-                      <span>€{selectedBooking.basePrice.toFixed(2)}</span>
+                      <span>€{Number(selectedBooking.basePrice).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Cleaning Fee:</span>
-                      <span>€{selectedBooking.cleaningFee.toFixed(2)}</span>
+                      <span>€{Number(selectedBooking.cleaningFee).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Service Fee:</span>
-                      <span>€{selectedBooking.serviceFee.toFixed(2)}</span>
+                      <span>€{Number(selectedBooking.serviceFee).toFixed(2)}</span>
                     </div>
-                    {selectedBooking.petFee > 0 && (
+                    {Number(selectedBooking.petFee) > 0 && (
                       <div className="flex justify-between">
                         <span>Pet Fee:</span>
-                        <span>€{selectedBooking.petFee.toFixed(2)}</span>
+                        <span>€{Number(selectedBooking.petFee).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span>City Tax:</span>
-                      <span>€{selectedBooking.cityTax.toFixed(2)}</span>
+                      <span>€{Number(selectedBooking.cityTax).toFixed(2)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total:</span>
-                      <span>€{selectedBooking.totalPrice.toFixed(2)}</span>
+                      <span>€{Number(selectedBooking.totalPrice).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
