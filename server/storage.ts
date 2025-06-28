@@ -28,7 +28,7 @@ import {
   type HeroImage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, lt, gt, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -540,19 +540,10 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.status, "confirmed" as any),
         eq(bookings.status, "checked_in" as any)
       ),
-      or(
-        and(
-          gte(bookings.checkInDate, checkIn),
-          lte(bookings.checkInDate, checkOut)
-        ),
-        and(
-          gte(bookings.checkOutDate, checkIn),
-          lte(bookings.checkOutDate, checkOut)
-        ),
-        and(
-          lte(bookings.checkInDate, checkIn),
-          gte(bookings.checkOutDate, checkOut)
-        )
+      // Check for any overlap: existing booking check-in is before new check-out AND existing check-out is after new check-in
+      and(
+        sql`${bookings.checkInDate} < ${checkOut}`,
+        sql`${bookings.checkOutDate} > ${checkIn}`
       )
     ];
 
