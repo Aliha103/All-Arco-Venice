@@ -749,13 +749,7 @@ export default function BookingPage() {
                           )}
                         </div>
                       </div>
-                      {formData.paymentMethod === 'property' && (
-                        <div className="mt-3 ml-7">
-                          <Badge variant="outline" className="border-orange-200 text-orange-800">
-                            €100 card authorization required
-                          </Badge>
-                        </div>
-                      )}
+
                     </div>
                   </div>
 
