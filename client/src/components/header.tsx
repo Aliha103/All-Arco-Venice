@@ -36,8 +36,29 @@ export default function Header() {
     refetchInterval: 1000,
   });
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    try {
+      // For local auth users (admin), use the local logout endpoint
+      if (user && (user as any).authProvider === 'local') {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          window.location.href = '/';
+        } else {
+          console.error('Logout failed');
+        }
+      } else {
+        // For Replit Auth users
+        window.location.href = "/api/logout";
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback to standard logout
+      window.location.href = "/api/logout";
+    }
   };
 
   // Show loading state without early return
