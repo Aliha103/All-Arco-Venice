@@ -116,6 +116,23 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    const user = req.user as any;
+    
+    // Handle local auth users (admin users)
+    if (user && user.access_token === 'local_session') {
+      req.logout(() => {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Session destruction error:", err);
+          }
+          res.clearCookie('connect.sid');
+          res.redirect('/');
+        });
+      });
+      return;
+    }
+    
+    // Handle Replit Auth users
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
