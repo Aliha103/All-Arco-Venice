@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface CalendarBooking {
   id: number;
@@ -20,11 +26,43 @@ interface AdminCalendarProps {
 export function AdminCalendar({ className = '' }: AdminCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarBookings, setCalendarBookings] = useState<CalendarBooking[]>([]);
+  const [dragStart, setDragStart] = useState<string | null>(null);
+  const [dragEnd, setDragEnd] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch bookings with 100ms refresh rate for real-time updates
   const { data: bookings } = useQuery({
     queryKey: ['/api/bookings'],
     refetchInterval: 100,
+  });
+
+  // Block dates mutation
+  const blockDatesMutation = useMutation({
+    mutationFn: async (data: { startDate: string; endDate: string; reason: string }) => {
+      return apiRequest('POST', '/api/admin/block-dates', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      toast({
+        title: "Dates Blocked",
+        description: "Selected dates have been blocked successfully.",
+      });
+      setShowBlockDialog(false);
+      setBlockReason('');
+      setDragStart(null);
+      setDragEnd(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to block dates. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Transform bookings data for calendar display
