@@ -264,11 +264,15 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
           onMouseEnter={() => handleDragOver(dateKey)}
           onMouseUp={handleDragEnd}
         >
-          <div className={`text-sm font-bold mb-2 transition-all duration-300 group-hover:scale-125 group-hover:text-blue-600 ${
+          <div className={`text-sm font-bold mb-2 transition-all duration-300 transform-gpu ${
             isToday 
-              ? 'text-blue-800 bg-blue-100/50 rounded-full w-7 h-7 flex items-center justify-center mx-auto shadow-lg ring-2 ring-blue-300/50' 
-              : 'text-gray-700 hover:text-blue-600'
-          }`}>
+              ? 'text-blue-800 bg-blue-100/50 rounded-full w-7 h-7 flex items-center justify-center mx-auto shadow-lg ring-2 ring-blue-300/50 group-hover:scale-110' 
+              : 'text-gray-700 hover:text-blue-600 group-hover:scale-110'
+          }`}
+          style={{
+            transformOrigin: 'center center',
+            willChange: 'transform'
+          }}>
             {day}
           </div>
           {bookingInfo && (
