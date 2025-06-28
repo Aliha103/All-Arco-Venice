@@ -58,6 +58,7 @@ export default function BookingPage() {
   } | null>(null);
   const [appliedDiscount, setAppliedDiscount] = useState<'voucher' | 'referral' | null>(null);
   const [creditsUsed, setCreditsUsed] = useState(0);
+  const [isBookingForSelf, setIsBookingForSelf] = useState(true);
   
   // Get booking details from URL params or localStorage
   const [bookingDetails, setBookingDetails] = useState<BookingPageProps['bookingDetails']>(() => {
@@ -83,6 +84,30 @@ export default function BookingPage() {
       setLocation('/');
     }
   }, [bookingDetails, setLocation]);
+
+  // Prefill user details if authenticated and booking for self
+  useEffect(() => {
+    if (isAuthenticated && user && isBookingForSelf) {
+      setFormData(prev => ({
+        ...prev,
+        guestFirstName: user.firstName || '',
+        guestLastName: user.lastName || '',
+        guestEmail: user.email || '',
+        guestCountry: user.country || '',
+        guestPhone: user.mobileNumber || ''
+      }));
+    } else if (!isBookingForSelf) {
+      // Clear fields when booking for someone else
+      setFormData(prev => ({
+        ...prev,
+        guestFirstName: '',
+        guestLastName: '',
+        guestEmail: '',
+        guestCountry: '',
+        guestPhone: ''
+      }));
+    }
+  }, [isAuthenticated, user, isBookingForSelf]);
 
   // Calculate dynamic pricing based on applied discounts and credits
   const calculateFinalPricing = () => {
@@ -508,6 +533,37 @@ export default function BookingPage() {
                   <CardTitle>Guest Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Booking for self or someone else - Only show for authenticated users */}
+                  {isAuthenticated && (
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <Label className="text-base font-medium">Who is this booking for?</Label>
+                      <div className="flex space-x-4 mt-2">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={isBookingForSelf}
+                            onChange={() => setIsBookingForSelf(true)}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span>Myself</span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={!isBookingForSelf}
+                            onChange={() => setIsBookingForSelf(false)}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span>Someone else</span>
+                        </label>
+                      </div>
+                      {!isBookingForSelf && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          Please enter the guest's information below
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName">First Name *</Label>

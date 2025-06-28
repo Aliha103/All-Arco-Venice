@@ -405,6 +405,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's own bookings
+  app.get('/api/user/bookings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookings = await storage.getBookings({ userId });
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching user bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  // Lookup booking by confirmation code and email (public endpoint)
+  app.post('/api/bookings/lookup', async (req, res) => {
+    try {
+      const { confirmationCode, email } = req.body;
+      
+      if (!confirmationCode || !email) {
+        return res.status(400).json({ message: "Confirmation code and email are required" });
+      }
+
+      const booking = await storage.getBookingByConfirmationCode(confirmationCode);
+      
+      if (!booking || booking.guestEmail.toLowerCase() !== email.toLowerCase()) {
+        return res.status(404).json({ message: "Booking not found or email doesn't match" });
+      }
+
+      res.json(booking);
+    } catch (error) {
+      console.error("Error looking up booking:", error);
+      res.status(500).json({ message: "Failed to lookup booking" });
+    }
+  });
+
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
