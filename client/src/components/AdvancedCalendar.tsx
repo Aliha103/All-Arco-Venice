@@ -254,6 +254,7 @@ export default function AdvancedCalendar() {
         paymentMethod: "property",
         createdBy: "admin",
         blockReason: "Manual block",
+        bookingSource: "blocked",
       };
       createBookingMutation.mutate(blockData);
     } else {
@@ -268,6 +269,7 @@ export default function AdvancedCalendar() {
         guests: formState.guests,
         paymentMethod: formState.paymentMethod,
         createdBy: "admin",
+        bookingSource: formState.source,
       };
       createBookingMutation.mutate(bookingData);
     }
