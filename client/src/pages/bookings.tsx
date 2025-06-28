@@ -52,7 +52,7 @@ export default function BookingsPage() {
     setPageLoaded(true);
   }, []);
 
-  const { data: userBookings = [], isLoading } = useQuery({
+  const { data: userBookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/user/bookings'],
     enabled: isAuthenticated,
     staleTime: 30000,
@@ -569,7 +569,7 @@ export default function BookingsPage() {
       {/* Ultra-Enhanced Booking Details Modal */}
       {selectedBooking && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-3xl shadow-black/20 max-w-3xl w-full max-h-[95vh] overflow-y-auto border-0 ring-1 ring-gray-200/30 transform transition-all duration-500 animate-slideInUp">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-3xl shadow-black/20 max-w-3xl w-full max-h-[95vh] overflow-y-auto border-0 ring-1 ring-gray-200/30 transform transition-all duration-500 animate-modalSlideIn hover-lift">
             <div className="relative bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-violet-50/80 backdrop-blur-sm border-b border-gray-200/30 rounded-t-2xl p-6">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-indigo-100/30 rounded-t-2xl"></div>
               <div className="relative flex justify-between items-start">
@@ -596,117 +596,241 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            <div className="p-8 space-y-8">
-              {/* Guest Information */}
-              <div>
-                <h3 className="font-semibold text-lg mb-3">Guest Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Name:</span>
-                    <p className="font-medium">{selectedBooking.guestFirstName} {selectedBooking.guestLastName}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Email:</span>
-                    <p className="font-medium">{selectedBooking.guestEmail}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Country:</span>
-                    <p className="font-medium">{selectedBooking.guestCountry}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Phone:</span>
-                    <p className="font-medium">{selectedBooking.guestPhone}</p>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Booking Details */}
-              <div>
-                <h3 className="font-semibold text-lg mb-3">Booking Details</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Check-in:</span>
-                    <p className="font-medium">{formatDate(selectedBooking.checkInDate)} at 15:00</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Check-out:</span>
-                    <p className="font-medium">{formatDate(selectedBooking.checkOutDate)} at 10:00</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Guests:</span>
-                    <p className="font-medium">{selectedBooking.guests} guest{selectedBooking.guests !== 1 ? 's' : ''}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Pet:</span>
-                    <p className="font-medium">{selectedBooking.hasPet ? 'Yes' : 'No'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Pricing Breakdown */}
-              <div>
-                <h3 className="font-semibold text-lg mb-3">Pricing Breakdown</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Base Price:</span>
-                    <span>€{Number(selectedBooking.basePrice).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cleaning Fee:</span>
-                    <span>€{Number(selectedBooking.cleaningFee).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Service Fee:</span>
-                    <span>€{Number(selectedBooking.serviceFee).toFixed(2)}</span>
-                  </div>
-                  {Number(selectedBooking.petFee) > 0 && (
-                    <div className="flex justify-between">
-                      <span>Pet Fee:</span>
-                      <span>€{Number(selectedBooking.petFee).toFixed(2)}</span>
+            <div className="relative p-8 space-y-8 overflow-hidden">
+              {/* Ultra-Sophisticated Guest Information Section */}
+              <div className="relative group overflow-hidden animate-bounceIn stagger-1">
+                <div className="absolute -inset-2 bg-gradient-to-r from-blue-100/40 via-indigo-100/30 to-violet-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100 animate-gradientShift"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-blue-100/30 hover:shadow-xl hover:shadow-blue-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 hover-lift hover-glow">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:animate-iconSpin transition-transform duration-500 hover-glow">
+                      <Users className="w-5 h-5 text-white" />
                     </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>City Tax:</span>
-                    <span>€{Number(selectedBooking.cityTax).toFixed(2)}</span>
+                    <div>
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                        Guest Information
+                      </h3>
+                      <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20"></div>
+                    </div>
                   </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>Total:</span>
-                    <span>€{Number(selectedBooking.totalPrice).toFixed(2)}</span>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { label: 'Name', value: `${selectedBooking.guestFirstName} ${selectedBooking.guestLastName}`, icon: Users, color: 'blue' },
+                      { label: 'Email', value: selectedBooking.guestEmail, icon: Clock, color: 'emerald' },
+                      { label: 'Country', value: selectedBooking.guestCountry, icon: MapPin, color: 'purple' },
+                      { label: 'Phone', value: selectedBooking.guestPhone, icon: CreditCard, color: 'orange' }
+                    ].map((item, index) => (
+                      <div key={item.label} className={`group/item relative overflow-hidden bg-gradient-to-br from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg p-4 border border-white/40 hover:border-${item.color}-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-105 hover:shadow-lg hover:shadow-${item.color}-100/30 transform`}
+                           style={{ animationDelay: `${index * 100}ms` }}>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-${item.color}-50/20 to-${item.color}-100/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 rounded-lg`}></div>
+                        <div className="relative flex items-center space-x-3">
+                          <div className={`w-8 h-8 bg-gradient-to-br from-${item.color}-400 to-${item.color}-600 rounded-lg flex items-center justify-center shadow-sm group-hover/item:rotate-12 group-hover/item:scale-110 transition-all duration-300`}>
+                            <item.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium text-${item.color}-600 uppercase tracking-wide mb-1`}>{item.label}</p>
+                            <p className="font-semibold text-gray-900 truncate group-hover/item:text-gray-700 transition-colors duration-300">{item.value}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* QR Code */}
-              <div className="text-center">
-                <h3 className="font-semibold text-lg mb-3">Check-in QR Code</h3>
-                <div className="inline-block p-4 bg-white border rounded-lg">
-                  <QRCodeComponent 
-                    value={`AllArco-${selectedBooking.confirmationCode}`}
-                    size={128}
-                    className="mx-auto"
-                  />
+              {/* Ultra-Enhanced Decorative Separator */}
+              <div className="relative flex items-center justify-center py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300/60 to-transparent"></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">Show this QR code at check-in</p>
+                <div className="relative bg-white/90 backdrop-blur-sm px-6 py-2 rounded-full border border-gray-200/50 shadow-sm">
+                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse-slow"></div>
+                </div>
               </div>
 
-              <div className="flex space-x-3">
+              {/* Ultra-Sophisticated Booking Details Section */}
+              <div className="relative group overflow-hidden">
+                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-100/40 via-teal-100/30 to-cyan-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-emerald-100/30 hover:shadow-xl hover:shadow-emerald-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:rotate-6 transition-transform duration-500">
+                      <Calendar className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-teal-700 bg-clip-text text-transparent">
+                        Booking Details
+                      </h3>
+                      <div className="h-1 w-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { label: 'Check-in', value: `${formatDate(selectedBooking.checkInDate)} at 15:00`, icon: Calendar, color: 'emerald' },
+                      { label: 'Check-out', value: `${formatDate(selectedBooking.checkOutDate)} at 10:00`, icon: Clock, color: 'blue' },
+                      { label: 'Guests', value: `${selectedBooking.guests} guest${selectedBooking.guests !== 1 ? 's' : ''}`, icon: Users, color: 'purple' },
+                      { label: 'Pet', value: selectedBooking.hasPet ? 'Yes' : 'No', icon: PawPrint, color: 'orange' }
+                    ].map((item, index) => (
+                      <div key={item.label} className={`group/item relative overflow-hidden bg-gradient-to-br from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg p-4 border border-white/40 hover:border-${item.color}-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-105 hover:shadow-lg hover:shadow-${item.color}-100/30 transform`}
+                           style={{ animationDelay: `${index * 100}ms` }}>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-${item.color}-50/20 to-${item.color}-100/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 rounded-lg`}></div>
+                        <div className="relative flex items-center space-x-3">
+                          <div className={`w-8 h-8 bg-gradient-to-br from-${item.color}-400 to-${item.color}-600 rounded-lg flex items-center justify-center shadow-sm group-hover/item:rotate-12 group-hover/item:scale-110 transition-all duration-300`}>
+                            <item.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium text-${item.color}-600 uppercase tracking-wide mb-1`}>{item.label}</p>
+                            <p className="font-semibold text-gray-900 truncate group-hover/item:text-gray-700 transition-colors duration-300">{item.value}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Ultra-Enhanced Decorative Separator */}
+              <div className="relative flex items-center justify-center py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300/60 to-transparent"></div>
+                </div>
+                <div className="relative bg-white/90 backdrop-blur-sm px-6 py-2 rounded-full border border-gray-200/50 shadow-sm">
+                  <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full animate-pulse-slow"></div>
+                </div>
+              </div>
+
+              {/* Ultra-Sophisticated Pricing Breakdown Section */}
+              <div className="relative group overflow-hidden">
+                <div className="absolute -inset-2 bg-gradient-to-r from-amber-100/40 via-yellow-100/30 to-orange-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-amber-100/30 hover:shadow-xl hover:shadow-amber-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:rotate-6 transition-transform duration-500">
+                      <TrendingUp className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-amber-800 to-orange-700 bg-clip-text text-transparent">
+                        Pricing Breakdown
+                      </h3>
+                      <div className="h-1 w-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Base Price', amount: Number(selectedBooking.basePrice), color: 'blue' },
+                      { label: 'Cleaning Fee', amount: Number(selectedBooking.cleaningFee), color: 'emerald' },
+                      { label: 'Service Fee', amount: Number(selectedBooking.serviceFee), color: 'purple' },
+                      ...(Number(selectedBooking.petFee) > 0 ? [{ label: 'Pet Fee', amount: Number(selectedBooking.petFee), color: 'orange' }] : []),
+                      { label: 'City Tax', amount: Number(selectedBooking.cityTax), color: 'indigo' }
+                    ].map((item, index) => (
+                      <div key={item.label} className={`group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-${item.color}-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-${item.color}-100/30`}
+                           style={{ animationDelay: `${index * 50}ms` }}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 bg-gradient-to-r from-${item.color}-400 to-${item.color}-600 rounded-full group-hover/price:scale-150 transition-transform duration-300`}></div>
+                          <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">{item.label}</span>
+                        </div>
+                        <span className={`font-bold text-${item.color}-700 group-hover/price:scale-110 transition-transform duration-300`}>
+                          €{item.amount.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                    
+                    {/* Enhanced Total Section */}
+                    <div className="relative mt-6 pt-4 border-t border-gradient-to-r from-transparent via-gray-300/60 to-transparent">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-50/50 via-yellow-50/40 to-orange-50/50 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="relative flex items-center justify-between p-6 bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/80 backdrop-blur-sm rounded-xl border border-amber-200/50 shadow-lg shadow-amber-200/30 hover:shadow-xl hover:shadow-amber-300/40 transition-all duration-500 hover:scale-[1.02] group/total">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover/total:rotate-12 transition-transform duration-500">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                          </div>
+                          <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-amber-800 to-orange-700 bg-clip-text text-transparent group-hover/total:scale-110 transition-transform duration-300">
+                            Total Amount
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent group-hover/total:scale-110 transition-transform duration-300">
+                            €{Number(selectedBooking.totalPrice).toFixed(2)}
+                          </div>
+                          <div className="text-sm text-amber-600 font-medium">Including all fees</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ultra-Enhanced Decorative Separator */}
+              <div className="relative flex items-center justify-center py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300/60 to-transparent"></div>
+                </div>
+                <div className="relative bg-white/90 backdrop-blur-sm px-6 py-2 rounded-full border border-gray-200/50 shadow-sm">
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow"></div>
+                </div>
+              </div>
+
+              {/* Ultra-Sophisticated QR Code Section */}
+              <div className="relative group overflow-hidden">
+                <div className="absolute -inset-2 bg-gradient-to-r from-purple-100/40 via-pink-100/30 to-rose-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg shadow-purple-100/30 hover:shadow-xl hover:shadow-purple-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 text-center">
+                  <div className="flex items-center justify-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:rotate-6 transition-transform duration-500">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-700 bg-clip-text text-transparent">
+                        Check-in QR Code
+                      </h3>
+                      <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20 mx-auto"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="relative group/qr inline-block">
+                    <div className="absolute -inset-3 bg-gradient-to-r from-purple-200/40 to-pink-200/40 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-all duration-500 blur-sm"></div>
+                    <div className="relative p-6 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 backdrop-blur-sm rounded-2xl border border-purple-200/50 shadow-xl shadow-purple-200/40 hover:shadow-2xl hover:shadow-purple-300/50 transition-all duration-500 hover:scale-105 group-hover/qr:bg-white/90">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 to-pink-100/20 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-opacity duration-500"></div>
+                      <div className="relative">
+                        <QRCodeComponent 
+                          value={`AllArco-${selectedBooking.confirmationCode}`}
+                          size={140}
+                          className="mx-auto transition-transform duration-500 group-hover/qr:scale-110"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 space-y-2">
+                    <p className="text-lg font-semibold bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
+                      Show this QR code at check-in
+                    </p>
+                    <p className="text-sm text-gray-600 bg-gray-50/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200/50 inline-block">
+                      Scan for instant property access
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ultra-Enhanced Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
                   onClick={() => setSelectedBooking(null)}
-                  className="flex-1"
+                  className="flex-1 h-14 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg shadow-gray-500/25 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium"
                 >
-                  Close
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  <span className="relative flex items-center justify-center space-x-2">
+                    <span>Close Details</span>
+                  </span>
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={() => window.print()}
-                  className="flex items-center gap-2"
+                  className="flex-1 h-14 border-2 border-blue-300/60 bg-blue-50/40 hover:bg-blue-100/60 hover:border-blue-400/80 text-blue-700 hover:text-blue-800 shadow-lg shadow-blue-200/30 hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium backdrop-blur-sm"
                 >
-                  Print Details
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/0 via-blue-200/30 to-blue-100/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  <span className="relative flex items-center justify-center space-x-2">
+                    <CreditCard className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                    <span>Print Details</span>
+                  </span>
                 </Button>
               </div>
             </div>
