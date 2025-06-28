@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import StripePaymentWrapper from '@/components/stripe-payment-wrapper';
+import { QRCodeComponent } from '@/components/qr-code';
 
 interface BookingPageProps {
   bookingDetails: {
@@ -319,11 +320,14 @@ export default function BookingPage() {
               {/* QR Code */}
               <div className="text-center">
                 <div className="inline-block p-4 bg-white border rounded-lg">
-                  <div className="w-32 h-32 bg-gray-100 flex items-center justify-center text-gray-500 text-xs">
-                    QR Code<br/>{confirmationData.confirmationCode}
-                  </div>
+                  <QRCodeComponent 
+                    value={`AllArco-${confirmationData.confirmationCode}`}
+                    size={128}
+                    className="mx-auto"
+                  />
                 </div>
                 <p className="text-sm text-gray-600 mt-2">Show this QR code at check-in</p>
+                <p className="text-xs text-gray-500 mt-1">Confirmation: {confirmationData.confirmationCode}</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
