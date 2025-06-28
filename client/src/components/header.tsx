@@ -37,9 +37,30 @@ export default function Header() {
     refetchInterval: 1000,
   });
 
-  const handleLogout = () => {
-    // Force immediate redirect to logout endpoint
-    window.location.href = '/api/auth/logout-redirect';
+  const handleLogout = async () => {
+    console.log('🔴 LOGOUT CLICKED - Starting logout process');
+    console.log('🔴 Current user:', user);
+    
+    try {
+      // Clear query cache immediately
+      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.clear();
+      
+      // Call logout endpoint
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      console.log('🔴 Logout response:', response.status);
+      
+      // Force complete page reload to reset all state
+      window.location.replace('/');
+    } catch (error) {
+      console.error('🔴 Logout error:', error);
+      // Force reload anyway
+      window.location.replace('/');
+    }
   };
 
   // Show loading state without early return

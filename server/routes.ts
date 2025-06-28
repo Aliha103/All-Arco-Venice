@@ -354,63 +354,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Local logout route - complete session reset
-  app.post('/api/auth/logout', (req, res) => {
-    // Clear the user from the request
-    req.user = undefined;
+  // Local logout route - complete session reset with database cleanup
+  app.post('/api/auth/logout', async (req, res) => {
+    console.log('🔴 SERVER: Local logout endpoint hit');
+    console.log('🔴 SERVER: Session ID:', req.sessionID);
+    console.log('🔴 SERVER: Current user:', req.user);
     
-    // Logout using passport
-    req.logout((err) => {
-      if (err) {
-        console.error("Passport logout error:", err);
+    try {
+      const sessionId = req.sessionID;
+      
+      // Clear the user immediately
+      req.user = undefined;
+      
+      // Delete session from database directly
+      if (sessionId) {
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
+        console.log('🔴 SERVER: Session deleted from database');
       }
       
-      // Destroy the session completely
-      req.session.destroy((sessionErr) => {
-        if (sessionErr) {
-          console.error("Session destroy error:", sessionErr);
+      // Logout using passport
+      req.logout((err) => {
+        if (err) {
+          console.error("🔴 SERVER: Passport logout error:", err);
         }
+        console.log('🔴 SERVER: Passport logout completed');
         
-        // Clear all possible cookie variations
-        res.clearCookie('connect.sid', { path: '/' });
-        res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
-        res.clearCookie('connect.sid', { path: '/', httpOnly: true });
-        res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
-        
-        // Set headers to prevent caching
-        res.set({
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+        // Destroy the session completely
+        req.session.destroy((sessionErr) => {
+          if (sessionErr) {
+            console.error("🔴 SERVER: Session destroy error:", sessionErr);
+          }
+          console.log('🔴 SERVER: Session destroyed');
+          
+          // Clear all possible cookie variations
+          res.clearCookie('connect.sid', { path: '/' });
+          res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
+          res.clearCookie('connect.sid', { path: '/', httpOnly: true });
+          res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+          console.log('🔴 SERVER: Cookies cleared');
+          
+          // Set headers to prevent caching
+          res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          });
+          
+          console.log('🔴 SERVER: Logout completed successfully');
+          res.json({ message: "Logout successful", cleared: true, sessionCleared: true });
         });
-        
-        res.json({ message: "Logout successful", cleared: true });
       });
-    });
+    } catch (error) {
+      console.error('🔴 SERVER: Database session cleanup error:', error);
+      // Continue with regular logout even if DB cleanup fails
+      req.user = undefined;
+      req.logout((err) => {
+        req.session.destroy(() => {
+          res.clearCookie('connect.sid', { path: '/' });
+          res.json({ message: "Logout successful", cleared: true });
+        });
+      });
+    }
   });
 
   // Logout redirect endpoint - complete session termination
   app.get('/api/auth/logout-redirect', (req, res) => {
+    console.log('🔴 SERVER: Logout redirect endpoint hit');
+    console.log('🔴 SERVER: Current user before logout:', req.user);
+    console.log('🔴 SERVER: Session ID before logout:', req.sessionID);
+    console.log('🔴 SERVER: Is authenticated:', req.isAuthenticated());
+    
     // Clear the user immediately
     req.user = undefined;
+    console.log('🔴 SERVER: User cleared from request');
     
     // Logout using passport
     req.logout((err) => {
       if (err) {
-        console.error("Passport logout error:", err);
+        console.error("🔴 SERVER: Passport logout error:", err);
       }
+      console.log('🔴 SERVER: Passport logout completed');
       
       // Destroy the session completely
       req.session.destroy((sessionErr) => {
         if (sessionErr) {
-          console.error("Session destroy error:", sessionErr);
+          console.error("🔴 SERVER: Session destroy error:", sessionErr);
         }
+        console.log('🔴 SERVER: Session destroyed successfully');
         
         // Clear all cookies
         res.clearCookie('connect.sid', { path: '/' });
         res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
         res.clearCookie('connect.sid', { path: '/', httpOnly: true });
         res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+        console.log('🔴 SERVER: All cookies cleared');
         
         // Set no-cache headers
         res.set({
@@ -418,9 +456,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Pragma': 'no-cache',
           'Expires': '0'
         });
+        console.log('🔴 SERVER: No-cache headers set');
         
-        // Redirect to homepage
-        res.redirect('/');
+        // Redirect to homepage with cache busting
+        console.log('🔴 SERVER: Redirecting to homepage with cache busting');
+        res.redirect('/?t=' + Date.now());
       });
     });
   });
