@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ import { Link } from "wouter";
 export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // All hooks must be called unconditionally
   const { data: unreadCount } = useQuery<number>({
@@ -36,29 +37,9 @@ export default function Header() {
     refetchInterval: 1000,
   });
 
-  const handleLogout = async () => {
-    try {
-      // For local auth users (admin), use the local logout endpoint
-      if (user && (user as any).authProvider === 'local') {
-        const response = await fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          window.location.href = '/';
-        } else {
-          console.error('Logout failed');
-        }
-      } else {
-        // For Replit Auth users
-        window.location.href = "/api/logout";
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Fallback to standard logout
-      window.location.href = "/api/logout";
-    }
+  const handleLogout = () => {
+    // Force immediate redirect to logout endpoint
+    window.location.href = '/api/auth/logout-redirect';
   };
 
   // Show loading state without early return

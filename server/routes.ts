@@ -354,15 +354,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Local logout route
+  // Local logout route - complete session reset
   app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy((err) => {
+    // Clear the user from the request
+    req.user = undefined;
+    
+    // Logout using passport
+    req.logout((err) => {
       if (err) {
-        console.error("Logout error:", err);
-        return res.status(500).json({ message: "Failed to logout" });
+        console.error("Passport logout error:", err);
       }
-      res.clearCookie('connect.sid');
-      res.json({ message: "Logout successful" });
+      
+      // Destroy the session completely
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          console.error("Session destroy error:", sessionErr);
+        }
+        
+        // Clear all possible cookie variations
+        res.clearCookie('connect.sid', { path: '/' });
+        res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+        
+        // Set headers to prevent caching
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+        
+        res.json({ message: "Logout successful", cleared: true });
+      });
     });
   });
 
