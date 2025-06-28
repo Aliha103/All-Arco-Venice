@@ -606,10 +606,10 @@ export default function BookingsPage() {
                       <Users className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent animate-textGlow">
                         Guest Information
                       </h3>
-                      <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20"></div>
+                      <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20 animate-gradientShift"></div>
                     </div>
                   </div>
                   
@@ -649,9 +649,9 @@ export default function BookingsPage() {
               </div>
 
               {/* Ultra-Sophisticated Booking Details Section */}
-              <div className="relative group overflow-hidden">
-                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-100/40 via-teal-100/30 to-cyan-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-emerald-100/30 hover:shadow-xl hover:shadow-emerald-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90">
+              <div className="relative group overflow-hidden animate-bounceIn stagger-2">
+                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-100/40 via-teal-100/30 to-cyan-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100 animate-gradientShift"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-emerald-100/30 hover:shadow-xl hover:shadow-emerald-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 hover-lift hover-glow">
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:rotate-6 transition-transform duration-500">
                       <Calendar className="w-5 h-5 text-white" />
@@ -700,9 +700,9 @@ export default function BookingsPage() {
               </div>
 
               {/* Ultra-Sophisticated Pricing Breakdown Section */}
-              <div className="relative group overflow-hidden">
-                <div className="absolute -inset-2 bg-gradient-to-r from-amber-100/40 via-yellow-100/30 to-orange-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-amber-100/30 hover:shadow-xl hover:shadow-amber-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90">
+              <div className="relative group overflow-hidden animate-bounceIn stagger-3">
+                <div className="absolute -inset-2 bg-gradient-to-r from-amber-100/40 via-yellow-100/30 to-orange-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100 animate-gradientShift"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-lg shadow-amber-100/30 hover:shadow-xl hover:shadow-amber-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 hover-lift hover-glow">
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:rotate-6 transition-transform duration-500">
                       <TrendingUp className="w-5 h-5 text-white" />
@@ -770,30 +770,30 @@ export default function BookingsPage() {
               </div>
 
               {/* Ultra-Sophisticated QR Code Section */}
-              <div className="relative group overflow-hidden">
-                <div className="absolute -inset-2 bg-gradient-to-r from-purple-100/40 via-pink-100/30 to-rose-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg shadow-purple-100/30 hover:shadow-xl hover:shadow-purple-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 text-center">
+              <div className="relative group overflow-hidden animate-bounceIn stagger-4">
+                <div className="absolute -inset-2 bg-gradient-to-r from-purple-100/40 via-pink-100/30 to-rose-100/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-sm scale-95 group-hover:scale-100 animate-gradientShift"></div>
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg shadow-purple-100/30 hover:shadow-xl hover:shadow-purple-200/40 transition-all duration-500 hover:scale-[1.01] group-hover:bg-white/90 text-center hover-lift hover-glow">
                   <div className="flex items-center justify-center space-x-3 mb-6">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:rotate-6 transition-transform duration-500">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:animate-iconSpin transition-transform duration-500 hover-glow">
                       <Shield className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-700 bg-clip-text text-transparent">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-700 bg-clip-text text-transparent animate-textGlow">
                         Check-in QR Code
                       </h3>
-                      <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20 mx-auto"></div>
+                      <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-1 transition-all duration-500 group-hover:w-20 mx-auto animate-gradientShift"></div>
                     </div>
                   </div>
                   
-                  <div className="relative group/qr inline-block">
-                    <div className="absolute -inset-3 bg-gradient-to-r from-purple-200/40 to-pink-200/40 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-all duration-500 blur-sm"></div>
-                    <div className="relative p-6 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 backdrop-blur-sm rounded-2xl border border-purple-200/50 shadow-xl shadow-purple-200/40 hover:shadow-2xl hover:shadow-purple-300/50 transition-all duration-500 hover:scale-105 group-hover/qr:bg-white/90">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 to-pink-100/20 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative group/qr inline-block animate-bounceIn stagger-5">
+                    <div className="absolute -inset-3 bg-gradient-to-r from-purple-200/40 to-pink-200/40 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-all duration-500 blur-sm animate-gradientShift"></div>
+                    <div className="relative p-6 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 backdrop-blur-sm rounded-2xl border border-purple-200/50 shadow-xl shadow-purple-200/40 hover:shadow-2xl hover:shadow-purple-300/50 transition-all duration-500 hover:scale-105 group-hover/qr:bg-white/90 hover-lift hover-glow hover-tilt">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 to-pink-100/20 rounded-2xl opacity-0 group-hover/qr:opacity-100 transition-opacity duration-500 animate-gradientShift"></div>
                       <div className="relative">
                         <QRCodeComponent 
                           value={`AllArco-${selectedBooking.confirmationCode}`}
                           size={140}
-                          className="mx-auto transition-transform duration-500 group-hover/qr:scale-110"
+                          className="mx-auto transition-transform duration-500 group-hover/qr:scale-110 animate-cardHover"
                         />
                       </div>
                     </div>
@@ -811,10 +811,10 @@ export default function BookingsPage() {
               </div>
 
               {/* Ultra-Enhanced Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-bounceIn stagger-6">
                 <Button 
                   onClick={() => setSelectedBooking(null)}
-                  className="flex-1 h-14 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg shadow-gray-500/25 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium"
+                  className="flex-1 h-14 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg shadow-gray-500/25 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium hover-lift animate-gradientShift"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                   <span className="relative flex items-center justify-center space-x-2">
@@ -824,11 +824,11 @@ export default function BookingsPage() {
                 <Button 
                   variant="outline"
                   onClick={() => window.print()}
-                  className="flex-1 h-14 border-2 border-blue-300/60 bg-blue-50/40 hover:bg-blue-100/60 hover:border-blue-400/80 text-blue-700 hover:text-blue-800 shadow-lg shadow-blue-200/30 hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium backdrop-blur-sm"
+                  className="flex-1 h-14 border-2 border-blue-300/60 bg-blue-50/40 hover:bg-blue-100/60 hover:border-blue-400/80 text-blue-700 hover:text-blue-800 shadow-lg shadow-blue-200/30 hover:shadow-xl hover:shadow-blue-300/40 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium backdrop-blur-sm hover-lift hover-glow animate-gradientShift"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-100/0 via-blue-200/30 to-blue-100/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                   <span className="relative flex items-center justify-center space-x-2">
-                    <CreditCard className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                    <CreditCard className="w-5 h-5 group-hover:animate-iconSpin transition-transform duration-300" />
                     <span>Print Details</span>
                   </span>
                 </Button>
