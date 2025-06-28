@@ -125,16 +125,32 @@ export default function AdvancedCalendar() {
       return apiRequest("POST", "/api/bookings", bookingData);
     },
     onSuccess: () => {
+      // Invalidate all booking-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings/dates"] });
+      
       toast({
         title: "Success",
         description: "Booking created successfully",
       });
       setShowBookingModal(false);
+      
+      // Reset form state
+      setFormState({
+        mode: "manual",
+        guestName: "",
+        price: 150,
+        guests: 2,
+        nights: 1,
+        source: "direct",
+        paymentMethod: "card",
+      });
+      setSelectedDate(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Error", 
         description: error.message || "Failed to create booking",
         variant: "destructive",
       });
@@ -238,7 +254,6 @@ export default function AdvancedCalendar() {
         paymentMethod: "property",
         createdBy: "admin",
         blockReason: "Manual block",
-        bookingSource: "blocked",
       };
       createBookingMutation.mutate(blockData);
     } else {
@@ -253,7 +268,6 @@ export default function AdvancedCalendar() {
         guests: formState.guests,
         paymentMethod: formState.paymentMethod,
         createdBy: "admin",
-        bookingSource: formState.source,
       };
       createBookingMutation.mutate(bookingData);
     }

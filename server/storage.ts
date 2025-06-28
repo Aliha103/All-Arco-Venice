@@ -59,6 +59,7 @@ export interface IStorage {
     bookedForSelf?: boolean;
     userId?: string;
     blockReason?: string;
+    bookingSource?: string;
   }): Promise<Booking>;
   getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]>;
   getBooking(id: number): Promise<Booking | undefined>;
@@ -313,6 +314,7 @@ export class DatabaseStorage implements IStorage {
     bookedForSelf?: boolean;
     userId?: string;
     blockReason?: string;
+    bookingSource?: string;
   }): Promise<Booking> {
     // Calculate comprehensive pricing
     const pricing = await this.calculateBookingPricing(
@@ -391,7 +393,7 @@ export class DatabaseStorage implements IStorage {
         qrCode,
         
         // Booking source and blocking
-        bookingSource: bookingData.blockReason ? "blocked" : "direct",
+        bookingSource: bookingData.bookingSource || (bookingData.blockReason ? "blocked" : "direct"),
         blockReason: bookingData.blockReason || null,
         
         // Status - pending for online payment, confirmed for property payment
