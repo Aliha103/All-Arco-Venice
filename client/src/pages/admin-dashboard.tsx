@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { AdminCalendar } from "@/components/admin-calendar";
 import { 
   BarChart3, 
   Users, 
@@ -164,6 +165,7 @@ export default function AdminDashboard() {
   const [uploadPreview, setUploadPreview] = useState<string>("");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
+  const [showBookingSourceForm, setShowBookingSourceForm] = useState(false);
   
   // Drag and drop state for hero images
   const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
@@ -650,10 +652,14 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-6 lg:w-fit">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Calendar
             </TabsTrigger>
             <TabsTrigger value="bookings" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
@@ -776,6 +782,53 @@ export default function AdminDashboard() {
                 ) : (
                   <p className="text-gray-500 text-center py-8">No bookings yet</p>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Calendar Tab */}
+          <TabsContent value="calendar" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Booking Calendar</CardTitle>
+                    <CardDescription>Color-coded calendar showing all booking sources</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowBookingSourceForm(!showBookingSourceForm)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Custom Source
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Legend */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-3">Booking Source Legend</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-400 rounded"></div>
+                      <span className="text-sm">Airbnb</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-400 rounded"></div>
+                      <span className="text-sm">Booking.com</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-400 rounded"></div>
+                      <span className="text-sm">Direct Website</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                      <span className="text-sm">Blocked/Unavailable</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calendar Component */}
+                <div className="border rounded-lg p-4">
+                  <AdminCalendar />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
