@@ -1132,6 +1132,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin block dates route
+  app.post('/api/admin/block-dates', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { startDate, endDate, reason } = req.body;
+      
+      if (!startDate || !endDate || !reason) {
+        return res.status(400).json({ message: "Start date, end date, and reason are required" });
+      }
+
+      // Create blocked booking entry
+      const blockedBooking = await storage.createBooking({
+        guestFirstName: 'Blocked',
+        guestLastName: 'Period',
+        guestEmail: 'admin@allarco.com',
+        guestCountry: 'IT',
+        guestPhone: '+390000000000',
+        checkInDate: startDate,
+        checkOutDate: endDate,
+        guests: 1,
+        paymentMethod: 'property',
+        createdBy: 'admin',
+        userId: userId,
+        referralCode: undefined
+      });
+
+      // Broadcast to all connected clients
+      broadcastToAdmins({
+        type: 'dates_blocked',
+        data: {
+          startDate,
+          endDate,
+          reason,
+          booking: blockedBooking
+        }
+      });
+
+      res.json({ success: true, booking: blockedBooking });
+    } catch (error) {
+      console.error("Error blocking dates:", error);
+      res.status(500).json({ message: "Failed to block dates" });
+    }
+  });
+
   // Enhanced Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {

@@ -76,6 +76,65 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
     }
   }, [bookings]);
 
+  // Handle drag start for blocking dates
+  const handleDragStart = (dateStr: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    setDragStart(dateStr);
+    setDragEnd(dateStr);
+    setIsDragging(true);
+  };
+
+  // Handle drag over for blocking dates
+  const handleDragOver = (dateStr: string) => {
+    if (isDragging && dragStart) {
+      setDragEnd(dateStr);
+    }
+  };
+
+  // Handle drag end for blocking dates
+  const handleDragEnd = () => {
+    if (dragStart && dragEnd && dragStart !== dragEnd) {
+      setShowBlockDialog(true);
+    }
+    setIsDragging(false);
+  };
+
+  // Get drag range dates for visual feedback
+  const getDragRange = () => {
+    if (!dragStart || !dragEnd) return [];
+    
+    const start = new Date(dragStart);
+    const end = new Date(dragEnd);
+    const startDate = start <= end ? start : end;
+    const endDate = start <= end ? end : start;
+    
+    const dates = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      dates.push(new Date(current).toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  // Handle blocking dates
+  const handleBlockDates = () => {
+    if (dragStart && dragEnd && blockReason.trim()) {
+      const start = new Date(dragStart);
+      const end = new Date(dragEnd);
+      const startDate = start <= end ? dragStart : dragEnd;
+      const endDate = start <= end ? dragEnd : dragStart;
+      
+      blockDatesMutation.mutate({
+        startDate,
+        endDate,
+        reason: blockReason.trim()
+      });
+    }
+  };
+
   const getSourceColor = (source: string) => {
     switch (source) {
       case 'airbnb':
@@ -192,46 +251,59 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
       calendarGrid.push(
         <div 
           key={day} 
-          className={`relative p-1 h-20 border border-gray-200 ${isToday ? 'bg-blue-50' : ''}`}
+          className={`relative p-1 h-20 border border-gray-200 ${isToday ? 'bg-blue-50' : ''} ${
+            getDragRange().includes(dateKey) ? 'bg-yellow-100 border-yellow-300' : ''
+          } hover:bg-gray-50 transition-colors cursor-pointer select-none`}
+          onMouseDown={(e) => handleDragStart(dateKey, e)}
+          onMouseEnter={() => handleDragOver(dateKey)}
+          onMouseUp={handleDragEnd}
         >
           <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
             {day}
           </div>
           {bookingInfo && (
-            <div className="relative h-12">
-              {/* Check-in day: rounded left, extends to right edge */}
+            <div className="relative h-10">
+              {/* Check-in day: rounded left half, square right half extending to edge */}
               {bookingInfo.position === 'checkin' && bookingInfo.isSpanning && (
-                <div className={`absolute left-0 top-2 right-0 h-6 rounded-l-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-start pl-3 shadow-sm`}>
-                  <span className="text-xs font-medium text-white">
-                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
-                  </span>
-                  <div className="ml-auto mr-2 w-4 h-4 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
-                    {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
-                    {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
-                    {bookingInfo.booking.bookingSource === 'direct' && 'D'}
-                    {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                <div className="absolute left-1/2 top-1 right-0 h-8 flex items-center">
+                  <div className={`w-4 h-8 rounded-l-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center`}>
+                    <span className="text-xs font-bold text-white">
+                      {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
+                      {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
+                      {bookingInfo.booking.bookingSource === 'direct' && 'D'}
+                      {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                    </span>
+                  </div>
+                  <div className={`flex-1 h-8 ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-start pl-2`}>
+                    <span className="text-xs font-medium text-white truncate">
+                      {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                    </span>
                   </div>
                 </div>
               )}
               
-              {/* Check-out day: extends from left edge, rounded right */}
+              {/* Check-out day: square left half extending from edge, rounded right half */}
               {bookingInfo.position === 'checkout' && bookingInfo.isSpanning && (
-                <div className={`absolute left-0 top-2 right-0 h-6 rounded-r-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-end pr-3 shadow-sm`}>
-                  <div className="mr-auto ml-2 w-4 h-4 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
-                    {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
-                    {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
-                    {bookingInfo.booking.bookingSource === 'direct' && 'D'}
-                    {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                <div className="absolute left-0 top-1 right-1/2 h-8 flex items-center">
+                  <div className={`flex-1 h-8 ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-end pr-2`}>
+                    <span className="text-xs font-medium text-white truncate">
+                      {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-white">
-                    {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
-                  </span>
+                  <div className={`w-4 h-8 rounded-r-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center`}>
+                    <span className="text-xs font-bold text-white">
+                      {bookingInfo.booking.bookingSource === 'airbnb' && 'A'}
+                      {bookingInfo.booking.bookingSource === 'booking.com' && 'B'}
+                      {bookingInfo.booking.bookingSource === 'direct' && 'D'}
+                      {bookingInfo.booking.bookingSource === 'blocked' && 'X'}
+                    </span>
+                  </div>
                 </div>
               )}
               
-              {/* Middle days: pipe-like connection (rectangular) */}
+              {/* Middle days: full width pipe connection */}
               {bookingInfo.position === 'middle' && (
-                <div className={`absolute left-0 top-2 right-0 h-6 ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                <div className={`absolute left-0 top-1 right-0 h-8 ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center`}>
                   <span className="text-xs font-medium text-white">
                     {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
                   </span>
@@ -240,7 +312,7 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
               
               {/* Single day booking: fully rounded */}
               {bookingInfo.position === 'checkin' && !bookingInfo.isSpanning && (
-                <div className={`absolute left-0 top-2 right-0 h-6 rounded-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center shadow-sm`}>
+                <div className={`absolute left-0 top-1 right-0 h-8 rounded-full ${getSourceColor(bookingInfo.booking.bookingSource)} flex items-center justify-center`}>
                   <span className="text-xs font-medium text-white">
                     {bookingInfo.booking.guestFirstName} {bookingInfo.booking.guestLastName.charAt(0)}.
                   </span>
@@ -300,37 +372,72 @@ export function AdminCalendar({ className = '' }: AdminCalendarProps) {
         {renderCalendar()}
       </div>
 
-      {/* Quick Stats */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div className="text-center">
-          <div className="w-4 h-4 bg-red-400 rounded mx-auto mb-1"></div>
-          <div className="font-medium">
-            {calendarBookings.filter(b => b.bookingSource === 'airbnb').length}
+      {/* Quick Stats - Only show sources that have bookings */}
+      {(() => {
+        const sourceStats = [
+          { source: 'airbnb', color: 'bg-red-400', label: 'Airbnb', count: calendarBookings.filter(b => b.bookingSource === 'airbnb').length },
+          { source: 'booking.com', color: 'bg-blue-400', label: 'Booking.com', count: calendarBookings.filter(b => b.bookingSource === 'booking.com').length },
+          { source: 'direct', color: 'bg-green-400', label: 'Direct', count: calendarBookings.filter(b => b.bookingSource === 'direct').length },
+          { source: 'blocked', color: 'bg-gray-300', label: 'Blocked', count: calendarBookings.filter(b => b.bookingSource === 'blocked').length },
+        ].filter(stat => stat.count > 0);
+
+        return sourceStats.length > 0 ? (
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {sourceStats.map(stat => (
+              <div key={stat.source} className="text-center">
+                <div className={`w-4 h-4 ${stat.color} rounded mx-auto mb-1`}></div>
+                <div className="font-medium">{stat.count}</div>
+                <div className="text-gray-600">{stat.label}</div>
+              </div>
+            ))}
           </div>
-          <div className="text-gray-600">Airbnb</div>
-        </div>
-        <div className="text-center">
-          <div className="w-4 h-4 bg-blue-400 rounded mx-auto mb-1"></div>
-          <div className="font-medium">
-            {calendarBookings.filter(b => b.bookingSource === 'booking.com').length}
+        ) : null;
+      })()}
+
+      {/* Block Dates Dialog */}
+      <Dialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Block Selected Dates</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reason">Reason for blocking</Label>
+              <Textarea
+                id="reason"
+                placeholder="e.g., Maintenance, Personal use, Renovation..."
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            {dragStart && dragEnd && (
+              <div className="text-sm text-gray-600">
+                Blocking dates: {dragStart} to {dragEnd}
+              </div>
+            )}
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBlockDialog(false);
+                  setBlockReason('');
+                  setDragStart(null);
+                  setDragEnd(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBlockDates}
+                disabled={!blockReason.trim() || blockDatesMutation.isPending}
+              >
+                {blockDatesMutation.isPending ? 'Blocking...' : 'Block Dates'}
+              </Button>
+            </div>
           </div>
-          <div className="text-gray-600">Booking.com</div>
-        </div>
-        <div className="text-center">
-          <div className="w-4 h-4 bg-green-400 rounded mx-auto mb-1"></div>
-          <div className="font-medium">
-            {calendarBookings.filter(b => b.bookingSource === 'direct').length}
-          </div>
-          <div className="text-gray-600">Direct</div>
-        </div>
-        <div className="text-center">
-          <div className="w-4 h-4 bg-gray-300 rounded mx-auto mb-1"></div>
-          <div className="font-medium">
-            {calendarBookings.filter(b => b.bookingSource === 'blocked').length}
-          </div>
-          <div className="text-gray-600">Blocked</div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
