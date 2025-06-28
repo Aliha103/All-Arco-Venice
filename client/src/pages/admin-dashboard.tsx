@@ -165,7 +165,7 @@ export default function AdminDashboard() {
   const [uploadPreview, setUploadPreview] = useState<string>("");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
-  const [showBookingSourceForm, setShowBookingSourceForm] = useState(false);
+
   
   // Drag and drop state for hero images
   const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
