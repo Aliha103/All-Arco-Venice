@@ -475,9 +475,7 @@ export default function AdvancedCalendar() {
               <CalendarIcon className="w-5 h-5" />
               {selectedBooking ? "Booking Details" : "Create New Booking"}
             </DialogTitle>
-            <DialogDescription>
-              {selectedBooking ? "View and manage booking information" : "Create a new booking or block dates on the calendar"}
-            </DialogDescription>
+
           </DialogHeader>
 
           {selectedBooking ? (
