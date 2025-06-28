@@ -83,10 +83,15 @@ export default function BookingsPage() {
     }
 
     try {
-      const result = await apiRequest('POST', '/api/bookings/lookup', {
-        confirmationCode: lookupCode,
-        email: lookupEmail
+      const response = await fetch('/api/bookings/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmationCode: lookupCode,
+          email: lookupEmail
+        })
       });
+      const result = await response.json();
       setLookupResult(result);
       toast({
         title: "Booking Found",
