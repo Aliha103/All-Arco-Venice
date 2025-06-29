@@ -1116,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔵 SERVER: Postponing booking ${bookingId} to ${newCheckInDate} - ${newCheckOutDate}`);
       
       // Get the original booking to calculate new city tax
-      const booking = await storage.getBookingById(bookingId);
+      const booking = await storage.getBooking(bookingId);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }

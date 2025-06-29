@@ -288,10 +288,13 @@ export default function AdminDashboard() {
   // Mutation for updating booking status
   const updateBookingStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
-      return apiRequest(`/api/bookings/${bookingId}/status`, {
+      return fetch(`/api/bookings/${bookingId}/status`, {
         method: "PATCH",
-        body: { status }
-      });
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
@@ -319,15 +322,18 @@ export default function AdminDashboard() {
       newCheckInTime: string;
       newCheckOutTime: string;
     }) => {
-      return apiRequest(`/api/bookings/${data.bookingId}/postpone`, {
+      return fetch(`/api/bookings/${data.bookingId}/postpone`, {
         method: "PATCH",
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           newCheckInDate: data.newCheckInDate,
           newCheckOutDate: data.newCheckOutDate,
           newCheckInTime: data.newCheckInTime,
           newCheckOutTime: data.newCheckOutTime,
-        }
-      });
+        })
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });

@@ -564,6 +564,32 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id));
   }
 
+  async getBookingById(id: number): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    return booking;
+  }
+
+  async postponeBooking(id: number, data: {
+    newCheckInDate: string;
+    newCheckOutDate: string;
+    newCheckInTime: string;
+    newCheckOutTime: string;
+    newCityTax: number;
+  }): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ 
+        checkInDate: data.newCheckInDate,
+        checkOutDate: data.newCheckOutDate,
+        checkInTime: data.newCheckInTime,
+        checkOutTime: data.newCheckOutTime,
+        cityTax: data.newCityTax,
+        updatedAt: new Date(),
+        modificationDate: new Date()
+      })
+      .where(eq(bookings.id, id));
+  }
+
   async updateBookingPaymentStatus(id: number, paymentStatus: string): Promise<void> {
     await db
       .update(bookings)
