@@ -376,6 +376,8 @@ export class DatabaseStorage implements IStorage {
         // Booking details
         checkInDate: bookingData.checkInDate,
         checkOutDate: bookingData.checkOutDate,
+        checkInTime: bookingData.checkInTime || "15:00",
+        checkOutTime: bookingData.checkOutTime || "10:00",
         guests: bookingData.guests,
         
         // Pricing breakdown
