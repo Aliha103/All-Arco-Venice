@@ -345,14 +345,35 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           
           // Single row span
           if (startRow === endRow) {
+            // Calculate positioning based on check-in/check-out split
+            let leftPos, widthPercent;
+            
+            if (span.isCheckIn && span.isCheckOut) {
+              // Same day check-in/check-out: check-out left 45%, check-in right 45%
+              leftPos = `${(startCol * (100/7)) + 2.75}%`; // Start from 55% of first cell
+              widthPercent = `${((endCol - startCol + 1) * (100/7)) * 0.45}%`; // 45% width
+            } else if (span.isCheckIn) {
+              // Check-in: starts from right side (55% of cell)
+              leftPos = `${(startCol * (100/7)) + ((100/7) * 0.55)}%`;
+              widthPercent = `${((endCol - startCol + 1) * (100/7)) - ((100/7) * 0.55) + ((endCol > startCol) ? 0 : 0)}%`;
+            } else if (span.isCheckOut) {
+              // Check-out: starts from left, takes 45% of last cell
+              leftPos = `${(startCol * (100/7)) + 0.1}%`;
+              widthPercent = `${((endCol - startCol + 1) * (100/7)) - ((100/7) * 0.55)}%`;
+            } else {
+              // Middle days: full width
+              leftPos = `${(startCol * (100/7)) + 0.1}%`;
+              widthPercent = `${((endCol - startCol + 1) * (100/7)) - 0.2}%`;
+            }
+            
             return (
               <div
                 key={`span-${span.booking.id}`}
                 className="absolute z-10"
                 style={{
-                  top: `${startRow * 96 + 48 + verticalOffset}px`, // 96px = h-24, 48px = center
-                  left: `${(startCol * (100/7)) + 1}%`,
-                  width: `${((endCol - startCol + 1) * (100/7)) - 0.3}%`,
+                  top: `${startRow * 96 + 48 + verticalOffset}px`,
+                  left: leftPos,
+                  width: widthPercent,
                   height: '24px',
                   transform: 'translateY(-50%)'
                 }}
@@ -378,14 +399,31 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             const rowStartCol = isFirstRow ? startCol : 0;
             const rowEndCol = isLastRow ? endCol : 6;
             
+            // Calculate positioning for multi-row spans with 45% split
+            let leftPos, widthPercent;
+            
+            if (isFirstRow && span.isCheckIn) {
+              // First row with check-in: start from right side (55% of cell)
+              leftPos = `${(rowStartCol * (100/7)) + ((100/7) * 0.55)}%`;
+              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - ((100/7) * 0.55)}%`;
+            } else if (isLastRow && span.isCheckOut) {
+              // Last row with check-out: end at 45% of last cell
+              leftPos = `${(rowStartCol * (100/7)) + 0.1}%`;
+              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - ((100/7) * 0.55)}%`;
+            } else {
+              // Middle rows: full width
+              leftPos = `${(rowStartCol * (100/7)) + 0.1}%`;
+              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - 0.2}%`;
+            }
+            
             rows.push(
               <div
                 key={`span-${span.booking.id}-row-${row}`}
                 className="absolute z-10"
                 style={{
                   top: `${row * 96 + 48 + verticalOffset}px`,
-                  left: `${(rowStartCol * (100/7)) + 0.1}%`,
-                  width: `${((rowEndCol - rowStartCol + 1) * (100/7)) - 0.2}%`,
+                  left: leftPos,
+                  width: widthPercent,
                   height: '24px',
                   transform: 'translateY(-50%)'
                 }}
