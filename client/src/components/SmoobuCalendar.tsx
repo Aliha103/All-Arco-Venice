@@ -406,9 +406,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="w-full mx-auto p-2 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
+    <div className="w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
       {/* Mobile-optimized Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-3 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-8 p-2 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-2 sm:space-y-0">
         
         {/* Mobile: Month/Year and Navigation in one row */}
         <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6">
@@ -439,34 +439,15 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         </div>
-
-        {/* Mobile: Today button and status on second row */}
-        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center sm:justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToToday}
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all duration-200"
-          >
-            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            Today
-          </Button>
-
-          {/* Compact status indicator for mobile */}
-          <div className="flex items-center gap-1 sm:gap-2 text-xs text-green-600 bg-green-50 px-2 sm:px-3 py-1 sm:py-2 rounded-full sm:rounded-lg border border-green-200">
-            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-ping"></div>
-            <span className="font-medium">Live</span>
-          </div>
-        </div>
       </div>
       {/* Mobile-optimized days of week header */}
-      <div className="grid grid-cols-7 gap-0 mb-1 sm:mb-2 bg-gray-50 rounded-t-lg border-b border-gray-200">
+      <div className="grid grid-cols-7 gap-0 mb-0 sm:mb-2 bg-gray-50 rounded-t-lg border-b border-gray-200">
         {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => {
           const fullDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
           return (
             <div
               key={day + index}
-              className="p-1 sm:p-2 text-center font-semibold text-gray-700 text-xs sm:text-sm border-r border-gray-200 last:border-r-0"
+              className="py-1 px-0.5 sm:p-2 text-center font-semibold text-gray-700 text-xs sm:text-sm border-r border-gray-200 last:border-r-0"
             >
               <span className="sm:hidden">{day}</span>
               <span className="hidden sm:inline">{fullDays[index]}</span>
@@ -506,7 +487,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               <div
                 key={day.toISOString()}
                 className={`
-                  relative h-16 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
+                  relative h-12 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
                   transition-all duration-200 active:scale-95 touch-manipulation
                   ${
                     hasBlockedBooking
@@ -554,7 +535,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const endCol = endIndex % 7;
 
           // Responsive row height calculation matching CSS classes
-          const cellHeight = window.innerWidth < 640 ? 64 : window.innerWidth < 1024 ? 96 : 112; // h-16 sm:h-24 lg:h-28
+          const cellHeight = window.innerWidth < 640 ? 48 : window.innerWidth < 1024 ? 96 : 112; // h-12 sm:h-24 lg:h-28
           const verticalOffset = 0; // All bookings at same level
 
           // Single row span
