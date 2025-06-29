@@ -357,95 +357,86 @@ export default function AdvancedCalendar() {
                     {format(day, "d")}
                   </div>
                   
-                  {/* Professional continuous booking display matching screenshot */}
-                  <div className="relative flex-1 mt-1 overflow-visible">
+                  {/* Smoobu-style calendar booking display */}
+                  <div className="relative flex-1 mt-2 min-h-[100px]">
                     {dayBookings.slice(0, 4).map((booking, bookingIndex) => {
                       const position = booking.position;
-                      const topOffset = 6 + (bookingIndex * 26); // Professional spacing
+                      const topOffset = 2 + (bookingIndex * 20); // Compact Smoobu spacing
                       
                       return (
                         <div 
-                          key={booking.id} 
-                          className="absolute left-0 right-0 overflow-visible"
+                          key={`${booking.id}-${bookingIndex}`} 
+                          className="absolute left-0.5 right-0.5"
                           style={{ 
                             top: `${topOffset}px`,
-                            height: '20px',
-                            zIndex: 20 + bookingIndex
+                            height: '16px',
+                            zIndex: 10 + bookingIndex
                           }}
                         >
-                          {/* Continuous booking bar with professional styling */}
-                          <div className="relative w-full h-full overflow-visible">
-                            <div 
-                              className={`
-                                h-full w-full ${getSourceColor(booking.source)} 
-                                flex items-center justify-center text-xs font-medium relative
-                                rounded-md shadow-sm border border-opacity-20 border-white
-                              `}
-                              title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
-                            >
-                              {/* Professional guest name display */}
-                              <span className="text-white text-xs font-semibold truncate px-2 drop-shadow-sm">
-                                {booking.guestName}
-                              </span>
-                              
-                              {/* Check-in indicator circle */}
-                              {position === 'checkin' && (
-                                <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
-                                  <div className="w-3 h-3 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-sm">
-                                    <span className="text-xs font-bold text-gray-700">→</span>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* Check-out indicator circle */}
-                              {position === 'checkout' && (
-                                <div className="absolute left-1 top-1/2 transform -translate-y-1/2">
-                                  <div className="w-3 h-3 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-sm">
-                                    <span className="text-xs font-bold text-gray-700">←</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                          {/* Smoobu-style horizontal booking bar */}
+                          <div 
+                            className={`
+                              h-full w-full ${getSourceColor(booking.source)} 
+                              flex items-center text-xs font-medium relative
+                              ${position === 'checkin' ? 'rounded-l-md' : ''}
+                              ${position === 'checkout' ? 'rounded-r-md' : ''}
+                              shadow-sm opacity-95
+                            `}
+                            title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
+                          >
+                            {/* Guest name display */}
+                            <span className="text-white text-xs font-medium truncate px-1.5 select-none leading-none">
+                              {booking.guestName}
+                            </span>
                             
-                            {/* Seamless horizontal connections */}
-                            {(position === 'checkin' || position === 'middle') && !isLastColumnOfRow && (
-                              <div 
-                                className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
-                                style={{ 
-                                  right: '-1px',
-                                  width: '2px',
-                                  zIndex: 35
-                                }}
-                              />
+                            {/* Smoobu-style subtle edge indicators */}
+                            {position === 'checkin' && (
+                              <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-white bg-opacity-50" />
                             )}
                             
-                            {(position === 'checkout' || position === 'middle') && !isFirstColumnOfRow && (
-                              <div 
-                                className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
-                                style={{ 
-                                  left: '-1px',
-                                  width: '2px',
-                                  zIndex: 35
-                                }}
-                              />
+                            {position === 'checkout' && (
+                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-white bg-opacity-50" />
                             )}
                           </div>
+                          
+                          {/* Seamless horizontal bridges */}
+                          {(position === 'checkin' || position === 'middle') && !isLastColumnOfRow && (
+                            <div 
+                              className={`absolute top-0 h-full ${getSourceColor(booking.source)} opacity-95`}
+                              style={{ 
+                                right: '-2px',
+                                width: '4px',
+                                zIndex: 5
+                              }}
+                            />
+                          )}
+                          
+                          {(position === 'checkout' || position === 'middle') && !isFirstColumnOfRow && (
+                            <div 
+                              className={`absolute top-0 h-full ${getSourceColor(booking.source)} opacity-95`}
+                              style={{ 
+                                left: '-2px',
+                                width: '4px',
+                                zIndex: 5
+                              }}
+                            />
+                          )}
                         </div>
                       );
                     })}
                     
-                    {/* Overflow indicator */}
+                    {/* Compact overflow indicator */}
                     {dayBookings.length > 4 && (
                       <div 
-                        className="absolute text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200"
+                        className="absolute text-xs text-gray-600 font-medium bg-white/90 px-1.5 py-0.5 rounded-sm shadow-sm border"
                         style={{ 
-                          top: `${6 + (4 * 26)}px`,
+                          top: `${2 + (4 * 20)}px`,
                           left: '50%',
                           transform: 'translateX(-50%)',
-                          zIndex: 30
+                          zIndex: 15
                         }}
                       >
-                        +{dayBookings.length - 4} more
+                        +{dayBookings.length - 4}
                       </div>
                     )}
                   </div>
