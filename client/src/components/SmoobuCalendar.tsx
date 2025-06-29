@@ -340,8 +340,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const startCol = startIndex % 7;
           const endCol = endIndex % 7;
           
-          // Calculate vertical offset for multiple bookings on the same day
-          const verticalOffset = spanIndex * 28; // 28px spacing between booking bars
+          // No vertical offset - all spans align horizontally
+          const verticalOffset = 0; // All bookings at same level
           
           // Single row span
           if (startRow === endRow) {
