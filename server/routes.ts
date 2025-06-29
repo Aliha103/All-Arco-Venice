@@ -1815,6 +1815,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Undo no-show status (revert to confirmed)
+  app.post('/api/bookings/:id/undo-no-show', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const booking = await storage.getBooking(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.status !== 'no_show') {
+        return res.status(400).json({ message: "Booking is not marked as no-show" });
+      }
+
+      await storage.updateBookingStatus(bookingId, 'confirmed');
+      
+      // Add activity timeline entry
+      await storage.addActivityTimeline({
+        activityType: 'booking_status_reverted',
+        description: `No-show status reverted to confirmed for booking #${bookingId}`,
+        bookingId: bookingId,
+        createdAt: new Date()
+      });
+
+      res.json({ message: "No-show status reverted successfully" });
+    } catch (error) {
+      console.error("Error undoing no-show:", error);
+      res.status(500).json({ message: "Failed to undo no-show status" });
+    }
+  });
+
+  // Edit booking dates
+  app.put('/api/bookings/:id/edit-dates', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { newCheckInDate, newCheckOutDate } = req.body;
+      
+      if (!newCheckInDate || !newCheckOutDate) {
+        return res.status(400).json({ message: "New check-in and check-out dates are required" });
+      }
+
+      // Check if new dates are available
+      const conflictingBookings = await storage.checkBookingConflicts(newCheckInDate, newCheckOutDate, bookingId);
+      
+      if (conflictingBookings.length > 0) {
+        return res.status(400).json({ 
+          message: "Selected dates are not available",
+          conflicts: conflictingBookings 
+        });
+      }
+
+      const oldBooking = await storage.getBooking(bookingId);
+      if (!oldBooking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      await storage.updateBookingDates(bookingId, newCheckInDate, newCheckOutDate);
+      
+      // Add activity timeline entry
+      await storage.addActivityTimeline({
+        activityType: 'booking_dates_changed',
+        description: `Booking dates changed from ${oldBooking.checkInDate} - ${oldBooking.checkOutDate} to ${newCheckInDate} - ${newCheckOutDate}`,
+        bookingId: bookingId,
+        createdAt: new Date()
+      });
+
+      res.json({ message: "Booking dates updated successfully" });
+    } catch (error) {
+      console.error("Error editing booking dates:", error);
+      res.status(500).json({ message: "Failed to edit booking dates" });
+    }
+  });
+
+  // Delete booking (cancel and free dates)
+  app.delete('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const booking = await storage.getBooking(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update booking status to cancelled instead of deleting
+      await storage.updateBookingStatus(bookingId, 'cancelled');
+      
+      // Add activity timeline entry
+      await storage.addActivityTimeline({
+        activityType: 'booking_cancelled',
+        description: `Booking #${bookingId} cancelled by admin - dates now available for new bookings`,
+        bookingId: bookingId,
+        createdAt: new Date()
+      });
+
+      res.json({ message: "Booking cancelled successfully - dates are now available" });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
+
   // Broadcast function for admin notifications
   function broadcastToAdmins(message: any) {
     const messageStr = JSON.stringify(message);

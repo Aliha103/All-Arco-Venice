@@ -584,10 +584,7 @@ export default function AdminDashboard() {
                       Real-time tracking of all booking activities and system events
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-600 font-medium">Live 100ms</span>
-                  </div>
+                  
                 </div>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 lg:p-6">
