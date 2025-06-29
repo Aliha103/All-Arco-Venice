@@ -542,13 +542,7 @@ export default function AdminDashboard() {
                 <span className="hidden md:inline">Users</span>
                 <span className="md:hidden">User</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="timeline" 
-                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-              >
-                <span className="hidden md:inline">Timeline</span>
-                <span className="md:hidden">Time</span>
-              </TabsTrigger>
+
             </TabsList>
           </div>
 
@@ -596,6 +590,111 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Activity Timeline Section within Overview */}
+            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                  <div>
+                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">Activity Timeline</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+                      Real-time tracking of all booking activities and system events
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600 font-medium">Live 100ms</span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="space-y-4">
+                  {activityTimeline && activityTimeline.length > 0 ? (
+                    <div className="space-y-3 sm:space-y-4 max-h-96 overflow-y-auto">
+                      {activityTimeline.map((activity, index) => (
+                        <Card 
+                          key={activity.id || index}
+                          className="p-3 sm:p-4 lg:p-6 border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${
+                                activity.activityType === 'booking_created' ? 'bg-gradient-to-br from-green-500 to-blue-600' :
+                                activity.activityType === 'booking_cancelled' ? 'bg-gradient-to-br from-red-500 to-pink-600' :
+                                activity.activityType === 'booking_modified' ? 'bg-gradient-to-br from-yellow-500 to-orange-600' :
+                                activity.activityType === 'booking_confirmed' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
+                                activity.activityType === 'booking_checked_in' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
+                                activity.activityType === 'booking_no_show' ? 'bg-gradient-to-br from-gray-500 to-slate-600' :
+                                'bg-gradient-to-br from-gray-400 to-gray-600'
+                              }`}>
+                                {activity.activityType === 'booking_created' ? '📅' :
+                                 activity.activityType === 'booking_cancelled' ? '❌' :
+                                 activity.activityType === 'booking_modified' ? '✏️' :
+                                 activity.activityType === 'booking_confirmed' ? '✅' :
+                                 activity.activityType === 'booking_checked_in' ? '🏠' :
+                                 activity.activityType === 'booking_no_show' ? '👻' :
+                                 '📝'}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                                    {activity.activityType === 'booking_created' ? 'New Booking Created' :
+                                     activity.activityType === 'booking_cancelled' ? 'Booking Cancelled' :
+                                     activity.activityType === 'booking_modified' ? 'Booking Modified' :
+                                     activity.activityType === 'booking_confirmed' ? 'Booking Confirmed' :
+                                     activity.activityType === 'booking_checked_in' ? 'Guest Checked In' :
+                                     activity.activityType === 'booking_no_show' ? 'No Show Recorded' :
+                                     'System Activity'}
+                                  </h3>
+                                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                    {activity.description || 'Activity recorded in system'}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col sm:items-end gap-1">
+                                  <Badge variant={
+                                    activity.activityType === 'booking_created' ? 'default' :
+                                    activity.activityType === 'booking_cancelled' ? 'destructive' :
+                                    activity.activityType === 'booking_modified' ? 'secondary' :
+                                    activity.activityType === 'booking_confirmed' ? 'default' :
+                                    activity.activityType === 'booking_checked_in' ? 'default' :
+                                    activity.activityType === 'booking_no_show' ? 'destructive' :
+                                    'outline'
+                                  } className="text-xs">
+                                    {activity.activityType?.replace('booking_', '').replace('_', ' ').toUpperCase() || 'ACTIVITY'}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500">
+                                    {activity.createdAt ? new Date(activity.createdAt).toLocaleString() : 'Just now'}
+                                  </span>
+                                </div>
+                              </div>
+                              {activity.bookingId && (
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                  <span className="text-xs text-gray-500">
+                                    Booking ID: #{activity.bookingId}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <Clock className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-base font-medium text-gray-900 mb-2">No Activity Yet</h3>
+                      <p className="text-sm text-gray-600">
+                        Activity timeline will show all booking events as they happen in real-time.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Calendar Tab - Advanced Responsive */}
@@ -823,112 +922,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Timeline Tab - Activity Timeline with Real-time Updates */}
-          <TabsContent value="timeline" className="space-y-4 sm:space-y-6">
-            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                  <div>
-                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">Activity Timeline</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
-                      Real-time tracking of all booking activities and system events
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-600 font-medium">Live 100ms</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="space-y-4">
-                  {activityTimeline && activityTimeline.length > 0 ? (
-                    <div className="space-y-3 sm:space-y-4">
-                      {activityTimeline.map((activity, index) => (
-                        <Card 
-                          key={activity.id || index}
-                          className="p-3 sm:p-4 lg:p-6 border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${
-                                activity.activityType === 'booking_created' ? 'bg-gradient-to-br from-green-500 to-blue-600' :
-                                activity.activityType === 'booking_cancelled' ? 'bg-gradient-to-br from-red-500 to-pink-600' :
-                                activity.activityType === 'booking_modified' ? 'bg-gradient-to-br from-yellow-500 to-orange-600' :
-                                activity.activityType === 'booking_confirmed' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
-                                activity.activityType === 'booking_checked_in' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
-                                activity.activityType === 'booking_no_show' ? 'bg-gradient-to-br from-gray-500 to-slate-600' :
-                                'bg-gradient-to-br from-gray-400 to-gray-600'
-                              }`}>
-                                {activity.activityType === 'booking_created' ? '📅' :
-                                 activity.activityType === 'booking_cancelled' ? '❌' :
-                                 activity.activityType === 'booking_modified' ? '✏️' :
-                                 activity.activityType === 'booking_confirmed' ? '✅' :
-                                 activity.activityType === 'booking_checked_in' ? '🏠' :
-                                 activity.activityType === 'booking_no_show' ? '👻' :
-                                 '📝'}
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                                    {activity.activityType === 'booking_created' ? 'New Booking Created' :
-                                     activity.activityType === 'booking_cancelled' ? 'Booking Cancelled' :
-                                     activity.activityType === 'booking_modified' ? 'Booking Modified' :
-                                     activity.activityType === 'booking_confirmed' ? 'Booking Confirmed' :
-                                     activity.activityType === 'booking_checked_in' ? 'Guest Checked In' :
-                                     activity.activityType === 'booking_no_show' ? 'No Show Recorded' :
-                                     'System Activity'}
-                                  </h3>
-                                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                                    {activity.description || 'Activity recorded in system'}
-                                  </p>
-                                </div>
-                                <div className="flex flex-col sm:items-end gap-1">
-                                  <Badge variant={
-                                    activity.activityType === 'booking_created' ? 'default' :
-                                    activity.activityType === 'booking_cancelled' ? 'destructive' :
-                                    activity.activityType === 'booking_modified' ? 'secondary' :
-                                    activity.activityType === 'booking_confirmed' ? 'default' :
-                                    activity.activityType === 'booking_checked_in' ? 'default' :
-                                    activity.activityType === 'booking_no_show' ? 'destructive' :
-                                    'outline'
-                                  } className="text-xs">
-                                    {activity.activityType?.replace('booking_', '').replace('_', ' ').toUpperCase() || 'ACTIVITY'}
-                                  </Badge>
-                                  <span className="text-xs text-gray-500">
-                                    {activity.createdAt ? new Date(activity.createdAt).toLocaleString() : 'Just now'}
-                                  </span>
-                                </div>
-                              </div>
-                              {activity.bookingId && (
-                                <div className="mt-2 pt-2 border-t border-gray-100">
-                                  <span className="text-xs text-gray-500">
-                                    Booking ID: #{activity.bookingId}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <Clock className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Activity Yet</h3>
-                      <p className="text-gray-600 max-w-md mx-auto">
-                        Activity timeline will show all booking events, modifications, and system activities as they happen in real-time.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
         </Tabs>
       </div>
 
