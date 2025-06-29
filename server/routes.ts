@@ -1080,6 +1080,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
 
+      // Get booking to check its date
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Security restriction: Only allow status changes for current or past bookings
+      const today = new Date().toISOString().split('T')[0];
+      if (booking.checkInDate > today && (status === 'checked_in' || status === 'no_show')) {
+        return res.status(400).json({ 
+          message: "Status changes for check-in and no-show can only be made for current or past bookings, not future bookings." 
+        });
+      }
+
       console.log(`🔵 SERVER: Updating booking ${bookingId} status to ${status}`);
       await storage.updateBookingStatus(bookingId, status);
       

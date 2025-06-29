@@ -515,13 +515,15 @@ export default function AdminDashboard() {
   });
 
   // Function to handle booking status decision
-  const handleStatusDecision = (status: 'checked_in' | 'no_show') => {
+  const handleStatusDecision = (status: 'checked_in' | 'no_show' | 'confirmed') => {
     if (!statusActionBooking) return;
     
     // Immediately show feedback
     toast({
       title: "Updating Status...",
-      description: `Marking booking as ${status === 'checked_in' ? 'checked-in' : 'no-show'}`,
+      description: `${status === 'checked_in' ? 'Marking booking as checked-in' : 
+                    status === 'no_show' ? 'Marking booking as no-show' : 
+                    'Undoing check-in (setting to confirmed)'}`,
     });
     
     updateBookingStatusMutation.mutate({
@@ -1449,6 +1451,19 @@ export default function AdminDashboard() {
                     
                     <DropdownMenuItem
                       onClick={() => {
+                        // Check if booking is in the future (security restriction)
+                        const today = new Date().toISOString().split('T')[0];
+                        const checkInDate = selectedBooking?.checkInDate;
+                        
+                        if (checkInDate && checkInDate > today) {
+                          toast({
+                            title: "Action Not Allowed",
+                            description: "Status changes can only be made for current or past bookings, not future bookings.",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
                         // Use setTimeout to ensure proper dialog transition
                         setTimeout(() => {
                           setStatusActionBooking(selectedBooking);
@@ -1459,7 +1474,7 @@ export default function AdminDashboard() {
                       className="text-blue-600 focus:text-blue-600"
                     >
                       <Settings className="w-4 h-4 mr-2" />
-                      Manage Status
+                      {selectedBooking?.status === 'checked_in' ? 'Undo Check-in' : 'Manage Status'}
                     </DropdownMenuItem>
                     
                     <DropdownMenuSeparator />
@@ -1498,16 +1513,23 @@ export default function AdminDashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2 text-orange-600">
               <Clock className="w-5 h-5" />
-              <span>Booking Status Required</span>
+              <span>
+                {statusActionBooking?.status === 'checked_in' ? 'Undo Check-in' : 'Booking Status Required'}
+              </span>
             </DialogTitle>
           </DialogHeader>
           
           {statusActionBooking && (
             <div className="space-y-4">
               <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <h3 className="font-semibold text-orange-800 mb-2">Action Required</h3>
+                <h3 className="font-semibold text-orange-800 mb-2">
+                  {statusActionBooking.status === 'checked_in' ? 'Undo Check-in Action' : 'Action Required'}
+                </h3>
                 <p className="text-sm text-orange-700 mb-3">
-                  The check-in day has completely passed for this booking. Please decide the booking status before proceeding with other admin tasks.
+                  {statusActionBooking.status === 'checked_in' 
+                    ? 'This booking is currently marked as checked-in. Do you want to undo the check-in status?'
+                    : 'The check-in day has completely passed for this booking. Please decide the booking status before proceeding with other admin tasks.'
+                  }
                 </p>
                 
                 <div className="space-y-2 text-sm">
@@ -1520,27 +1542,46 @@ export default function AdminDashboard() {
 
               <div className="space-y-3">
                 <p className="text-sm text-gray-600">
-                  What happened with this booking?
+                  {statusActionBooking.status === 'checked_in' 
+                    ? 'Choose an action for this checked-in booking:'
+                    : 'What happened with this booking?'
+                  }
                 </p>
                 
                 <div className="grid grid-cols-1 gap-3">
-                  <Button
-                    onClick={() => handleStatusDecision('checked_in')}
-                    disabled={updateBookingStatusMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Guest Checked In
-                  </Button>
-                  
-                  <Button
-                    onClick={() => handleStatusDecision('no_show')}
-                    disabled={updateBookingStatusMutation.isPending}
-                    variant="destructive"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Mark as No-show
-                  </Button>
+                  {statusActionBooking.status === 'checked_in' ? (
+                    // Undo Check-in button for checked-in bookings
+                    <Button
+                      onClick={() => handleStatusDecision('confirmed')}
+                      disabled={updateBookingStatusMutation.isPending}
+                      variant="outline"
+                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      <Undo2 className="w-4 h-4 mr-2" />
+                      Undo Check-in (Set to Confirmed)
+                    </Button>
+                  ) : (
+                    // Normal status buttons for non-checked-in bookings
+                    <>
+                      <Button
+                        onClick={() => handleStatusDecision('checked_in')}
+                        disabled={updateBookingStatusMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Guest Checked In
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleStatusDecision('no_show')}
+                        disabled={updateBookingStatusMutation.isPending}
+                        variant="destructive"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Mark as No-show
+                      </Button>
+                    </>
+                  )}
 
                   {(() => {
                     const totalNights = Math.ceil((new Date(statusActionBooking.checkOutDate).getTime() - new Date(statusActionBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
