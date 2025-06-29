@@ -476,94 +476,93 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         })}
       </div>
 
-      {/* Mobile-optimized Calendar grid */}
-      <div className="grid grid-cols-7 gap-0 relative rounded-lg overflow-hidden bg-white border border-gray-200">
-        {daysInMonth.map((day, dayIndex) => {
-          const isCurrentDay = isToday(day);
-          const isCurrentMonthDay = isSameMonth(day, currentMonth);
+      {/* Professional Mobile Calendar Grid */}
+      <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-0">
+          {daysInMonth.map((day, dayIndex) => {
+            const isCurrentDay = isToday(day);
+            const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
-          // Check date availability based on new rules
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const dayDate = new Date(day);
-          dayDate.setHours(0, 0, 0, 0);
+            // Check date availability based on new rules
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dayDate = new Date(day);
+            dayDate.setHours(0, 0, 0, 0);
 
-          const isPastDate = dayDate < today;
-          const checkInBooking = bookingForCheckIn(day);
-          const checkOutBooking = bookingForCheckOut(day);
+            const isPastDate = dayDate < today;
+            const checkInBooking = bookingForCheckIn(day);
+            const checkOutBooking = bookingForCheckOut(day);
 
-          // Check if this day has a blocked booking
-          const dayBookings = getBookingsForDay(day);
-          const hasBlockedBooking = dayBookings.some(
-            (booking) => booking.bookingSource === "blocked",
-          );
+            // Check if this day has a blocked booking
+            const dayBookings = getBookingsForDay(day);
+            const hasBlockedBooking = dayBookings.some(
+              (booking) => booking.bookingSource === "blocked",
+            );
 
-          // Date is clickable if: not past date AND no check-in booking
-          const isClickable = !isPastDate && !checkInBooking;
-          const hasCheckOutOnly = checkOutBooking && !checkInBooking;
+            // Date is clickable if: not past date AND no check-in booking
+            const isClickable = !isPastDate && !checkInBooking;
+            const hasCheckOutOnly = checkOutBooking && !checkInBooking;
 
-          return (
-            <div
-              key={day.toISOString()}
-              className={`
-                relative h-16 sm:h-24 lg:h-28 border-r border-b border-gray-200 text-xs
-                transition-all duration-200 active:scale-95 touch-manipulation
-                ${
-                  hasBlockedBooking
-                    ? "blocked-stripe cursor-not-allowed"
-                    : isPastDate
-                      ? "bg-gray-100 cursor-not-allowed opacity-60"
-                      : checkInBooking
-                        ? "bg-red-50 cursor-not-allowed"
-                        : hasCheckOutOnly
-                          ? "bg-yellow-50 cursor-pointer active:bg-yellow-100"
-                          : "bg-white cursor-pointer active:bg-blue-50"
-                }
-                ${isCurrentDay ? "ring-2 ring-blue-500 ring-inset bg-blue-50" : ""}
-                ${!isCurrentMonthDay ? "opacity-40" : ""}
-              `}
-              onClick={() => (isClickable ? handleDateClick(day) : null)}
-            >
-              {/* Mobile-optimized date number */}
+            return (
               <div
-                className={`absolute top-1 left-1 sm:top-2 sm:left-2 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm z-20 ${
-                  isCurrentDay
-                    ? "bg-blue-500 text-white shadow-md"
-                    : isPastDate
-                      ? "bg-gray-300 text-gray-600"
-                      : checkInBooking
-                        ? "bg-red-400 text-white"
-                        : hasCheckOutOnly
-                          ? "bg-yellow-400 text-white"
-                          : hasBlockedBooking
-                            ? "bg-gray-400 text-white"
-                            : "bg-gray-100 text-gray-700"
-                }`}
+                key={day.toISOString()}
+                className={`
+                  relative h-20 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
+                  transition-all duration-200 active:scale-95 touch-manipulation
+                  ${
+                    hasBlockedBooking
+                      ? "blocked-stripe cursor-not-allowed"
+                      : isPastDate
+                        ? "bg-gray-50 cursor-not-allowed opacity-60"
+                        : checkInBooking
+                          ? "bg-red-50 cursor-not-allowed"
+                          : hasCheckOutOnly
+                            ? "bg-yellow-50 cursor-pointer active:bg-yellow-100"
+                            : "bg-white cursor-pointer active:bg-blue-50"
+                  }
+                  ${isCurrentDay ? "ring-2 ring-blue-500 ring-inset bg-blue-50" : ""}
+                  ${!isCurrentMonthDay ? "opacity-40" : ""}
+                `}
+                onClick={() => (isClickable ? handleDateClick(day) : null)}
               >
-                {format(day, "d")}
+                {/* Clean Date Number */}
+                <div className="absolute top-2 left-2 z-20">
+                  <div
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-sm font-semibold ${
+                      isCurrentDay
+                        ? "bg-blue-500 text-white shadow-md"
+                        : isPastDate
+                          ? "text-gray-400"
+                          : checkInBooking
+                            ? "bg-red-500 text-white"
+                            : hasCheckOutOnly
+                              ? "bg-yellow-500 text-white"
+                              : hasBlockedBooking
+                                ? "bg-gray-500 text-white"
+                                : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {format(day, "d")}
+                  </div>
+                </div>
+
+                {/* Simple Status Indicators */}
+                {hasCheckOutOnly && !checkInBooking && (
+                  <div className="absolute bottom-1 right-1 text-xs font-bold text-yellow-700 bg-yellow-200 px-1 py-0.5 rounded-sm">
+                    OUT
+                  </div>
+                )}
+
+                {checkInBooking && (
+                  <div className="absolute bottom-1 right-1 text-xs font-bold text-red-700 bg-red-200 px-1 py-0.5 rounded-sm">
+                    IN
+                  </div>
+                )}
               </div>
-
-              {/* Mobile-friendly status indicators */}
-              {isPastDate && (
-                <div className="absolute top-1 right-1 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                  ×
-                </div>
-              )}
-
-              {hasCheckOutOnly && (
-                <div className="absolute bottom-1 right-1 text-xs font-bold text-yellow-600 bg-yellow-100 px-1 rounded">
-                  CO
-                </div>
-              )}
-
-              {checkInBooking && (
-                <div className="absolute bottom-1 right-1 text-xs font-bold text-red-600 bg-red-100 px-1 rounded">
-                  CI
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {/* Render continuous booking spans on top */}
         {bookingSpans.map((span, spanIndex) => {
@@ -581,7 +580,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const startCol = startIndex % 7;
           const endCol = endIndex % 7;
 
-          // No vertical offset - all spans align horizontally
+          // Responsive row height calculation matching CSS classes
+          const cellHeight = window.innerWidth < 640 ? 80 : window.innerWidth < 1024 ? 96 : 112; // h-20 sm:h-24 lg:h-28
           const verticalOffset = 0; // All bookings at same level
 
           // Single row span
@@ -603,10 +603,10 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 key={`span-${span.booking.id}`}
                 className="absolute z-10"
                 style={{
-                  top: `${startRow * 96 + 48 + verticalOffset}px`,
+                  top: `${startRow * cellHeight + cellHeight / 2 + verticalOffset}px`,
                   left: leftPos,
                   width: widthPercent,
-                  height: "24px",
+                  height: window.innerWidth < 640 ? "16px" : "20px",
                   transform: "translateY(-50%)",
                 }}
               >
@@ -663,10 +663,10 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 key={`span-${span.booking.id}-row-${row}`}
                 className="absolute z-10"
                 style={{
-                  top: `${row * 96 + 48 + verticalOffset}px`,
+                  top: `${row * cellHeight + cellHeight / 2 + verticalOffset}px`,
                   left: leftPos,
                   width: widthPercent,
-                  height: "24px",
+                  height: window.innerWidth < 640 ? "16px" : "20px",
                   transform: "translateY(-50%)",
                 }}
               >
