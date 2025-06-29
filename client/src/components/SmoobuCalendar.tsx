@@ -459,7 +459,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           </div>
         </div>
       </div>
-
       {/* Mobile-optimized days of week header */}
       <div className="grid grid-cols-7 gap-0 mb-1 sm:mb-2 bg-gray-50 rounded-t-lg border-b border-gray-200">
         {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => {
@@ -475,7 +474,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           );
         })}
       </div>
-
       {/* Professional Mobile Calendar Grid */}
       <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         {/* Calendar Grid */}
@@ -529,19 +527,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {/* Clean Date Number */}
                 <div className="absolute top-2 left-2 z-20">
                   <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal ${
-                      isCurrentDay
-                        ? "bg-blue-500 text-white shadow-md"
-                        : isPastDate
-                          ? "text-gray-400"
-                          : checkInBooking
-                            ? "bg-red-500 text-white"
-                            : hasCheckOutOnly
-                              ? "bg-yellow-500 text-white"
-                              : hasBlockedBooking
-                                ? "bg-gray-500 text-white"
-                                : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] bg-red-500 text-white font-normal"
                   >
                     {format(day, "d")}
                   </div>
@@ -677,7 +663,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           return rows;
         })}
       </div>
-
       {/* Mobile-optimized Booking Form Modal */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
         <DialogContent className="max-w-md mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
