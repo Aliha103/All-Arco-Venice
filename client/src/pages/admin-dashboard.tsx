@@ -989,8 +989,10 @@ export default function AdminDashboard() {
                 <CardTitle>Advanced Booking Calendar</CardTitle>
                 <CardDescription>Professional calendar view with month/list modes, color-coded booking sources, and interactive booking management</CardDescription>
               </CardHeader>
-              <CardContent>
-                <SmoobuCalendar />
+              <CardContent className="overflow-x-auto">
+                <div className="w-full min-w-[320px]">
+                  <SmoobuCalendar />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
