@@ -190,11 +190,11 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const bookingSpans = getBookingSpans();
 
   const sourceColors = {
-    airbnb: 'bg-red-200 text-red-800',
-    booking: 'bg-blue-200 text-blue-800',
-    direct: 'bg-green-200 text-green-800',
+    airbnb: 'bg-red-500 text-white',
+    'booking.com': 'bg-blue-500 text-white',
+    direct: 'bg-green-500 text-white',
     blocked: 'blocked-stripe text-gray-800',
-    manual: 'bg-purple-200 text-purple-800',
+    manual: 'bg-[#a855f7] text-white',
   };
 
   const goToPreviousMonth = () => {
@@ -399,29 +399,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             Today
           </Button>
           
-          {/* Enhanced source color legend with animations */}
-          <div className="flex items-center gap-6 text-xs bg-gray-50 p-3 rounded-lg border">
-            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm animate-pulse"></div>
-              <span className="font-medium">Airbnb</span>
-            </div>
-            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm animate-pulse"></div>
-              <span className="font-medium">Booking.com</span>
-            </div>
-            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <div className="w-4 h-4 bg-green-500 rounded-full shadow-sm animate-pulse"></div>
-              <span className="font-medium">Direct</span>
-            </div>
-            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm animate-pulse"></div>
-              <span className="font-medium">Manual</span>
-            </div>
-            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <div className="w-4 h-4 blocked-stripe-mini rounded-full shadow-sm"></div>
-              <span className="font-medium">Blocked</span>
-            </div>
-          </div>
+          
           
           {/* Real-time status indicator */}
           <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
@@ -431,29 +409,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
-          <span className="text-sm">Airbnb</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm">Booking.com</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-sm">Direct</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-500 rounded"></div>
-          <span className="text-sm">Blocked</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-sm">Manual</span>
-        </div>
-      </div>
+
 
       {/* Days of week header */}
       <div className="grid grid-cols-7 gap-2 mb-2">
@@ -523,17 +479,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 </div>
               )}
               
-              {hasCheckOutOnly && (
-                <div className="absolute top-2 right-2 w-8 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  CO
-                </div>
-              )}
               
-              {checkInBooking && (
-                <div className="absolute top-2 right-2 w-8 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  CI
-                </div>
-              )}
+              
+              
               
               {/* Add a subtle plus icon for clickable dates */}
               {isClickable && !hasBlockedBooking && (
@@ -589,7 +537,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 }}
               >
                 <div className={`w-full h-full flex items-center justify-center text-xs font-bold px-2 shadow-lg border-2 border-white
-                  transition-all duration-300 hover:scale-105 hover:shadow-xl hover:z-30
+                  transition-all duration-300 hover:scale-105 hover:shadow-xl hover:z-30 mt-[40px] mb-[40px] pt-[15px] pb-[15px]
                   ${span.isCheckIn && span.isCheckOut ? 'rounded-full' :
                   span.isCheckIn ? 'rounded-l-full' :
                   span.isCheckOut ? 'rounded-r-full' : ''}
