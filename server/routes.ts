@@ -11,6 +11,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -360,70 +362,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔴 SERVER: Session ID:', req.sessionID);
     console.log('🔴 SERVER: Current user:', req.user);
     
-    try {
-      const sessionId = req.sessionID;
-      
-      // Clear the user immediately
-      req.user = undefined;
-      
-      // Delete session from database directly
-      if (sessionId) {
-        const { sql } = await import('drizzle-orm');
-        await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
-        console.log('🔴 SERVER: Session deleted from database');
+    const sessionId = req.sessionID;
+    
+    // Clear the user immediately
+    req.user = undefined;
+    
+    // Logout using passport first
+    req.logout((err) => {
+      if (err) {
+        console.error("🔴 SERVER: Passport logout error:", err);
       }
+      console.log('🔴 SERVER: Passport logout completed');
       
-      // Logout using passport
-      req.logout((err) => {
-        if (err) {
-          console.error("🔴 SERVER: Passport logout error:", err);
+      // Destroy the session completely
+      req.session.destroy(async (sessionErr) => {
+        if (sessionErr) {
+          console.error("🔴 SERVER: Session destroy error:", sessionErr);
         }
-        console.log('🔴 SERVER: Passport logout completed');
+        console.log('🔴 SERVER: Session destroyed');
         
-        // Destroy the session completely
-        req.session.destroy((sessionErr) => {
-          if (sessionErr) {
-            console.error("🔴 SERVER: Session destroy error:", sessionErr);
+        // Delete session from database directly as backup
+        try {
+          if (sessionId) {
+            const { db } = await import('./db');
+            const { sql } = await import('drizzle-orm');
+            await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
+            console.log('🔴 SERVER: Session deleted from database');
           }
-          console.log('🔴 SERVER: Session destroyed');
-          
-          // Clear all possible cookie variations
-          res.clearCookie('connect.sid', { path: '/' });
-          res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
-          res.clearCookie('connect.sid', { path: '/', httpOnly: true });
-          res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
-          console.log('🔴 SERVER: Cookies cleared');
-          
-          // Set headers to prevent caching
-          res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          });
-          
-          console.log('🔴 SERVER: Logout completed successfully');
-          res.json({ message: "Logout successful", cleared: true, sessionCleared: true });
+        } catch (dbError) {
+          console.log('🔴 SERVER: Database cleanup failed (non-critical):', dbError);
+        }
+        
+        // Clear all possible cookie variations
+        res.clearCookie('connect.sid', { path: '/' });
+        res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true });
+        res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+        console.log('🔴 SERVER: Cookies cleared');
+        
+        // Set headers to prevent caching
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         });
+        
+        console.log('🔴 SERVER: Logout completed successfully');
+        res.json({ message: "Logout successful", cleared: true, sessionCleared: true });
       });
-    } catch (error) {
-      console.error('🔴 SERVER: Database session cleanup error:', error);
-      // Continue with regular logout even if DB cleanup fails
-      req.user = undefined;
-      req.logout((err) => {
-        req.session.destroy(() => {
-          res.clearCookie('connect.sid', { path: '/' });
-          res.json({ message: "Logout successful", cleared: true });
-        });
-      });
-    }
+    });
   });
 
-  // Logout redirect endpoint - complete session termination
-  app.get('/api/auth/logout-redirect', (req, res) => {
+  // Logout redirect endpoint - complete session termination with database cleanup
+  app.get('/api/auth/logout-redirect', async (req, res) => {
     console.log('🔴 SERVER: Logout redirect endpoint hit');
     console.log('🔴 SERVER: Current user before logout:', req.user);
     console.log('🔴 SERVER: Session ID before logout:', req.sessionID);
     console.log('🔴 SERVER: Is authenticated:', req.isAuthenticated());
+    
+    const sessionId = req.sessionID;
+    
+    try {
+      // Delete session from database directly first
+      if (sessionId) {
+        const { db } = await import('./db');
+        const { sql } = await import('drizzle-orm');
+        await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
+        console.log('🔴 SERVER: Session deleted from database');
+      }
+    } catch (dbError) {
+      console.log('🔴 SERVER: Database cleanup error (continuing):', dbError);
+    }
     
     // Clear the user immediately
     req.user = undefined;
@@ -443,24 +452,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         console.log('🔴 SERVER: Session destroyed successfully');
         
-        // Clear all cookies
-        res.clearCookie('connect.sid', { path: '/' });
-        res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
-        res.clearCookie('connect.sid', { path: '/', httpOnly: true });
-        res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
+        // Clear all cookies with all possible variations
+        const cookieOptions = [
+          { path: '/' },
+          { path: '/', domain: req.hostname },
+          { path: '/', httpOnly: true },
+          { path: '/', httpOnly: true, secure: true },
+          { path: '/', httpOnly: true, secure: false },
+          { path: '/', sameSite: 'lax' },
+          { path: '/', sameSite: 'strict' },
+        ];
+        
+        cookieOptions.forEach(options => {
+          res.clearCookie('connect.sid', options);
+        });
         console.log('🔴 SERVER: All cookies cleared');
         
-        // Set no-cache headers
+        // Set aggressive no-cache headers
         res.set({
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'Last-Modified': new Date(0).toUTCString(),
+          'ETag': ''
         });
         console.log('🔴 SERVER: No-cache headers set');
         
         // Redirect to homepage with cache busting
         console.log('🔴 SERVER: Redirecting to homepage with cache busting');
-        res.redirect('/?t=' + Date.now());
+        res.redirect('/?logout=success&t=' + Date.now());
       });
     });
   });
