@@ -28,6 +28,7 @@ import {
   Plus,
   Trash2,
   Edit,
+  Undo2,
   CheckCircle,
   XCircle,
   Clock,
@@ -148,6 +149,12 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [editDatesBooking, setEditDatesBooking] = useState<Booking | null>(null);
+  const [deleteBookingId, setDeleteBookingId] = useState<number | null>(null);
+  const [editDatesForm, setEditDatesForm] = useState({
+    newCheckInDate: '',
+    newCheckOutDate: ''
+  });
   const [pricingForm, setPricingForm] = useState({
     basePrice: 0,
     cleaningFee: 0,
@@ -192,6 +199,10 @@ export default function AdminDashboard() {
     newCheckInTime: "15:00",
     newCheckOutTime: "10:00",
   });
+  
+  // New booking management features state
+  const [showEditDatesDialog, setShowEditDatesDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Data queries
   const { data: analytics } = useQuery<Analytics>({
@@ -1519,6 +1530,53 @@ export default function AdminDashboard() {
                     }
                     return null;
                   })()}
+
+                  {/* Undo No-show button for no-show bookings */}
+                  {statusActionBooking.status === 'no_show' && (
+                    <Button
+                      onClick={() => undoNoShowMutation.mutate(statusActionBooking.id)}
+                      disabled={undoNoShowMutation.isPending}
+                      variant="outline"
+                      className="border-green-300 text-green-600 hover:bg-green-50"
+                    >
+                      <Undo2 className="w-4 h-4 mr-2" />
+                      Undo No-show
+                    </Button>
+                  )}
+
+                  {/* Edit Dates button for all non-cancelled bookings */}
+                  {statusActionBooking.status !== 'cancelled' && (
+                    <Button
+                      onClick={() => {
+                        setEditDatesBooking(statusActionBooking);
+                        setEditDatesForm({
+                          newCheckInDate: statusActionBooking.checkInDate,
+                          newCheckOutDate: statusActionBooking.checkOutDate
+                        });
+                        setShowEditDatesDialog(true);
+                      }}
+                      disabled={editDatesMutation.isPending}
+                      variant="outline"
+                      className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Dates
+                    </Button>
+                  )}
+
+                  {/* Delete booking button */}
+                  <Button
+                    onClick={() => {
+                      setDeleteBookingId(statusActionBooking.id);
+                      setShowDeleteDialog(true);
+                    }}
+                    disabled={deleteBookingMutation.isPending}
+                    variant="outline"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cancel Booking
+                  </Button>
                 </div>
 
                 {updateBookingStatusMutation.isPending && (
@@ -1651,6 +1709,161 @@ export default function AdminDashboard() {
                     <>
                       <Calendar className="w-4 h-4 mr-2" />
                       Confirm Postponement
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dates Dialog */}
+      <Dialog open={showEditDatesDialog} onOpenChange={setShowEditDatesDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="w-5 h-5" />
+              <span>Edit Booking Dates</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {editDatesBooking && (
+            <div className="space-y-6">
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h3 className="font-semibold text-orange-800 mb-2">Current Booking</h3>
+                <div className="space-y-1 text-sm text-orange-700">
+                  <div><strong>Guest:</strong> {editDatesBooking.guestFirstName} {editDatesBooking.guestLastName}</div>
+                  <div><strong>Current Dates:</strong> {new Date(editDatesBooking.checkInDate).toLocaleDateString()} - {new Date(editDatesBooking.checkOutDate).toLocaleDateString()}</div>
+                  <div><strong>Total Price:</strong> €{editDatesBooking.totalPrice.toFixed(2)}</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="editCheckInDate" className="text-base font-semibold text-orange-700">New Check-in Date</Label>
+                    <Input
+                      id="editCheckInDate"
+                      type="date"
+                      value={editDatesForm.newCheckInDate}
+                      onChange={(e) => setEditDatesForm({ ...editDatesForm, newCheckInDate: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="border-orange-300 focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="editCheckOutDate" className="text-base font-semibold text-orange-700">New Check-out Date</Label>
+                    <Input
+                      id="editCheckOutDate"
+                      type="date"
+                      value={editDatesForm.newCheckOutDate}
+                      onChange={(e) => setEditDatesForm({ ...editDatesForm, newCheckOutDate: e.target.value })}
+                      min={editDatesForm.newCheckInDate || new Date().toISOString().split('T')[0]}
+                      className="border-orange-300 focus:border-orange-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    Note: Changing dates will check for conflicts with existing bookings. 
+                    The booking price will remain the same.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowEditDatesDialog(false);
+                    setEditDatesBooking(null);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!editDatesBooking || !editDatesForm.newCheckInDate || !editDatesForm.newCheckOutDate) return;
+                    
+                    editDatesMutation.mutate({
+                      bookingId: editDatesBooking.id,
+                      newCheckInDate: editDatesForm.newCheckInDate,
+                      newCheckOutDate: editDatesForm.newCheckOutDate,
+                    });
+                  }}
+                  disabled={!editDatesForm.newCheckInDate || !editDatesForm.newCheckOutDate || editDatesMutation.isPending}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                >
+                  {editDatesMutation.isPending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Update Dates
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Booking Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Trash2 className="w-5 h-5 text-red-600" />
+              <span>Cancel Booking</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {deleteBookingId && (
+            <div className="space-y-6">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h3 className="font-semibold text-red-800 mb-2">Warning</h3>
+                <p className="text-sm text-red-700">
+                  This will permanently cancel the booking and mark it as cancelled. 
+                  The dates will become available for new bookings. This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setDeleteBookingId(null);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Keep Booking
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!deleteBookingId) return;
+                    deleteBookingMutation.mutate(deleteBookingId);
+                  }}
+                  disabled={deleteBookingMutation.isPending}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  {deleteBookingMutation.isPending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Cancel Booking
                     </>
                   )}
                 </Button>
