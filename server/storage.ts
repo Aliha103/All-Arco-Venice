@@ -571,6 +571,51 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id));
   }
 
+  async checkBookingConflicts(checkInDate: string, checkOutDate: string, excludeBookingId?: number): Promise<any[]> {
+    const conditions = [
+      sql`${bookings.status} != 'cancelled'`, // Don't consider cancelled bookings
+      or(
+        and(
+          sql`${bookings.checkInDate} <= ${checkInDate}`,
+          sql`${bookings.checkOutDate} > ${checkInDate}`
+        ),
+        and(
+          sql`${bookings.checkInDate} < ${checkOutDate}`,
+          sql`${bookings.checkOutDate} >= ${checkOutDate}`
+        ),
+        and(
+          sql`${bookings.checkInDate} >= ${checkInDate}`,
+          sql`${bookings.checkOutDate} <= ${checkOutDate}`
+        )
+      )
+    ];
+
+    if (excludeBookingId) {
+      conditions.push(sql`${bookings.id} != ${excludeBookingId}`);
+    }
+
+    return await db.select().from(bookings).where(and(...conditions));
+  }
+
+  async updateBookingDates(bookingId: number, newCheckInDate: string, newCheckOutDate: string): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ 
+        checkInDate: newCheckInDate,
+        checkOutDate: newCheckOutDate,
+        modificationDate: new Date()
+      })
+      .where(eq(bookings.id, bookingId));
+  }
+
+  async getBooking(bookingId: number): Promise<Booking | undefined> {
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId));
+    return booking;
+  }
+
   async getBookingById(id: number): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
     return booking;

@@ -298,6 +298,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activity-timeline"] });
       toast({
         title: "Booking Status Updated",
         description: "The booking status has been successfully updated.",
@@ -308,6 +309,109 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to update booking status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for undo no-show
+  const undoNoShowMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const response = await fetch(`/api/bookings/${bookingId}/undo-no-show`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to undo no-show");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activity-timeline"] });
+      toast({
+        title: "No-show Reverted",
+        description: "Booking status has been reverted to confirmed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to undo no-show",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for editing booking dates
+  const editDatesMutation = useMutation({
+    mutationFn: async ({ bookingId, newCheckInDate, newCheckOutDate }: { 
+      bookingId: number; 
+      newCheckInDate: string; 
+      newCheckOutDate: string; 
+    }) => {
+      const response = await fetch(`/api/bookings/${bookingId}/edit-dates`, {
+        method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newCheckInDate, newCheckOutDate }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to edit dates");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activity-timeline"] });
+      toast({
+        title: "Dates Updated",
+        description: "Booking dates have been successfully updated.",
+      });
+      setEditDatesBooking(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to edit dates",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for deleting booking
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete booking");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activity-timeline"] });
+      toast({
+        title: "Booking Cancelled",
+        description: "Booking has been cancelled and dates are now available.",
+      });
+      setDeleteBookingId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel booking",
         variant: "destructive",
       });
     },

@@ -1840,9 +1840,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add activity timeline entry
       await storage.addActivityTimeline({
-        activityType: 'booking_status_reverted',
+        guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
         description: `No-show status reverted to confirmed for booking #${bookingId}`,
-        bookingId: bookingId,
+        actionType: 'booking_status_reverted',
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        guestEmail: booking.guestEmail,
         createdAt: new Date()
       });
 
