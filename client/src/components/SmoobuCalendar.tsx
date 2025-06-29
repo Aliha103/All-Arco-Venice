@@ -382,6 +382,10 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const checkInBooking = bookingForCheckIn(day);
           const checkOutBooking = bookingForCheckOut(day);
           
+          // Check if this day has a blocked booking
+          const dayBookings = getBookingsForDay(day);
+          const hasBlockedBooking = dayBookings.some(booking => booking.bookingSource === 'blocked');
+          
           // Date is clickable if: not past date AND no check-in booking
           const isClickable = !isPastDate && !checkInBooking;
           const hasCheckOutOnly = checkOutBooking && !checkInBooking;
@@ -391,7 +395,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               key={day.toISOString()}
               className={`
                 relative h-24 border-r border-b border-gray-200 transition-all duration-200 text-xs
-                ${isPastDate ? 'bg-gray-100 cursor-not-allowed opacity-60' : 
+                ${hasBlockedBooking ? 'blocked-stripe cursor-not-allowed' :
+                  isPastDate ? 'bg-gray-100 cursor-not-allowed opacity-60' : 
                   checkInBooking ? 'bg-red-50 cursor-not-allowed' :
                   hasCheckOutOnly ? 'bg-yellow-50 cursor-pointer hover:bg-green-50' :
                   'bg-white cursor-pointer hover:bg-green-50'}
