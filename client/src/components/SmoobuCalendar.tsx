@@ -506,9 +506,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 onClick={() => (isClickable ? handleDateClick(day) : null)}
               >
                 {/* Clean Date Number */}
-                <div className="absolute top-2 left-2 z-20">
+                <div className="absolute top-1 left-1 sm:top-2 sm:left-2 z-20">
                   <div
-                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal bg-white text-gray-800"
+                    className="w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-[12px] font-normal bg-white text-gray-800"
                   >
                     {format(day, "d")}
                   </div>
@@ -560,7 +560,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                   top: `${startRow * cellHeight + cellHeight / 2 + verticalOffset}px`,
                   left: leftPos,
                   width: widthPercent,
-                  height: window.innerWidth < 640 ? "16px" : "20px",
+                  height: window.innerWidth < 640 ? "12px" : "20px",
                   transform: "translateY(-50%)",
                 }}
               >
@@ -620,7 +620,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                   top: `${row * cellHeight + cellHeight / 2 + verticalOffset}px`,
                   left: leftPos,
                   width: widthPercent,
-                  height: window.innerWidth < 640 ? "16px" : "20px",
+                  height: window.innerWidth < 640 ? "12px" : "20px",
                   transform: "translateY(-50%)",
                 }}
               >
