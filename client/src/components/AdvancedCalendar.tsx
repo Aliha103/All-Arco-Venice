@@ -373,59 +373,93 @@ export default function AdvancedCalendar() {
                             zIndex: 20 + bookingIndex
                           }}
                         >
-                          {/* Continuous booking bar matching screenshot */}
+                          {/* Seamless continuous booking with 45%-10%-45% layout */}
                           <div className="relative w-full h-full overflow-visible">
-                            <div 
-                              className={`
-                                h-full w-full ${getSourceColor(booking.source)} 
-                                flex items-center justify-center text-xs font-medium relative
-                                ${position === 'checkin' ? 'rounded-l-lg' : ''}
-                                ${position === 'checkout' ? 'rounded-r-lg' : ''}
-                                ${position === 'middle' ? '' : ''}
-                              `}
-                              title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
-                            >
-                              {/* Check-in indicator */}
-                              {position === 'checkin' && (
-                                <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                                  <span className="text-white text-xs font-bold">↓</span>
+                            {position === 'middle' ? (
+                              /* Full width bar for middle spans */
+                              <div 
+                                className={`h-full w-full ${getSourceColor(booking.source)} flex items-center justify-center`}
+                                title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
+                              >
+                                <span className="text-white text-sm font-bold truncate px-2">
+                                  {booking.guestName.split(' ')[0]}
+                                </span>
+                              </div>
+                            ) : (
+                              /* Split layout for check-in/check-out */
+                              <div className="h-full w-full flex items-center">
+                                {/* Check-out area (left side - 45% width) */}
+                                <div 
+                                  className={`
+                                    h-full flex items-center justify-center text-xs font-medium relative
+                                    ${position === 'checkout' ? 
+                                      `${getSourceColor(booking.source)} rounded-l-lg` : 
+                                      'bg-transparent'
+                                    }
+                                  `}
+                                  style={{ width: '45%' }}
+                                  title={position === 'checkout' ? `Check-out: ${booking.guestName}` : ''}
+                                >
+                                  {position === 'checkout' && (
+                                    <>
+                                      <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                                        <span className="text-white text-xs font-bold">↑</span>
+                                      </div>
+                                      <span className="text-white text-sm font-bold truncate px-2">
+                                        {booking.guestName.split(' ')[1] || booking.guestName.split(' ')[0]}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
-                              )}
-                              
-                              {/* Check-out indicator */}
-                              {position === 'checkout' && (
-                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                                  <span className="text-white text-xs font-bold">↑</span>
+                                
+                                {/* 10% space between */}
+                                <div style={{ width: '10%' }} />
+                                
+                                {/* Check-in area (right side - 45% width) */}
+                                <div 
+                                  className={`
+                                    h-full flex items-center justify-center text-xs font-medium relative
+                                    ${position === 'checkin' ? 
+                                      `${getSourceColor(booking.source)} rounded-r-lg` : 
+                                      'bg-transparent'
+                                    }
+                                  `}
+                                  style={{ width: '45%' }}
+                                  title={position === 'checkin' ? `Check-in: ${booking.guestName}` : ''}
+                                >
+                                  {position === 'checkin' && (
+                                    <>
+                                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                        <span className="text-white text-xs font-bold">↓</span>
+                                      </div>
+                                      <span className="text-white text-sm font-bold truncate px-2">
+                                        {booking.guestName.split(' ')[0]}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
-                              )}
-                              
-                              {/* Guest name display */}
-                              <span className="text-white text-sm font-bold truncate px-2">
-                                {position === 'checkin' ? booking.guestName.split(' ')[0] : 
-                                 position === 'checkout' ? booking.guestName.split(' ')[1] || booking.guestName.split(' ')[0] :
-                                 booking.guestName.split(' ')[0]}
-                              </span>
-                            </div>
+                              </div>
+                            )}
                             
-                            {/* Seamless connecting bridges - extend beyond cell boundaries */}
-                            {(position === 'checkin' || position === 'middle') && !isLastColumnOfRow && (
+                            {/* Seamless connecting bridges that eliminate gaps */}
+                            {(position === 'checkin' || position === 'middle' || position === 'checkout') && !isLastColumnOfRow && (
                               <div 
                                 className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
                                 style={{ 
-                                  right: '-1px',
-                                  width: '2px',
-                                  zIndex: 35
+                                  right: '0px',
+                                  width: '1px',
+                                  zIndex: 40
                                 }}
                               />
                             )}
                             
-                            {(position === 'checkout' || position === 'middle') && !isFirstColumnOfRow && (
+                            {(position === 'checkout' || position === 'middle' || position === 'checkin') && !isFirstColumnOfRow && (
                               <div 
                                 className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
                                 style={{ 
-                                  left: '-1px',
-                                  width: '2px',
-                                  zIndex: 35
+                                  left: '0px',
+                                  width: '1px',
+                                  zIndex: 40
                                 }}
                               />
                             )}
