@@ -364,10 +364,7 @@ export default function AdminDashboard() {
                       Manage bookings and availability with real-time updates
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Live Updates</span>
-                  </div>
+                  
                 </div>
               </CardHeader>
               <CardContent className="p-0 sm:p-2 lg:p-4">
