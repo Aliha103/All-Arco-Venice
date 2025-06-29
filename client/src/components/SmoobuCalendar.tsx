@@ -469,7 +469,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             const dayDate = new Date(day);
             dayDate.setHours(0, 0, 0, 0);
 
-            const isPastDate = dayDate < today;
+            const isPastDate = dayDate < today; // Current day (today) is NOT past date
             const checkInBooking = bookingForCheckIn(day);
             const checkOutBooking = bookingForCheckOut(day);
 
@@ -479,7 +479,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               (booking) => booking.bookingSource === "blocked",
             );
 
-            // Date is clickable if: not past date AND no check-in booking
+            // Date is clickable if: not past date (including today) AND no check-in booking
             const isClickable = !isPastDate && !checkInBooking;
             const hasCheckOutOnly = checkOutBooking && !checkInBooking;
 
@@ -786,6 +786,32 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                           ...formData,
                           nights: parseInt(e.target.value) || 1,
                         })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Check-in and Check-out Time Selection */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="checkInTime">Check-in Time</Label>
+                    <Input
+                      id="checkInTime"
+                      type="time"
+                      value={formData.checkInTime || "15:00"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, checkInTime: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkOutTime">Check-out Time</Label>
+                    <Input
+                      id="checkOutTime"
+                      type="time"
+                      value={formData.checkOutTime || "10:00"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, checkOutTime: e.target.value })
                       }
                     />
                   </div>
