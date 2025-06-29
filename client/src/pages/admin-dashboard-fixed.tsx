@@ -517,6 +517,166 @@ export default function AdminDashboard() {
           {/* Other tabs would go here */}
         </Tabs>
       </div>
+
+      {/* User Details Popup Modal */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                {selectedUser?.firstName.charAt(0)}{selectedUser?.lastName.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">{selectedUser?.firstName} {selectedUser?.lastName}</h2>
+                <p className="text-sm text-gray-500">{selectedUser?.email}</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedUser && (
+            <div className="space-y-6 mt-4">
+              {/* Registration Status */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="font-medium">Registration Status</span>
+                <Badge 
+                  variant={selectedUser.isRegistered ? "default" : "secondary"}
+                  className={`${
+                    selectedUser.isRegistered 
+                      ? "bg-green-100 text-green-800 border-green-200" 
+                      : "bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {selectedUser.isRegistered ? "Registered User" : "Guest User"}
+                </Badge>
+              </div>
+
+              {/* Personal Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Personal Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{selectedUser.email}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedUser.mobileNumber && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Phone</p>
+                        <p className="font-medium">{selectedUser.mobileNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedUser.country && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Country</p>
+                        <p className="font-medium">{selectedUser.country}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedUser.dateOfBirth && (
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Date of Birth</p>
+                        <p className="font-medium">{new Date(selectedUser.dateOfBirth).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Account Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Account Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-600">Provider</p>
+                    <p className="font-semibold text-blue-800">{selectedUser.provider}</p>
+                  </div>
+                  
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-600">Credits</p>
+                    <p className="font-semibold text-green-800">€{selectedUser.credits}</p>
+                  </div>
+                  
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-purple-600">Referral Code</p>
+                    <p className="font-semibold text-purple-800 font-mono text-xs">{selectedUser.referralCode}</p>
+                  </div>
+                  
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <p className="text-sm text-orange-600">Referrals Made</p>
+                    <p className="font-semibold text-orange-800">{selectedUser.totalReferrals}</p>
+                  </div>
+                </div>
+                
+                {selectedUser.referrerName && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600">Referred By</p>
+                    <p className="font-semibold">{selectedUser.referrerName}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Booking Statistics */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Booking Statistics</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{selectedUser.totalBookings}</div>
+                    <p className="text-sm text-blue-800">Total Bookings</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">€{selectedUser.totalSpent}</div>
+                    <p className="text-sm text-green-800">Total Spent</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      €{selectedUser.totalBookings > 0 ? (selectedUser.totalSpent / selectedUser.totalBookings).toFixed(0) : 0}
+                    </div>
+                    <p className="text-sm text-purple-800">Avg Per Booking</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetails(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Could add functionality to view user's bookings
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "View user's booking history will be available soon.",
+                    });
+                  }}
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Bookings
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

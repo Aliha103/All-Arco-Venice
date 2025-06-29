@@ -41,6 +41,24 @@ export interface IStorage {
   incrementReferralCount(userId: string): Promise<void>;
   updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
   deductUserCredits(userId: string, amount: number): Promise<void>;
+  getAllUsersWithDetails(): Promise<Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    dateOfBirth?: string;
+    country?: string;
+    mobileNumber?: string;
+    referralCode: string;
+    totalReferrals: number;
+    referredBy?: string;
+    referrerName?: string;
+    credits: number;
+    provider: string;
+    totalBookings: number;
+    totalSpent: number;
+    isRegistered: boolean;
+  }>>;
   
   // Booking operations with comprehensive pricing
   createBooking(bookingData: {
@@ -865,6 +883,73 @@ export class DatabaseStorage implements IStorage {
       referrerName: user.referrerName,
       referralCode: user.referralCode!,
     };
+  }
+
+  async getAllUsersWithDetails(): Promise<Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    dateOfBirth?: string;
+    country?: string;
+    mobileNumber?: string;
+    referralCode: string;
+    totalReferrals: number;
+    referredBy?: string;
+    referrerName?: string;
+    credits: number;
+    provider: string;
+    totalBookings: number;
+    totalSpent: number;
+    isRegistered: boolean;
+  }>> {
+    // Get all users
+    const allUsers = await db.select().from(users);
+
+    // Get booking statistics for each user
+    const usersWithDetails = await Promise.all(
+      allUsers.map(async (user) => {
+        // Calculate booking statistics for this user
+        const userBookings = await db
+          .select({
+            count: count(),
+            totalSpent: sql<number>`COALESCE(SUM(${bookings.totalPrice}), 0)`,
+          })
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.status, 'confirmed'),
+              or(
+                eq(bookings.userId, user.id),
+                eq(bookings.guestEmail, user.email)
+              )
+            )
+          );
+
+        const bookingStats = userBookings[0] || { count: 0, totalSpent: 0 };
+
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          dateOfBirth: user.dateOfBirth ? (typeof user.dateOfBirth === 'string' ? user.dateOfBirth : user.dateOfBirth.toISOString()) : undefined,
+          country: user.country || undefined,
+          mobileNumber: user.mobileNumber || undefined,
+          referralCode: user.referralCode || '',
+          totalReferrals: user.totalReferrals || 0,
+          referredBy: user.referredBy || undefined,
+          referrerName: user.referrerName || undefined,
+          credits: user.credits || 0,
+          provider: user.replit_id ? 'replit' : 'local',
+          totalBookings: bookingStats.count,
+          totalSpent: Number(bookingStats.totalSpent) || 0,
+          isRegistered: !!user.password || !!user.replit_id,
+        };
+      })
+    );
+
+    return usersWithDetails.sort((a, b) => b.totalSpent - a.totalSpent);
   }
 
   // Promotions operations
