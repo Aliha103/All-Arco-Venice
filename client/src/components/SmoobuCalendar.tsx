@@ -281,74 +281,89 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid - Smoobu style with continuous booking spans */}
-      <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
-        {daysInMonth.map((day) => {
-          const checkInBooking = bookingForCheckIn(day);
-          const checkOutBooking = bookingForCheckOut(day);
-          const continuousBooking = getContinuousBooking(day);
-          const isCurrentDay = isToday(day);
-          const isCurrentMonthDay = isSameMonth(day, currentMonth);
+      {/* Calendar container with absolute positioning for continuous spans */}
+      <div className="relative">
+        {/* Calendar grid base */}
+        <div className="grid grid-cols-7 gap-0 border-t border-l border-gray-200">
+          {daysInMonth.map((day, index) => {
+            const isCurrentDay = isToday(day);
+            const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
-          return (
-            <div
-              key={day.toISOString()}
-              className={`
-                relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 flex text-xs
-                ${(checkInBooking || checkOutBooking || continuousBooking) ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
-                ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
-                ${!isCurrentMonthDay ? 'opacity-50' : ''}
-              `}
-              onClick={() => handleDateClick(day)}
-            >
-              <span className="absolute top-1 left-1 text-gray-500 font-medium">
-                {format(day, 'd')}
-              </span>
-              
-              {/* Continuous booking bar (full width) */}
-              {continuousBooking && (
-                <div className="absolute inset-x-0 top-8 bottom-8 flex items-center justify-center">
-                  <div className={`w-full h-6 flex items-center justify-center rounded ${
-                    sourceColors[continuousBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
-                  }`}>
-                    <span className="text-xs font-medium truncate px-2">
-                      {continuousBooking.guestFirstName} {continuousBooking.guestLastName}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Split layout for check-in/check-out days */}
-              {!continuousBooking && (
-                <>
-                  {/* Check-out area (45%) */}
-                  <div className="w-[45%] h-full flex items-center justify-center">
-                    {checkOutBooking && (
-                      <div className={`rounded-full px-1 py-0.5 truncate ${
-                        sourceColors[checkOutBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
-                      }`}>
-                        {checkOutBooking.guestFirstName} {checkOutBooking.guestLastName}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Middle space (10%) */}
-                  <div className="w-[10%] h-full" />
-                  
-                  {/* Check-in area (45%) */}
-                  <div className="w-[45%] h-full flex items-center justify-center">
-                    {checkInBooking && (
-                      <div className={`rounded-full px-1 py-0.5 truncate ${
-                        sourceColors[checkInBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
-                      }`}>
-                        {checkInBooking.guestFirstName} {checkInBooking.guestLastName}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+            return (
+              <div
+                key={day.toISOString()}
+                className={`
+                  relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 text-xs
+                  bg-white hover:bg-green-50
+                  ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
+                  ${!isCurrentMonthDay ? 'opacity-50' : ''}
+                `}
+                onClick={() => handleDateClick(day)}
+              >
+                <span className="absolute top-1 left-1 text-gray-500 font-medium z-20">
+                  {format(day, 'd')}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Continuous booking spans - rendered above grid */}
+        {smoobuBookings.map((booking) => {
+          const checkInDate = new Date(booking.checkInDate);
+          const checkOutDate = new Date(booking.checkOutDate);
+          
+          // Calculate which days this booking spans within the current month
+          const bookingDays = daysInMonth.filter(day => 
+            isWithinInterval(day, { start: checkInDate, end: checkOutDate })
           );
+          
+          if (bookingDays.length === 0) return null;
+
+          const startIndex = daysInMonth.findIndex(day => isSameDay(day, bookingDays[0]));
+          const endIndex = daysInMonth.findIndex(day => isSameDay(day, bookingDays[bookingDays.length - 1]));
+          
+          const startRow = Math.floor(startIndex / 7);
+          const endRow = Math.floor(endIndex / 7);
+          const startCol = startIndex % 7;
+          const endCol = endIndex % 7;
+
+          // If booking spans multiple weeks, render separate bars for each week
+          const weekSpans = [];
+          for (let row = startRow; row <= endRow; row++) {
+            const weekStartCol = row === startRow ? startCol : 0;
+            const weekEndCol = row === endRow ? endCol : 6;
+            const spanWidth = weekEndCol - weekStartCol + 1;
+            
+            weekSpans.push({
+              row,
+              startCol: weekStartCol,
+              width: spanWidth,
+              isFirstWeek: row === startRow,
+              isLastWeek: row === endRow
+            });
+          }
+
+          return weekSpans.map((span, spanIndex) => (
+            <div
+              key={`${booking.id}-week-${span.row}`}
+              className={`absolute z-10 h-6 flex items-center justify-center ${
+                sourceColors[booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+              }`}
+              style={{
+                top: `${span.row * 96 + 32}px`, // 96px = h-24, 32px = top offset
+                left: `${span.startCol * (100/7)}%`,
+                width: `${span.width * (100/7)}%`,
+                borderRadius: span.isFirstWeek && span.isLastWeek ? '12px' : 
+                             span.isFirstWeek ? '12px 0 0 12px' :
+                             span.isLastWeek ? '0 12px 12px 0' : '0'
+              }}
+            >
+              <span className="text-xs font-medium truncate px-2">
+                {booking.guestFirstName} {booking.guestLastName}
+              </span>
+            </div>
+          ));
         })}
       </div>
 
