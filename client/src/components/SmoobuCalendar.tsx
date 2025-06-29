@@ -506,7 +506,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               <div
                 key={day.toISOString()}
                 className={`
-                  relative h-20 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
+                  relative h-16 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
                   transition-all duration-200 active:scale-95 touch-manipulation
                   ${
                     hasBlockedBooking
@@ -527,7 +527,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {/* Clean Date Number */}
                 <div className="absolute top-2 left-2 z-20">
                   <div
-                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal bg-[#ffffff] text-[#1f2937]"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal bg-white text-gray-800"
                   >
                     {format(day, "d")}
                   </div>
@@ -554,7 +554,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const endCol = endIndex % 7;
 
           // Responsive row height calculation matching CSS classes
-          const cellHeight = window.innerWidth < 640 ? 80 : window.innerWidth < 1024 ? 96 : 112; // h-20 sm:h-24 lg:h-28
+          const cellHeight = window.innerWidth < 640 ? 64 : window.innerWidth < 1024 ? 96 : 112; // h-16 sm:h-24 lg:h-28
           const verticalOffset = 0; // All bookings at same level
 
           // Single row span
