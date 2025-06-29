@@ -177,7 +177,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     airbnb: 'bg-red-200 text-red-800',
     booking: 'bg-blue-200 text-blue-800',
     direct: 'bg-green-200 text-green-800',
-    blocked: 'bg-gray-200 text-gray-800',
+    blocked: 'blocked-stripe text-gray-800',
     manual: 'bg-purple-200 text-purple-800',
   };
 
