@@ -10,7 +10,7 @@ import BookingPage from "@/pages/booking";
 import BookingsPage from "@/pages/bookings";
 import Signup from "@/pages/signup";
 import Login from "@/pages/login";
-import AdminDashboard from "@/pages/admin-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard-fixed";
 import Checkout from "@/pages/checkout";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";

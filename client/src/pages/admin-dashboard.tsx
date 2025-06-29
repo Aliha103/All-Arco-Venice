@@ -141,33 +141,6 @@ const formatDate = (dateString: string) => {
 export default function AdminDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-
-  // Handle authentication loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle unauthorized access - redirect to login
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Access Required</h1>
-          <p className="text-gray-600 mb-6">You need to be logged in as an admin to access this dashboard.</p>
-          <Button onClick={() => window.location.href = '/login'} className="bg-blue-600 hover:bg-blue-700">
-            Go to Login
-          </Button>
-        </div>
-      </div>
-    );
-  }
   const [activeTab, setActiveTab] = useState("overview");
   const [pricingForm, setPricingForm] = useState({
     basePrice: 0,
@@ -198,7 +171,6 @@ export default function AdminDashboard() {
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
 
-  
   // Drag and drop state for hero images
   const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
   const [dragOverImageId, setDragOverImageId] = useState<number | null>(null);
@@ -206,6 +178,49 @@ export default function AdminDashboard() {
   // Booking details modal state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+
+  // All data queries (must be called unconditionally)
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<Analytics>({
+    queryKey: ["/api/analytics"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ["/api/bookings"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: reviews, isLoading: reviewsLoading } = useQuery<Review[]>({
+    queryKey: ["/api/reviews"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: pricingSettings, isLoading: pricingLoading } = useQuery<PricingSettings>({
+    queryKey: ["/api/pricing-settings"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: promotions, isLoading: promotionsLoading } = useQuery<Promotion[]>({
+    queryKey: ["/api/promotions"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: heroImages, isLoading: heroImagesLoading } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
+  const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
+    queryKey: ["/api/messages"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
 
   // Handle file selection and preview
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,48 +302,6 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, user, toast]);
 
-  // Analytics query
-  const { data: analytics, isLoading: analyticsLoading } = useQuery<Analytics>({
-    queryKey: ["/api/analytics"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
-  // Bookings query
-  const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
-    queryKey: ["/api/bookings"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
-  // Reviews query
-  const { data: reviews, isLoading: reviewsLoading } = useQuery<Review[]>({
-    queryKey: ["/api/reviews"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
-  // Pricing settings query
-  const { data: pricingSettings, isLoading: pricingLoading } = useQuery<PricingSettings>({
-    queryKey: ["/api/pricing-settings"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
-  // Promotions query
-  const { data: promotions, isLoading: promotionsLoading } = useQuery<Promotion[]>({
-    queryKey: ["/api/promotions"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
-  // Hero images query
-  const { data: heroImages, isLoading: heroImagesLoading } = useQuery<HeroImage[]>({
-    queryKey: ["/api/hero-images"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
-
   // Update pricing form when data loads
   useEffect(() => {
     if (pricingSettings) {
@@ -341,13 +314,6 @@ export default function AdminDashboard() {
       });
     }
   }, [pricingSettings]);
-
-  // Messages query
-  const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ["/api/messages"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
 
   
 
