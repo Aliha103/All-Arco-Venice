@@ -64,9 +64,12 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch bookings
+  // Fetch bookings for calendar display (includes blocks)
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
-    queryKey: ['/api/bookings'],
+    queryKey: ['/api/bookings/calendar', format(currentMonth, 'yyyy'), format(currentMonth, 'MM')],
+    queryFn: () => 
+      fetch(`/api/bookings/calendar/${format(currentMonth, 'yyyy')}/${format(currentMonth, 'MM')}`)
+        .then(res => res.json()),
   });
 
   // Create booking mutation
@@ -277,7 +280,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           manualPrice: 0,
           blockReason: "",
         });
-        queryClient.invalidateQueries({ queryKey: ['/api/bookings/calendar'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings/calendar', format(currentMonth, 'yyyy'), format(currentMonth, 'MM')] });
       } catch (error) {
         console.error("🔴 CLIENT: Block dates error:", error);
         toast({ 

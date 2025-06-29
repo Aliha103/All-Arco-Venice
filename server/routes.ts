@@ -826,14 +826,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calendar endpoint that includes both bookings AND blocks for display
   app.get('/api/bookings/calendar/:year/:month', async (req, res) => {
     try {
       const { year, month } = req.params;
       const startDate = `${year}-${month.padStart(2, '0')}-01`;
       const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
       
-      const bookings = await storage.getBookingsByDateRange(startDate, endDate);
-      res.json(bookings);
+      console.log("🟡 SERVER: Fetching calendar data for date range:", startDate, "to", endDate);
+      
+      // Get ALL bookings for calendar display (including blocks)
+      const allBookings = await storage.getBookingsByDateRange(startDate, endDate, true); // true = include blocks
+      
+      console.log("🟢 SERVER: Found", allBookings.length, "calendar items (bookings + blocks)");
+      res.json(allBookings);
     } catch (error) {
       console.error("Error fetching calendar bookings:", error);
       res.status(500).json({ message: "Failed to fetch calendar data" });

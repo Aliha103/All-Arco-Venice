@@ -601,20 +601,33 @@ export class DatabaseStorage implements IStorage {
     return result[0].count === 0;
   }
 
-  async getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]> {
+  async getBookingsByDateRange(startDate: string, endDate: string, includeBlocks = false): Promise<Booking[]> {
+    let conditions = [
+      gte(bookings.checkInDate, startDate),
+      lte(bookings.checkOutDate, endDate)
+    ];
+
+    if (!includeBlocks) {
+      // Exclude blocked dates for regular booking lists
+      conditions.push(
+        or(
+          eq(bookings.status, "confirmed"),
+          eq(bookings.status, "checked_in")
+        ),
+        or(
+          eq(bookings.bookingSource, "direct"),
+          eq(bookings.bookingSource, "airbnb"), 
+          eq(bookings.bookingSource, "booking.com"),
+          eq(bookings.bookingSource, "custom")
+        )
+      );
+    }
+    // If includeBlocks is true, include ALL bookings (including blocks) for calendar display
+
     return await db
       .select()
       .from(bookings)
-      .where(
-        and(
-          gte(bookings.checkInDate, startDate),
-          lte(bookings.checkOutDate, endDate),
-          or(
-            eq(bookings.status, "confirmed"),
-            eq(bookings.status, "checked_in")
-          )
-        )
-      );
+      .where(and(...conditions));
   }
 
   async associateBookingWithUser(bookingId: number, userId: string): Promise<void> {
