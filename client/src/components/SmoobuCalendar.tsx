@@ -546,9 +546,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                     {format(day, "d")}
                   </div>
                 </div>
-
-                
-              );
+              </div>
+            );
           })}
         </div>
 
