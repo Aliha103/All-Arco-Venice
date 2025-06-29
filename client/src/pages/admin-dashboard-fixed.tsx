@@ -38,6 +38,7 @@ import {
   X,
   Reply,
   ArrowLeft,
+  LogOut,
   GripVertical,
   CreditCard,
   MapPin,
