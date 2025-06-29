@@ -137,23 +137,36 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     });
   };
 
-  const getBookingSpanInfo = (day: Date, booking: any) => {
-    const checkInDate = new Date(booking.checkInDate);
-    const checkOutDate = new Date(booking.checkOutDate);
-    const isCheckIn = isSameDay(checkInDate, day);
-    const isCheckOut = isSameDay(checkOutDate, day);
-    const isMiddle = isWithinInterval(day, { start: checkInDate, end: checkOutDate }) && !isCheckIn && !isCheckOut;
+  // Group consecutive booking days together for continuous rendering
+  const getBookingSpans = () => {
+    const spans: any[] = [];
     
-    return { isCheckIn, isCheckOut, isMiddle };
-  };
-
-  const getBookingForDay = (day: Date) => {
-    return smoobuBookings.find(booking => {
+    smoobuBookings.forEach(booking => {
       const checkInDate = new Date(booking.checkInDate);
       const checkOutDate = new Date(booking.checkOutDate);
-      return isWithinInterval(day, { start: checkInDate, end: checkOutDate });
+      const bookingDays = eachDayOfInterval({ start: checkInDate, end: checkOutDate });
+      
+      // Only include days that are in the current month view
+      const monthDays = bookingDays.filter(day => 
+        daysInMonth.some(monthDay => isSameDay(day, monthDay))
+      );
+      
+      if (monthDays.length > 0) {
+        spans.push({
+          booking,
+          days: monthDays,
+          startDay: monthDays[0],
+          endDay: monthDays[monthDays.length - 1],
+          isCheckIn: isSameDay(checkInDate, monthDays[0]),
+          isCheckOut: isSameDay(checkOutDate, monthDays[monthDays.length - 1])
+        });
+      }
     });
+    
+    return spans;
   };
+
+  const bookingSpans = getBookingSpans();
 
   const sourceColors = {
     airbnb: 'bg-red-200 text-red-800',
@@ -288,52 +301,105 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid - Seamless continuous booking spans */}
+      {/* Calendar grid with continuous booking spans */}
       <div className="grid grid-cols-7 gap-0 border-t border-l border-gray-200 relative">
         {daysInMonth.map((day, dayIndex) => {
-          const booking = getBookingForDay(day);
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
-          
-          let spanInfo = null;
-          if (booking) {
-            spanInfo = getBookingSpanInfo(day, booking);
-          }
+          const hasBooking = bookingSpans.some(span => 
+            span.days.some((spanDay: Date) => isSameDay(spanDay, day))
+          );
 
           return (
             <div
               key={day.toISOString()}
               className={`
                 relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 text-xs
-                ${booking ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
+                ${hasBooking ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
                 ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
                 ${!isCurrentMonthDay ? 'opacity-50' : ''}
               `}
               onClick={() => handleDateClick(day)}
             >
-              <span className="absolute top-1 left-1 text-gray-500 font-medium z-10">
+              <span className="absolute top-1 left-1 text-gray-500 font-medium z-20">
                 {format(day, 'd')}
               </span>
-              
-              {/* Seamless pipe-like booking span */}
-              {booking && spanInfo && (
-                <div className="absolute top-1/2 -translate-y-1/2 h-6 flex items-center text-xs font-medium"
-                     style={{
-                       left: spanInfo.isCheckOut ? '2px' : (spanInfo.isMiddle ? '-1px' : '50%'),
-                       right: spanInfo.isCheckIn ? '2px' : (spanInfo.isMiddle ? '-1px' : '50%'),
-                       width: spanInfo.isMiddle ? 'calc(100% + 2px)' : 'auto'
-                     }}>
-                  <div className={`w-full h-full flex items-center justify-center px-2 ${
-                    spanInfo.isCheckIn ? 'rounded-l-full' : spanInfo.isCheckOut ? 'rounded-r-full' : ''
-                  } ${sourceColors[booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
-                    <span className="truncate">
-                      {booking.guestFirstName} {booking.guestLastName}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           );
+        })}
+        
+        {/* Render continuous booking spans on top */}
+        {bookingSpans.map((span, spanIndex) => {
+          const startIndex = daysInMonth.findIndex(day => isSameDay(day, span.startDay));
+          const endIndex = daysInMonth.findIndex(day => isSameDay(day, span.endDay));
+          
+          if (startIndex === -1 || endIndex === -1) return null;
+          
+          const startRow = Math.floor(startIndex / 7);
+          const endRow = Math.floor(endIndex / 7);
+          const startCol = startIndex % 7;
+          const endCol = endIndex % 7;
+          
+          // Single row span
+          if (startRow === endRow) {
+            return (
+              <div
+                key={`span-${span.booking.id}`}
+                className="absolute z-10"
+                style={{
+                  top: `${startRow * 96 + 48}px`, // 96px = h-24, 48px = center
+                  left: `${(startCol * (100/7)) + 1}%`,
+                  width: `${((endCol - startCol + 1) * (100/7)) - 0.3}%`,
+                  height: '24px',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                <div className={`w-full h-full flex items-center justify-center text-xs font-medium px-2 ${
+                  span.isCheckIn && span.isCheckOut ? 'rounded-full' :
+                  span.isCheckIn ? 'rounded-l-full' :
+                  span.isCheckOut ? 'rounded-r-full' : ''
+                } ${sourceColors[span.booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
+                  <span className="truncate">
+                    {span.booking.guestFirstName} {span.booking.guestLastName}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+          
+          // Multi-row spans
+          const rows = [];
+          for (let row = startRow; row <= endRow; row++) {
+            const isFirstRow = row === startRow;
+            const isLastRow = row === endRow;
+            const rowStartCol = isFirstRow ? startCol : 0;
+            const rowEndCol = isLastRow ? endCol : 6;
+            
+            rows.push(
+              <div
+                key={`span-${span.booking.id}-row-${row}`}
+                className="absolute z-10"
+                style={{
+                  top: `${row * 96 + 48}px`,
+                  left: `${(rowStartCol * (100/7)) + 0.1}%`,
+                  width: `${((rowEndCol - rowStartCol + 1) * (100/7)) - 0.2}%`,
+                  height: '24px',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                <div className={`w-full h-full flex items-center justify-center text-xs font-medium px-2 ${
+                  isFirstRow && span.isCheckIn ? 'rounded-l-full' :
+                  isLastRow && span.isCheckOut ? 'rounded-r-full' : ''
+                } ${sourceColors[span.booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
+                  <span className="truncate">
+                    {span.booking.guestFirstName} {span.booking.guestLastName}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+          
+          return rows;
         })}
       </div>
 
