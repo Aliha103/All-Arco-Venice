@@ -1443,63 +1443,18 @@ export default function AdminDashboard() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        toast({
-                          title: "Edit Dates",
-                          description: "Date modification feature will be available soon.",
-                        });
-                      }}
-                    >
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Edit Dates
-                    </DropdownMenuItem>
                     
-                    {/* Check-in and No-show options only show on check-in day */}
-                    {(() => {
-                      const today = new Date();
-                      const checkInDate = new Date(selectedBooking.checkInDate);
-                      const isCheckInDay = today.toDateString() === checkInDate.toDateString();
-                      
-                      if (isCheckInDay) {
-                        return (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                toast({
-                                  title: "Check-in Complete",
-                                  description: "Guest check-in functionality will be available soon.",
-                                });
-                              }}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Mark as Checked-in
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem
-                              onClick={() => {
-                                toast({
-                                  title: "No-show Marked",
-                                  description: "No-show status functionality will be available soon.",
-                                });
-                              }}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Mark as No-show
-                            </DropdownMenuItem>
-                          </>
-                        );
-                      }
-                      return null;
-                    })()}
                     
                     <DropdownMenuSeparator />
                     
                     <DropdownMenuItem
                       onClick={() => {
-                        setStatusActionBooking(selectedBooking);
-                        setShowStatusAlert(true);
-                        setShowBookingDetails(false);
+                        // Use setTimeout to ensure proper dialog transition
+                        setTimeout(() => {
+                          setStatusActionBooking(selectedBooking);
+                          setShowStatusAlert(true);
+                          setShowBookingDetails(false);
+                        }, 50);
                       }}
                       className="text-blue-600 focus:text-blue-600"
                     >
