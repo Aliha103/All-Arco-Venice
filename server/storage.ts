@@ -620,9 +620,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingsByDateRange(startDate: string, endDate: string, includeBlocks = false): Promise<Booking[]> {
+    // Fix: Check for any booking that overlaps with the date range
+    // A booking overlaps if: check-in is before range end AND check-out is after range start
     let conditions = [
-      gte(bookings.checkInDate, startDate),
-      lte(bookings.checkOutDate, endDate)
+      lte(bookings.checkInDate, endDate),
+      gt(bookings.checkOutDate, startDate)
     ];
 
     if (!includeBlocks) {
