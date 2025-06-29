@@ -52,12 +52,13 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     mode: "manual" as "blocked" | "manual",
-    guestName: "",
-    price: 150,
+    guestFirstName: "",
+    guestLastName: "",
+    guestEmail: "",
     guests: 2,
     nights: 1,
-    source: "direct" as "airbnb" | "booking" | "direct" | "blocked",
-    paymentMethod: "property"
+    manualPrice: 0,
+    blockReason: ""
   });
 
   const { toast } = useToast();
@@ -83,12 +84,13 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
       setSelectedDate(null);
       setFormData({
         mode: "manual",
-        guestName: "",
-        price: 150,
+        guestFirstName: "",
+        guestLastName: "",
+        guestEmail: "",
         guests: 2,
         nights: 1,
-        source: "direct",
-        paymentMethod: "property"
+        manualPrice: 0,
+        blockReason: ""
       });
       toast({
         title: "Success",
@@ -236,23 +238,61 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     const checkOutDate = new Date(selectedDate);
     checkOutDate.setDate(checkOutDate.getDate() + formData.nights);
 
-    const bookingData = {
-      guestFirstName: formData.guestName.split(' ')[0] || formData.guestName,
-      guestLastName: formData.guestName.split(' ').slice(1).join(' ') || 'Guest',
-      guestEmail: 'admin@booking.com',
-      guestCountry: 'Italy',
-      guestPhone: '+39 123 456 7890',
-      checkInDate: format(selectedDate, 'yyyy-MM-dd'),
-      checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
-      guests: formData.guests,
-      paymentMethod: formData.paymentMethod,
-      hasPet: false,
-      createdBy: "admin",
-      bookedForSelf: false,
-      bookingSource: formData.source,
-    };
+    if (formData.mode === "blocked") {
+      // Block dates with gray color and blocking reason
+      const blockData = {
+        guestFirstName: "Blocked",
+        guestLastName: formData.blockReason || "Date",
+        guestEmail: "blocked@system.com",
+        guestCountry: "System",
+        guestPhone: "000-000-0000",
+        checkInDate: format(selectedDate, 'yyyy-MM-dd'),
+        checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
+        guests: 1,
+        paymentMethod: "property",
+        hasPet: false,
+        createdBy: "admin",
+        bookedForSelf: false,
+        bookingSource: "blocked",
+        blockReason: formData.blockReason || "Admin blocked",
+        totalPrice: 0, // No earnings for blocked dates
+      };
+      createBookingMutation.mutate(blockData);
+    } else {
+      // Manual booking with complete guest details and pricing
+      const cityTax = Math.min(formData.nights, 5) * formData.guests * 4; // €4 per person per night, max 5 nights
+      const totalPrice = formData.manualPrice + cityTax;
 
-    createBookingMutation.mutate(bookingData);
+      const bookingData = {
+        guestFirstName: formData.guestFirstName,
+        guestLastName: formData.guestLastName,
+        guestEmail: formData.guestEmail,
+        guestCountry: "Manual Entry",
+        guestPhone: "000-000-0000",
+        checkInDate: format(selectedDate, 'yyyy-MM-dd'),
+        checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
+        guests: formData.guests,
+        paymentMethod: "property",
+        hasPet: false,
+        createdBy: "admin",
+        bookedForSelf: false,
+        bookingSource: "direct",
+        totalPrice: totalPrice,
+      };
+      createBookingMutation.mutate(bookingData);
+    }
+
+    setShowBookingForm(false);
+    setFormData({
+      mode: "manual",
+      guestFirstName: "",
+      guestLastName: "",
+      guestEmail: "",
+      guests: 2,
+      nights: 1,
+      manualPrice: 0,
+      blockReason: ""
+    });
   };
 
   if (isLoading) {
@@ -373,12 +413,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               {isPastDate && (
                 <span className="absolute top-1 right-1 text-gray-400 text-xs">×</span>
               )}
-              {hasCheckOutOnly && (
-                <span className="absolute bottom-1 right-1 text-yellow-600 text-xs font-bold">CO</span>
-              )}
-              {checkInBooking && (
-                <span className="absolute bottom-1 right-1 text-red-600 text-xs font-bold">CI</span>
-              )}
+              
+              
             </div>
           );
         })}
@@ -514,36 +550,69 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="source">Booking Source</Label>
-              <Select value={formData.source} onValueChange={(value: "airbnb" | "booking" | "direct" | "blocked") => setFormData({ ...formData, source: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="airbnb">Airbnb</SelectItem>
-                  <SelectItem value="booking">Booking.com</SelectItem>
-                  <SelectItem value="direct">Direct</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {formData.mode === "blocked" && (
+              <>
+                <div>
+                  <Label htmlFor="blockReason">Blocking Reason</Label>
+                  <Input
+                    id="blockReason"
+                    value={formData.blockReason || ""}
+                    onChange={(e) => setFormData({ ...formData, blockReason: e.target.value })}
+                    placeholder="Maintenance, personal use, etc."
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="nights">Number of Nights</Label>
+                  <Input
+                    id="nights"
+                    type="number"
+                    min="1"
+                    max="15"
+                    value={formData.nights}
+                    onChange={(e) => setFormData({ ...formData, nights: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+              </>
+            )}
 
             {formData.mode === "manual" && (
               <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="guestFirstName">First Name</Label>
+                    <Input
+                      id="guestFirstName"
+                      value={formData.guestFirstName || ""}
+                      onChange={(e) => setFormData({ ...formData, guestFirstName: e.target.value })}
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="guestLastName">Last Name</Label>
+                    <Input
+                      id="guestLastName"
+                      value={formData.guestLastName || ""}
+                      onChange={(e) => setFormData({ ...formData, guestLastName: e.target.value })}
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="guestName">Guest Name</Label>
+                  <Label htmlFor="guestEmail">Email</Label>
                   <Input
-                    id="guestName"
-                    value={formData.guestName}
-                    onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
-                    placeholder="John Doe"
+                    id="guestEmail"
+                    type="email"
+                    value={formData.guestEmail || ""}
+                    onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
+                    placeholder="john.doe@example.com"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="guests">Guests</Label>
+                    <Label htmlFor="guests">Number of Guests</Label>
                     <Input
                       id="guests"
                       type="number"
@@ -554,7 +623,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="nights">Nights</Label>
+                    <Label htmlFor="nights">Number of Nights</Label>
                     <Input
                       id="nights"
                       type="number"
@@ -564,6 +633,27 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                       onChange={(e) => setFormData({ ...formData, nights: parseInt(e.target.value) || 1 })}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="manualPrice">Manual Price (€)</Label>
+                  <Input
+                    id="manualPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.manualPrice || ""}
+                    onChange={(e) => setFormData({ ...formData, manualPrice: parseFloat(e.target.value) || 0 })}
+                    placeholder="Enter total price"
+                  />
+                </div>
+
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>City Tax:</strong> €4 per person per night (max 5 nights)
+                    <br />
+                    <strong>Total City Tax:</strong> €{Math.min(formData.nights, 5) * formData.guests * 4}
+                  </p>
                 </div>
               </>
             )}
