@@ -345,25 +345,22 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           
           // Single row span
           if (startRow === endRow) {
-            // Calculate positioning based on check-in/check-out split
+            // Calculate positioning: booking spans from 50% of check-in cell to 50% of check-out cell
+            const cellWidth = 100/7; // Each cell is 1/7 of total width
+            
             let leftPos, widthPercent;
             
             if (span.isCheckIn && span.isCheckOut) {
-              // Same day check-in/check-out: takes 50% of the single cell
-              leftPos = `${(startCol * (100/7)) + ((100/7) * 0.25)}%`; // Start from 25% (center 50%)
-              widthPercent = `${(100/7) * 0.5}%`; // 50% of one cell
-            } else if (span.isCheckIn) {
-              // Check-in: starts from 50% of check-in cell and spans to end
-              leftPos = `${(startCol * (100/7)) + ((100/7) * 0.5)}%`; // Start from 50% of first cell
-              widthPercent = `${((endCol - startCol + 1) * (100/7)) - ((100/7) * 0.5)}%`; // From 50% to end
-            } else if (span.isCheckOut) {
-              // Check-out: starts from beginning and takes 50% of last cell
-              leftPos = `${(startCol * (100/7)) + 0.1}%`;
-              widthPercent = `${((endCol - startCol + 1) * (100/7)) - ((100/7) * 0.5)}%`; // To 50% of last cell
+              // Same day: center 50% of single cell
+              leftPos = `${(startCol * cellWidth) + (cellWidth * 0.25)}%`;
+              widthPercent = `${cellWidth * 0.5}%`;
             } else {
-              // Middle days: full width
-              leftPos = `${(startCol * (100/7)) + 0.1}%`;
-              widthPercent = `${((endCol - startCol + 1) * (100/7)) - 0.2}%`;
+              // Multi-day: from 50% of check-in cell to 50% of check-out cell
+              const startAtHalf = startCol * cellWidth + (cellWidth * 0.5); // 50% of check-in cell
+              const endAtHalf = endCol * cellWidth + (cellWidth * 0.5); // 50% of check-out cell
+              
+              leftPos = `${startAtHalf}%`;
+              widthPercent = `${endAtHalf - startAtHalf}%`;
             }
             
             return (
@@ -393,27 +390,28 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           
           // Multi-row spans
           const rows = [];
+          const cellWidth = 100/7;
+          
           for (let row = startRow; row <= endRow; row++) {
             const isFirstRow = row === startRow;
             const isLastRow = row === endRow;
             const rowStartCol = isFirstRow ? startCol : 0;
             const rowEndCol = isLastRow ? endCol : 6;
             
-            // Calculate positioning for multi-row spans with 50% split
             let leftPos, widthPercent;
             
             if (isFirstRow && span.isCheckIn) {
-              // First row with check-in: start from 50% of check-in cell
-              leftPos = `${(rowStartCol * (100/7)) + ((100/7) * 0.5)}%`;
-              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - ((100/7) * 0.5)}%`;
+              // First row: start from 50% of check-in cell, go to end of row
+              leftPos = `${(rowStartCol * cellWidth) + (cellWidth * 0.5)}%`;
+              widthPercent = `${(rowEndCol - rowStartCol + 1) * cellWidth - (cellWidth * 0.5)}%`;
             } else if (isLastRow && span.isCheckOut) {
-              // Last row with check-out: end at 50% of check-out cell
-              leftPos = `${(rowStartCol * (100/7)) + 0.1}%`;
-              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - ((100/7) * 0.5)}%`;
+              // Last row: start from beginning, end at 50% of check-out cell
+              leftPos = `${rowStartCol * cellWidth}%`;
+              widthPercent = `${(rowEndCol - rowStartCol) * cellWidth + (cellWidth * 0.5)}%`;
             } else {
               // Middle rows: full width
-              leftPos = `${(rowStartCol * (100/7)) + 0.1}%`;
-              widthPercent = `${((rowEndCol - rowStartCol + 1) * (100/7)) - 0.2}%`;
+              leftPos = `${rowStartCol * cellWidth}%`;
+              widthPercent = `${(rowEndCol - rowStartCol + 1) * cellWidth}%`;
             }
             
             rows.push(
