@@ -46,7 +46,7 @@ import {
   Home
 } from "lucide-react";
 
-import AdvancedCalendar from "@/components/AdvancedCalendar";
+import SmoobuCalendar from "@/components/SmoobuCalendar";
 
 
 interface Analytics {
@@ -997,7 +997,7 @@ export default function AdminDashboard() {
                 <CardDescription>Professional calendar view with month/list modes, color-coded booking sources, and interactive booking management</CardDescription>
               </CardHeader>
               <CardContent>
-                <AdvancedCalendar />
+                <SmoobuCalendar />
               </CardContent>
             </Card>
           </TabsContent>
