@@ -1,0 +1,66 @@
+import React from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
+
+interface Booking {
+  id: number;
+  guestName: string;
+  checkIn: Date;
+  checkOut: Date;
+  source: 'Airbnb' | 'Booking' | 'Direct';
+}
+
+interface CalendarProps {
+  bookings: Booking[];
+  month?: Date;
+}
+
+const BookingCalendar: React.FC<CalendarProps> = ({ bookings, month = new Date() }) => {
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(month),
+    end: endOfMonth(month),
+  });
+
+  const getBookingsForDay = (day: Date) => {
+    return bookings.filter((booking) =>
+      isWithinInterval(day, { start: booking.checkIn, end: booking.checkOut }),
+    );
+  };
+
+  const sourceColors = {
+    Airbnb: 'bg-red-200 text-red-800',
+    Booking: 'bg-blue-200 text-blue-800',
+    Direct: 'bg-green-200 text-green-800',
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto my-8 p-4 bg-white shadow-lg rounded-lg">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        Bookings for {format(month, 'MMMM yyyy')}
+      </h2>
+      <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
+        {daysInMonth.map((day) => {
+          const dayBookings = getBookingsForDay(day);
+          return (
+            <div key={day.toISOString()} className="relative h-24 border-r border-b border-gray-200">
+              <span className="text-xs absolute top-1 left-1 text-gray-500">
+                {format(day, 'd')}
+              </span>
+              {dayBookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  className={`text-xs rounded-full px-2 py-0.5 absolute bottom-1 left-1 right-1 truncate ${
+                    sourceColors[booking.source]
+                  }`}
+                >
+                  {booking.source[0]}. {booking.guestName}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default BookingCalendar;

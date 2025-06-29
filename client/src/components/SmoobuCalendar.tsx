@@ -117,20 +117,18 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     end: endOfMonth(currentMonth),
   });
 
-  const getBookingForDay = (day: Date) => {
-    return smoobuBookings.find((booking) =>
+  const getBookingsForDay = (day: Date) => {
+    return smoobuBookings.filter((booking) =>
       isWithinInterval(day, { start: booking.checkIn, end: booking.checkOut }),
     );
   };
 
-  const getSourceColor = (source?: string) => {
-    switch (source) {
-      case "airbnb": return "bg-red-500";
-      case "booking": return "bg-blue-500";
-      case "direct": return "bg-green-500";
-      case "blocked": return "bg-gray-500";
-      default: return "bg-purple-500";
-    }
+  const sourceColors = {
+    airbnb: 'bg-red-200 text-red-800',
+    booking: 'bg-blue-200 text-blue-800',
+    direct: 'bg-green-200 text-green-800',
+    blocked: 'bg-gray-200 text-gray-800',
+    manual: 'bg-purple-200 text-purple-800',
   };
 
   const goToPreviousMonth = () => {
@@ -148,8 +146,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const handleDateClick = (date: Date) => {
     if (!isSameMonth(date, currentMonth)) return;
     
-    const existingBooking = getBookingForDay(date);
-    if (existingBooking) {
+    const existingBookings = getBookingsForDay(date);
+    if (existingBookings.length > 0) {
       toast({
         title: "Date Unavailable",
         description: "This date is already booked",
@@ -258,10 +256,10 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
+      {/* Calendar grid - Smoobu style */}
+      <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
         {daysInMonth.map((day) => {
-          const booking = getBookingForDay(day);
+          const dayBookings = getBookingsForDay(day);
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
@@ -269,21 +267,31 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <div
               key={day.toISOString()}
               className={`
-                border rounded-lg p-2 h-24 relative cursor-pointer transition-all duration-200
-                ${booking ? getSourceColor(booking.bookingSource) + ' text-white' : 'bg-green-100 hover:bg-green-200'}
-                ${isCurrentDay ? 'ring-2 ring-blue-500' : ''}
+                relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200
+                ${dayBookings.length > 0 ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
+                ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
                 ${!isCurrentMonthDay ? 'opacity-50' : ''}
               `}
               onClick={() => handleDateClick(day)}
             >
-              <span className={`font-bold text-sm absolute top-1 right-2 ${booking ? 'text-white' : 'text-gray-700'}`}>
+              <span className="text-xs absolute top-1 left-1 text-gray-500 font-medium">
                 {format(day, 'd')}
               </span>
-              {booking && (
-                <div className="text-xs mt-4 font-medium overflow-hidden">
-                  <div className="truncate">{booking.guestName}</div>
+              {dayBookings.map((booking, index) => (
+                <div
+                  key={booking.id}
+                  className={`text-xs rounded-full px-2 py-0.5 absolute truncate ${
+                    sourceColors[booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+                  }`}
+                  style={{
+                    bottom: `${4 + index * 16}px`,
+                    left: '4px',
+                    right: '4px'
+                  }}
+                >
+                  {booking.bookingSource?.charAt(0).toUpperCase() || 'M'}. {booking.guestName}
                 </div>
-              )}
+              ))}
             </div>
           );
         })}
