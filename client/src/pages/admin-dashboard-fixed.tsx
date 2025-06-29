@@ -190,6 +190,11 @@ export default function AdminDashboard() {
   const [showStatusAlert, setShowStatusAlert] = useState(false);
   const [statusActionBooking, setStatusActionBooking] = useState<Booking | null>(null);
   
+  // Check-out status alert system state
+  const [pendingCheckOutBookings, setPendingCheckOutBookings] = useState<Booking[]>([]);
+  const [showCheckOutAlert, setShowCheckOutAlert] = useState(false);
+  const [checkOutActionBooking, setCheckOutActionBooking] = useState<Booking | null>(null);
+  
   // Postponement functionality state
   const [showPostponeDialog, setShowPostponeDialog] = useState(false);
   const [postponeBooking, setPostponeBooking] = useState<Booking | null>(null);
@@ -296,6 +301,39 @@ export default function AdminDashboard() {
     }
   }, [bookings, statusActionBooking]);
 
+  // Check-out status alert monitoring effect
+  useEffect(() => {
+    if (!bookings) return;
+    
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Find bookings that need check-out status decision (check-out day has arrived and guests are checked-in)
+    const needingCheckOutDecision = bookings.filter(booking => {
+      const checkOutDate = new Date(booking.checkOutDate);
+      
+      // Set times to compare dates only (not times)
+      checkOutDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      console.log(`🔍 Checking check-out for booking ${booking.id}: checkOut=${booking.checkOutDate}, status=${booking.status}, today=${todayStr}`);
+      
+      return (
+        booking.status === 'checked_in' && // Guests are checked-in
+        today >= checkOutDate && // Check-out day has arrived
+        booking.bookingSource !== 'blocked' // Not a blocked booking
+      );
+    });
+    
+    setPendingCheckOutBookings(needingCheckOutDecision);
+    setShowCheckOutAlert(needingCheckOutDecision.length > 0 && !showStatusAlert); // Don't show if status alert is active
+    
+    // Auto-open check-out alert if there are pending check-outs and no other alerts active
+    if (needingCheckOutDecision.length > 0 && !checkOutActionBooking && !showStatusAlert) {
+      setCheckOutActionBooking(needingCheckOutDecision[0]);
+    }
+  }, [bookings, checkOutActionBooking, showStatusAlert]);
+
   // Mutation for updating booking status
   const updateBookingStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
@@ -315,6 +353,7 @@ export default function AdminDashboard() {
         description: "The booking status has been successfully updated.",
       });
       setStatusActionBooking(null);
+      setCheckOutActionBooking(null);
     },
     onError: (error: any) => {
       toast({
@@ -486,6 +525,21 @@ export default function AdminDashboard() {
     
     updateBookingStatusMutation.mutate({
       bookingId: statusActionBooking.id,
+      status
+    });
+  };
+
+  // Function to handle check-out status decision
+  const handleCheckOutDecision = (status: 'checked_out') => {
+    if (!checkOutActionBooking) return;
+    
+    toast({
+      title: "Updating Status...",
+      description: "Marking guests as checked-out",
+    });
+    
+    updateBookingStatusMutation.mutate({
+      bookingId: checkOutActionBooking.id,
       status
     });
   };
@@ -1597,6 +1651,71 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-center py-2">
                     <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full mr-2"></div>
                     <span className="text-sm text-gray-600">Updating status...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Check-out Status Alert Dialog */}
+      <Dialog open={showCheckOutAlert && !!checkOutActionBooking} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-green-600">
+              <LogOut className="w-5 h-5" />
+              <span>Check-out Status Required</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {checkOutActionBooking && (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="font-semibold text-green-800 mb-2">Check-out Day</h3>
+                <p className="text-sm text-green-700 mb-3">
+                  The check-out day has arrived for this checked-in booking. Please confirm if guests have checked out.
+                </p>
+                
+                <div className="space-y-2 text-sm">
+                  <div><strong>Guest:</strong> {checkOutActionBooking.guestFirstName} {checkOutActionBooking.guestLastName}</div>
+                  <div><strong>Check-in:</strong> {new Date(checkOutActionBooking.checkInDate).toLocaleDateString()}</div>
+                  <div><strong>Check-out:</strong> {new Date(checkOutActionBooking.checkOutDate).toLocaleDateString()}</div>
+                  <div><strong>Confirmation:</strong> {checkOutActionBooking.confirmationCode}</div>
+                  <div><strong>Current Status:</strong> <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Checked In</span></div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Have the guests checked out?
+                </p>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    onClick={() => handleCheckOutDecision('checked_out')}
+                    disabled={updateBookingStatusMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Yes, Guests Checked Out
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setCheckOutActionBooking(null)}
+                    disabled={updateBookingStatusMutation.isPending}
+                    variant="outline"
+                    className="border-gray-300"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Not Yet, Check Later
+                  </Button>
+                </div>
+
+                {updateBookingStatusMutation.isPending && (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">Updating check-out status...</span>
                   </div>
                 )}
               </div>
