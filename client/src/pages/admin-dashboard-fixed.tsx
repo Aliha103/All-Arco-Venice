@@ -1442,6 +1442,20 @@ export default function AdminDashboard() {
                     
                     <DropdownMenuItem
                       onClick={() => {
+                        setStatusActionBooking(selectedBooking);
+                        setShowStatusAlert(true);
+                        setShowBookingDetails(false);
+                      }}
+                      className="text-blue-600 focus:text-blue-600"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage Status
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem
+                      onClick={() => {
                         if (window.confirm(`Are you sure you want to delete booking #${selectedBooking?.id}? This action cannot be undone.`)) {
                           toast({
                             title: "Booking Deleted",
@@ -1532,7 +1546,10 @@ export default function AdminDashboard() {
                   })()}
 
                   {/* Undo No-show button for no-show bookings */}
-                  {statusActionBooking.status === 'no_show' && (
+                  {(() => {
+                    console.log('🔍 Status check:', statusActionBooking.status, 'for booking', statusActionBooking.id);
+                    return (statusActionBooking.status === 'no_show' || statusActionBooking.status === 'no-show');
+                  })() && (
                     <Button
                       onClick={() => undoNoShowMutation.mutate(statusActionBooking.id)}
                       disabled={undoNoShowMutation.isPending}
