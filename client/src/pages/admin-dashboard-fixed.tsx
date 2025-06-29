@@ -138,13 +138,7 @@ interface HeroImage {
   position: string;
 }
 
-interface Message {
-  id: number;
-  content: string;
-  isFromAdmin: boolean;
-  isRead: boolean;
-  createdAt: string;
-}
+
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -242,12 +236,7 @@ export default function AdminDashboard() {
     refetchInterval: 100, // 100ms refresh for real-time image updates
   });
 
-  const { data: messages } = useQuery<Message[]>({
-    queryKey: ["/api/messages"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-    refetchInterval: 100, // 100ms refresh for real-time messages updates
-  });
+
 
   const { data: users } = useQuery<UserDetails[]>({
     queryKey: ["/api/users"],
@@ -514,13 +503,7 @@ export default function AdminDashboard() {
                 <span className="hidden md:inline">Calendar</span>
                 <span className="md:hidden">Cal</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="messages" 
-                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-              >
-                <span className="hidden md:inline">Messages</span>
-                <span className="md:hidden">Msg</span>
-              </TabsTrigger>
+
               <TabsTrigger 
                 value="reviews" 
                 className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
