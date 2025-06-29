@@ -345,22 +345,22 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           
           // Single row span
           if (startRow === endRow) {
-            // Calculate positioning: booking spans from 50% of check-in cell to 50% of check-out cell
+            // Cell layout: 45% check-out | 10% free space | 45% check-in
             const cellWidth = 100/7; // Each cell is 1/7 of total width
             
             let leftPos, widthPercent;
             
             if (span.isCheckIn && span.isCheckOut) {
-              // Same day: center 50% of single cell
-              leftPos = `${(startCol * cellWidth) + (cellWidth * 0.25)}%`;
-              widthPercent = `${cellWidth * 0.5}%`;
+              // Same day: use middle 10% + some padding
+              leftPos = `${(startCol * cellWidth) + (cellWidth * 0.4)}%`;
+              widthPercent = `${cellWidth * 0.2}%`;
             } else {
-              // Multi-day: from 50% of check-in cell to 50% of check-out cell
-              const startAtHalf = startCol * cellWidth + (cellWidth * 0.5); // 50% of check-in cell
-              const endAtHalf = endCol * cellWidth + (cellWidth * 0.5); // 50% of check-out cell
+              // Multi-day: from check-in area (55% of start cell) to check-out area (45% of end cell)
+              const startAtCheckIn = startCol * cellWidth + (cellWidth * 0.55); // Start of check-in area (55% into start cell)
+              const endAtCheckOut = endCol * cellWidth + (cellWidth * 0.45); // End of check-out area (45% into end cell)
               
-              leftPos = `${startAtHalf}%`;
-              widthPercent = `${endAtHalf - startAtHalf}%`;
+              leftPos = `${startAtCheckIn}%`;
+              widthPercent = `${endAtCheckOut - startAtCheckIn}%`;
             }
             
             return (
@@ -401,13 +401,13 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             let leftPos, widthPercent;
             
             if (isFirstRow && span.isCheckIn) {
-              // First row: start from 50% of check-in cell, go to end of row
-              leftPos = `${(rowStartCol * cellWidth) + (cellWidth * 0.5)}%`;
-              widthPercent = `${(rowEndCol - rowStartCol + 1) * cellWidth - (cellWidth * 0.5)}%`;
+              // First row: start from check-in area (55% into cell), go to end of row
+              leftPos = `${(rowStartCol * cellWidth) + (cellWidth * 0.55)}%`;
+              widthPercent = `${(rowEndCol - rowStartCol + 1) * cellWidth - (cellWidth * 0.55)}%`;
             } else if (isLastRow && span.isCheckOut) {
-              // Last row: start from beginning, end at 50% of check-out cell
+              // Last row: start from beginning, end at check-out area (45% into cell)
               leftPos = `${rowStartCol * cellWidth}%`;
-              widthPercent = `${(rowEndCol - rowStartCol) * cellWidth + (cellWidth * 0.5)}%`;
+              widthPercent = `${(rowEndCol - rowStartCol) * cellWidth + (cellWidth * 0.45)}%`;
             } else {
               // Middle rows: full width
               leftPos = `${rowStartCol * cellWidth}%`;
