@@ -95,6 +95,13 @@
   }
 }
 
+@layer utilities {
+  /* Custom height for mobile calendar cells */
+  .h-15 {
+    height: 3.75rem; /* 60px */
+  }
+}
+
 @layer components {
   /* Enhanced Micro-interactions for smooth mobile responsiveness */
   .touch-interaction {

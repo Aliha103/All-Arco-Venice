@@ -406,7 +406,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="w-1/2 sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
+    <div className="w-4/5 sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
       {/* Mobile-optimized Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-8 p-2 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-2 sm:space-y-0">
         
@@ -487,7 +487,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               <div
                 key={day.toISOString()}
                 className={`
-                  relative h-12 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
+                  relative h-15 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
                   transition-all duration-200 active:scale-95 touch-manipulation
                   ${
                     hasBlockedBooking
@@ -535,7 +535,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const endCol = endIndex % 7;
 
           // Responsive row height calculation matching CSS classes
-          const cellHeight = window.innerWidth < 640 ? 48 : window.innerWidth < 1024 ? 96 : 112; // h-12 sm:h-24 lg:h-28
+          const cellHeight = window.innerWidth < 640 ? 60 : window.innerWidth < 1024 ? 96 : 112; // h-15 sm:h-24 lg:h-28
           const verticalOffset = 0; // All bookings at same level
 
           // Single row span
