@@ -186,48 +186,56 @@ export default function AdminDashboard() {
     queryKey: ["/api/analytics"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time analytics updates
   });
 
   const { data: bookings } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time booking updates
   });
 
   const { data: reviews } = useQuery<Review[]>({
     queryKey: ["/api/reviews"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time reviews updates
   });
 
   const { data: pricingSettings } = useQuery<PricingSettings>({
     queryKey: ["/api/pricing-settings"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time pricing updates
   });
 
   const { data: promotions } = useQuery<Promotion[]>({
     queryKey: ["/api/promotions"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time promotions updates
   });
 
   const { data: heroImages } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time image updates
   });
 
   const { data: messages } = useQuery<Message[]>({
     queryKey: ["/api/messages"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time messages updates
   });
 
   const { data: users } = useQuery<UserDetails[]>({
     queryKey: ["/api/users"],
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time user data updates
   });
 
   // Authentication check with early return
