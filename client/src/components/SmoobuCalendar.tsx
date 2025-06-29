@@ -137,6 +137,17 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     });
   };
 
+  const getContinuousBooking = (day: Date) => {
+    // Find any booking that spans this day (but is not check-in or check-out)
+    return smoobuBookings.find(booking => {
+      const checkInDate = new Date(booking.checkInDate);
+      const checkOutDate = new Date(booking.checkOutDate);
+      return isWithinInterval(day, { start: checkInDate, end: checkOutDate }) && 
+             !isSameDay(checkInDate, day) && 
+             !isSameDay(checkOutDate, day);
+    });
+  };
+
   const sourceColors = {
     airbnb: 'bg-red-200 text-red-800',
     booking: 'bg-blue-200 text-blue-800',
@@ -270,11 +281,12 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid - Smoobu style with split-day layout */}
+      {/* Calendar grid - Smoobu style with continuous booking spans */}
       <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
         {daysInMonth.map((day) => {
           const checkInBooking = bookingForCheckIn(day);
           const checkOutBooking = bookingForCheckOut(day);
+          const continuousBooking = getContinuousBooking(day);
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
@@ -283,7 +295,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               key={day.toISOString()}
               className={`
                 relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 flex text-xs
-                ${(checkInBooking || checkOutBooking) ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
+                ${(checkInBooking || checkOutBooking || continuousBooking) ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
                 ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
                 ${!isCurrentMonthDay ? 'opacity-50' : ''}
               `}
@@ -293,30 +305,48 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {format(day, 'd')}
               </span>
               
-              {/* Check-out area (45%) */}
-              <div className="w-[45%] h-full flex items-center justify-center">
-                {checkOutBooking && (
-                  <div className={`rounded-full px-1 py-0.5 truncate ${
-                    sourceColors[checkOutBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+              {/* Continuous booking bar (full width) */}
+              {continuousBooking && (
+                <div className="absolute inset-x-0 top-8 bottom-8 flex items-center justify-center">
+                  <div className={`w-full h-6 flex items-center justify-center rounded ${
+                    sourceColors[continuousBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
                   }`}>
-                    {checkOutBooking.guestName}
+                    <span className="text-xs font-medium truncate px-2">
+                      {continuousBooking.guestFirstName} {continuousBooking.guestLastName}
+                    </span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
               
-              {/* Middle space (10%) */}
-              <div className="w-[10%] h-full" />
-              
-              {/* Check-in area (45%) */}
-              <div className="w-[45%] h-full flex items-center justify-center">
-                {checkInBooking && (
-                  <div className={`rounded-full px-1 py-0.5 truncate ${
-                    sourceColors[checkInBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
-                  }`}>
-                    {checkInBooking.guestName}
+              {/* Split layout for check-in/check-out days */}
+              {!continuousBooking && (
+                <>
+                  {/* Check-out area (45%) */}
+                  <div className="w-[45%] h-full flex items-center justify-center">
+                    {checkOutBooking && (
+                      <div className={`rounded-full px-1 py-0.5 truncate ${
+                        sourceColors[checkOutBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+                      }`}>
+                        {checkOutBooking.guestFirstName} {checkOutBooking.guestLastName}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                  
+                  {/* Middle space (10%) */}
+                  <div className="w-[10%] h-full" />
+                  
+                  {/* Check-in area (45%) */}
+                  <div className="w-[45%] h-full flex items-center justify-center">
+                    {checkInBooking && (
+                      <div className={`rounded-full px-1 py-0.5 truncate ${
+                        sourceColors[checkInBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+                      }`}>
+                        {checkInBooking.guestFirstName} {checkInBooking.guestLastName}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
