@@ -406,71 +406,78 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto my-6 p-8 bg-gradient-to-br from-white to-gray-50 shadow-2xl rounded-2xl border border-gray-200">
-      {/* Advanced Header with enhanced navigation and status */}
-      <div className="flex items-center justify-between mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="flex items-center gap-6">
+    <div className="w-full mx-auto p-2 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
+      {/* Mobile-optimized Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-3 sm:space-y-0">
+        
+        {/* Mobile: Month/Year and Navigation in one row */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6">
           <Button
             variant="outline"
             size="sm"
             onClick={goToPreviousMonth}
-            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
+            className="h-8 w-8 sm:h-9 sm:w-auto p-1 sm:p-2 rounded-full sm:rounded-md bg-blue-50 hover:bg-blue-100 border-blue-200 transition-all duration-200"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-1">
-              {format(currentMonth, "MMMM yyyy")}
+          
+          <div className="text-center flex-1 sm:flex-none">
+            <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800">
+              {format(currentMonth, "MMM yyyy")}
             </h2>
-            <p className="text-sm text-gray-500">
-              {bookings.length} bookings •{" "}
-              {bookings.filter((b) => b.bookingSource === "blocked").length}{" "}
-              blocked dates
+            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+              {bookings.length} bookings • {bookings.filter((b) => b.bookingSource === "blocked").length} blocked
             </p>
           </div>
+          
           <Button
             variant="outline"
             size="sm"
             onClick={goToNextMonth}
-            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
+            className="h-8 w-8 sm:h-9 sm:w-auto p-1 sm:p-2 rounded-full sm:rounded-md bg-blue-50 hover:bg-blue-100 border-blue-200 transition-all duration-200"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Mobile: Today button and status on second row */}
+        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center sm:justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={goToToday}
-            className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all duration-200 hover:scale-105"
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all duration-200"
           >
-            <CalendarIcon className="w-4 h-4 mr-2" />
+            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Today
           </Button>
 
-          {/* Real-time status indicator */}
-          <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-            <span className="font-medium">Live 100ms</span>
+          {/* Compact status indicator for mobile */}
+          <div className="flex items-center gap-1 sm:gap-2 text-xs text-green-600 bg-green-50 px-2 sm:px-3 py-1 sm:py-2 rounded-full sm:rounded-lg border border-green-200">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-ping"></div>
+            <span className="font-medium">Live</span>
           </div>
         </div>
       </div>
 
-      {/* Days of week header */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div
-            key={day}
-            className="p-2 text-center font-medium text-gray-600 text-sm"
-          >
-            {day}
-          </div>
-        ))}
+      {/* Mobile-optimized days of week header */}
+      <div className="grid grid-cols-7 gap-0 mb-1 sm:mb-2 bg-gray-50 rounded-t-lg border-b border-gray-200">
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => {
+          const fullDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          return (
+            <div
+              key={day + index}
+              className="p-1 sm:p-2 text-center font-semibold text-gray-700 text-xs sm:text-sm border-r border-gray-200 last:border-r-0"
+            >
+              <span className="sm:hidden">{day}</span>
+              <span className="hidden sm:inline">{fullDays[index]}</span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Advanced Calendar grid with enhanced visual design */}
-      <div className="grid grid-cols-7 gap-0 border-t-2 border-l-2 border-gray-300 relative shadow-inner rounded-lg overflow-hidden bg-white">
+      {/* Mobile-optimized Calendar grid */}
+      <div className="grid grid-cols-7 gap-0 relative rounded-lg overflow-hidden bg-white border border-gray-200">
         {daysInMonth.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
@@ -499,50 +506,61 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <div
               key={day.toISOString()}
               className={`
-                relative h-28 border-r-2 border-b-2 border-gray-200 text-xs
+                relative h-16 sm:h-24 lg:h-28 border-r border-b border-gray-200 text-xs
+                transition-all duration-200 active:scale-95 touch-manipulation
                 ${
                   hasBlockedBooking
                     ? "blocked-stripe cursor-not-allowed"
                     : isPastDate
-                      ? "bg-gradient-to-br from-gray-100 to-gray-200 cursor-not-allowed opacity-60"
+                      ? "bg-gray-100 cursor-not-allowed opacity-60"
                       : checkInBooking
-                        ? "bg-gradient-to-br from-red-50 to-red-100 cursor-not-allowed shadow-inner"
+                        ? "bg-red-50 cursor-not-allowed"
                         : hasCheckOutOnly
-                          ? "bg-gradient-to-br from-yellow-50 to-yellow-100 cursor-pointer"
-                          : "bg-gradient-to-br from-white to-gray-50 cursor-pointer"
+                          ? "bg-yellow-50 cursor-pointer active:bg-yellow-100"
+                          : "bg-white cursor-pointer active:bg-blue-50"
                 }
-                ${isCurrentDay ? "ring-3 ring-blue-500 ring-inset shadow-md bg-gradient-to-br from-blue-50 to-blue-100" : ""}
+                ${isCurrentDay ? "ring-2 ring-blue-500 ring-inset bg-blue-50" : ""}
                 ${!isCurrentMonthDay ? "opacity-40" : ""}
               `}
               onClick={() => (isClickable ? handleDateClick(day) : null)}
             >
-              {/* Enhanced date number with gradient background */}
+              {/* Mobile-optimized date number */}
               <div
-                className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-20 ${
+                className={`absolute top-1 left-1 sm:top-2 sm:left-2 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm z-20 ${
                   isCurrentDay
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-300 ring-offset-1"
+                    ? "bg-blue-500 text-white shadow-md"
                     : isPastDate
-                      ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-600"
+                      ? "bg-gray-300 text-gray-600"
                       : checkInBooking
-                        ? "bg-gradient-to-br from-red-400 to-red-500 text-white shadow-md"
+                        ? "bg-red-400 text-white"
                         : hasCheckOutOnly
-                          ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-md"
+                          ? "bg-yellow-400 text-white"
                           : hasBlockedBooking
-                            ? "bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md"
-                            : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700"
+                            ? "bg-gray-400 text-white"
+                            : "bg-gray-100 text-gray-700"
                 }`}
               >
                 {format(day, "d")}
               </div>
 
-              {/* Enhanced visual indicators with animations */}
+              {/* Mobile-friendly status indicators */}
               {isPastDate && (
-                <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                <div className="absolute top-1 right-1 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   ×
                 </div>
               )}
 
-              
+              {hasCheckOutOnly && (
+                <div className="absolute bottom-1 right-1 text-xs font-bold text-yellow-600 bg-yellow-100 px-1 rounded">
+                  CO
+                </div>
+              )}
+
+              {checkInBooking && (
+                <div className="absolute bottom-1 right-1 text-xs font-bold text-red-600 bg-red-100 px-1 rounded">
+                  CI
+                </div>
+              )}
             </div>
           );
         })}
@@ -593,8 +611,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 }}
               >
                 <div
-                  className={`w-full h-full flex items-center justify-center text-xs font-bold px-2 shadow-lg border-2 border-white
-                  transition-all duration-300 hover:scale-105 hover:shadow-xl hover:z-30 mt-[40px] mb-[40px] pt-[15px] pb-[15px]
+                  className={`w-full h-full flex items-center justify-center text-xs sm:text-sm font-bold px-1 sm:px-2 shadow-md border border-white
+                  transition-all duration-200 active:scale-95 touch-manipulation
                   ${
                     span.isCheckIn && span.isCheckOut
                       ? "rounded-full"
@@ -673,26 +691,28 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         })}
       </div>
 
-      {/* Booking Form Modal */}
+      {/* Mobile-optimized Booking Form Modal */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Create Booking for{" "}
-              {selectedDate && format(selectedDate, "MMMM d, yyyy")}
+        <DialogContent className="max-w-md mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-lg sm:text-xl">
+              Create Booking
             </DialogTitle>
+            <p className="text-sm text-gray-600">
+              {selectedDate && format(selectedDate, "MMMM d, yyyy")}
+            </p>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <Label htmlFor="mode">Booking Type</Label>
+              <Label htmlFor="mode" className="text-sm sm:text-base font-medium">Booking Type</Label>
               <Select
                 value={formData.mode}
                 onValueChange={(value: "blocked" | "manual") =>
                   setFormData({ ...formData, mode: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -705,7 +725,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             {formData.mode === "blocked" && (
               <>
                 <div>
-                  <Label htmlFor="blockReason">Blocking Reason</Label>
+                  <Label htmlFor="blockReason" className="text-sm sm:text-base font-medium">Blocking Reason</Label>
                   <Input
                     id="blockReason"
                     value={formData.blockReason || ""}
@@ -713,11 +733,12 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                       setFormData({ ...formData, blockReason: e.target.value })
                     }
                     placeholder="Maintenance, personal use, etc."
+                    className="h-12 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="nights">Number of Nights</Label>
+                  <Label htmlFor="nights" className="text-sm sm:text-base font-medium">Number of Nights</Label>
                   <Input
                     id="nights"
                     type="number"
@@ -730,6 +751,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                         nights: parseInt(e.target.value) || 1,
                       })
                     }
+                    className="h-12 sm:h-10 text-base sm:text-sm"
                   />
                 </div>
               </>
@@ -845,7 +867,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               </>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 onClick={handleCreateBooking}
                 disabled={
@@ -856,7 +878,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                       !formData.guestEmail)) ||
                   (formData.mode === "blocked" && !formData.blockReason)
                 }
-                className="flex-1"
+                className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all duration-200"
               >
                 {createBookingMutation.isPending
                   ? "Creating..."
@@ -865,6 +887,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               <Button
                 variant="outline"
                 onClick={() => setShowBookingForm(false)}
+                className="h-12 sm:h-10 text-base sm:text-sm border-2 active:scale-95 transition-all duration-200"
               >
                 Cancel
               </Button>
