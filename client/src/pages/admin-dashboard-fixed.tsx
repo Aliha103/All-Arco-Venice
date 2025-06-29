@@ -234,20 +234,21 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => window.location.href = '/'}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
               >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Home</span>
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Back to Home</span>
+                <span className="sm:hidden">Back</span>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500">Welcome back, {user?.firstName}</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-xs sm:text-sm text-gray-500">Welcome back, {user?.firstName}</p>
               </div>
             </div>
           </div>
@@ -255,16 +256,37 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          </TabsList>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-8">
+          {/* Mobile-optimized tab navigation */}
+          <div className="w-full overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-6 min-w-[600px] sm:min-w-0 h-auto">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Stats</span>
+              </TabsTrigger>
+              <TabsTrigger value="bookings" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Bookings</span>
+                <span className="sm:hidden">Book</span>
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Calendar</span>
+                <span className="sm:hidden">Cal</span>
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Messages</span>
+                <span className="sm:hidden">Msg</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Reviews</span>
+                <span className="sm:hidden">Rev</span>
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="hidden sm:inline">Pricing</span>
+                <span className="sm:hidden">Price</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -309,16 +331,20 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Calendar Tab */}
-          <TabsContent value="calendar" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Calendar</CardTitle>
-                <CardDescription>
+          <TabsContent value="calendar" className="space-y-4 sm:space-y-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+                <CardTitle className="text-lg sm:text-xl">Booking Calendar</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   Manage bookings and availability
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <SmoobuCalendar />
+              <CardContent className="px-2 sm:px-6 pb-4 sm:pb-6">
+                <div className="w-full overflow-x-auto">
+                  <div className="min-w-[800px] sm:min-w-0">
+                    <SmoobuCalendar />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
