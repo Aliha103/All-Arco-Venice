@@ -12,7 +12,8 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { loggedOutSessions } from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -71,17 +72,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
+    console.log('🔴 SERVER: Auth user endpoint hit');
+    console.log('🔴 SERVER: Session ID:', req.sessionID);
+    console.log('🔴 SERVER: Request user:', req.user);
+    console.log('🔴 SERVER: Is authenticated:', req.isAuthenticated());
+    
+    // Check if this session has been logged out
     try {
-      // For development, return admin user directly
-      const adminUser = await storage.getUser("admin_1750978928105_9las2ojuk");
-      if (adminUser) {
-        res.json(adminUser);
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
+      const loggedOutSession = await db.select().from(loggedOutSessions).where(eq(loggedOutSessions.sessionId, req.sessionID));
+      if (loggedOutSession.length > 0) {
+        console.log('🔴 SERVER: Session found in logged out sessions, returning 401');
+        return res.status(401).json({ message: "Session invalidated" });
       }
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.log('🔴 SERVER: Error checking logged out sessions:', error);
+    }
+    
+    // Check for logout flag in session
+    if ((req.session as any)?.loggedOut) {
+      console.log('🔴 SERVER: Logout flag detected, returning 401');
+      return res.status(401).json({ message: "Logged out" });
+    }
+    
+    if (!req.user || !req.isAuthenticated()) {
+      console.log('🔴 SERVER: No user or not authenticated, returning 401');
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      // For local auth users, get fresh data from database
+      if ((req.user as any).authProvider === 'local') {
+        console.log('🔴 SERVER: Local auth user, fetching from database');
+        const user = await storage.getUser((req.user as any).id);
+        if (!user) {
+          console.log('🔴 SERVER: User not found in database, clearing session');
+          req.logout(() => {
+            req.session.destroy(() => {
+              res.status(401).json({ message: "User not found" });
+            });
+          });
+          return;
+        }
+        console.log('🔴 SERVER: Returning local user data');
+        return res.json(user);
+      }
+
+      // For Replit auth users, return user from session
+      console.log('🔴 SERVER: Returning Replit auth user data');
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("🔴 SERVER: Error in /api/auth/user:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -413,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Logout redirect endpoint - complete session termination with database cleanup
+  // Logout redirect endpoint - complete session termination with logout tracking
   app.get('/api/auth/logout-redirect', async (req, res) => {
     console.log('🔴 SERVER: Logout redirect endpoint hit');
     console.log('🔴 SERVER: Current user before logout:', req.user);
@@ -422,21 +465,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const sessionId = req.sessionID;
     
+    // Record this session as logged out
     try {
-      // Delete session from database directly first
+      await db.insert(loggedOutSessions).values({
+        sessionId: sessionId,
+        userId: req.user ? (req.user as any).id : 'unknown',
+      });
+      console.log('🔴 SERVER: Session recorded in logout tracking table');
+    } catch (error) {
+      console.log('🔴 SERVER: Error recording logout:', error);
+    }
+    
+    // Set logout flag in session before destroying
+    (req.session as any).loggedOut = true;
+    console.log('🔴 SERVER: Logout flag set in session');
+    
+    // Clear the user immediately
+    req.user = undefined;
+    console.log('🔴 SERVER: User cleared from request');
+    
+    try {
+      // Delete session from database directly
       if (sessionId) {
-        const { db } = await import('./db');
-        const { sql } = await import('drizzle-orm');
         await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
         console.log('🔴 SERVER: Session deleted from database');
       }
     } catch (dbError) {
       console.log('🔴 SERVER: Database cleanup error (continuing):', dbError);
     }
-    
-    // Clear the user immediately
-    req.user = undefined;
-    console.log('🔴 SERVER: User cleared from request');
     
     // Logout using passport
     req.logout((err) => {
@@ -459,8 +515,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { path: '/', httpOnly: true },
           { path: '/', httpOnly: true, secure: true },
           { path: '/', httpOnly: true, secure: false },
-          { path: '/', sameSite: 'lax' },
-          { path: '/', sameSite: 'strict' },
+          { path: '/', sameSite: 'lax' as const },
+          { path: '/', sameSite: 'strict' as const },
         ];
         
         cookieOptions.forEach(options => {

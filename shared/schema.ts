@@ -27,6 +27,14 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// Logout tracking table for session invalidation
+export const loggedOutSessions = pgTable("logged_out_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  loggedOutAt: timestamp("logged_out_at").defaultNow(),
+});
+
 // User storage table (supports both Replit Auth and local signup)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
