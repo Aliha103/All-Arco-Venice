@@ -232,32 +232,60 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     setShowBookingForm(true);
   };
 
-  const handleCreateBooking = () => {
+  const handleCreateBooking = async () => {
     if (!selectedDate) return;
+
+    console.log("🔵 CLIENT: Creating booking with mode:", formData.mode);
+    console.log("🔵 CLIENT: Form data:", formData);
 
     const checkOutDate = new Date(selectedDate);
     checkOutDate.setDate(checkOutDate.getDate() + formData.nights);
 
     if (formData.mode === "blocked") {
-      // Block dates - administrative blocks with no payment or guest info
+      // Block dates - administrative blocks (NOT bookings)
       const blockData = {
-        guestFirstName: "BLOCKED",
-        guestLastName: formData.blockReason || "Period",
-        guestEmail: "system@blocked.com",
-        guestCountry: "Administrative",
-        guestPhone: "000-000-0000",
         checkInDate: format(selectedDate, 'yyyy-MM-dd'),
         checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
-        guests: 0, // No guests for blocked dates
-        paymentMethod: "property",
-        hasPet: false,
-        createdBy: "admin",
-        bookedForSelf: false,
-        bookingSource: "blocked",
         blockReason: formData.blockReason || "Administrative block",
-        totalPrice: 0, // No earnings for blocked dates
       };
-      createBookingMutation.mutate(blockData);
+      
+      console.log("🔵 CLIENT: Creating block dates with data:", blockData);
+      
+      // Use separate block dates endpoint
+      try {
+        const response = await fetch('/api/block-dates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(blockData)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("🔴 CLIENT: Block dates API error:", error);
+          throw new Error(error.message || 'Failed to block dates');
+        }
+        
+        toast({ title: "Success", description: "Dates blocked successfully" });
+        setShowBookingForm(false);
+        setFormData({
+          mode: "manual",
+          guestFirstName: "",
+          guestLastName: "",
+          guestEmail: "",
+          guests: 1,
+          nights: 1,
+          manualPrice: 0,
+          blockReason: "",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings/calendar'] });
+      } catch (error) {
+        console.error("🔴 CLIENT: Block dates error:", error);
+        toast({ 
+          title: "Error", 
+          description: error instanceof Error ? error.message : "Failed to block dates",
+          variant: "destructive" 
+        });
+      }
     } else {
       // Manual booking with complete guest details and pricing
       const cityTax = Math.min(formData.nights, 5) * formData.guests * 4; // €4 per person per night, max 5 nights
@@ -279,19 +307,22 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         bookingSource: "direct",
         totalPrice: totalPrice,
       };
+      
+      console.log("🔵 CLIENT: Creating manual booking with data:", bookingData);
       createBookingMutation.mutate(bookingData);
     }
+  };
 
-    setShowBookingForm(false);
+  const resetForm = () => {
     setFormData({
       mode: "manual",
       guestFirstName: "",
       guestLastName: "",
       guestEmail: "",
-      guests: 2,
+      guests: 1,
       nights: 1,
       manualPrice: 0,
-      blockReason: ""
+      blockReason: "",
     });
   };
 

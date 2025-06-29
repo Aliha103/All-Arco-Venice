@@ -565,9 +565,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Separate endpoint for blocking dates (administrative blocks)
+  app.post("/api/block-dates", isAuthenticated, async (req, res) => {
+    try {
+      console.log("🟡 SERVER: Block dates request received:", req.body);
+      
+      const { checkInDate, checkOutDate, blockReason } = req.body;
+      
+      if (!checkInDate || !checkOutDate || !blockReason) {
+        console.log("🔴 SERVER: Missing required block data");
+        return res.status(400).json({ message: "Missing required block information" });
+      }
+      
+      // Create administrative block entry
+      const blockData = {
+        guestFirstName: "BLOCKED",
+        guestLastName: blockReason,
+        guestEmail: "system@blocked.com",
+        guestCountry: "Administrative",
+        guestPhone: "000-000-0000",
+        checkInDate,
+        checkOutDate,
+        guests: 0,
+        paymentMethod: "property" as const,
+        hasPet: false,
+        createdBy: "admin" as const,
+        bookedForSelf: false,
+        bookingSource: "blocked" as const,
+        blockReason,
+        totalPrice: 0,
+      };
+      
+      console.log("🟡 SERVER: Creating block with data:", blockData);
+      const block = await storage.createBooking(blockData);
+      console.log("🟢 SERVER: Block created successfully:", block.id);
+      
+      res.json({ success: true, blockId: block.id });
+    } catch (error: any) {
+      console.error("🔴 SERVER: Failed to create block:", error);
+      res.status(400).json({ message: error.message || "Failed to block dates" });
+    }
+  });
+
   // Create comprehensive booking endpoint
   app.post('/api/bookings', async (req, res) => {
     try {
+      console.log("🟡 SERVER: Booking creation request received:", req.body);
+      
       const {
         guestFirstName,
         guestLastName,
@@ -587,6 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate required fields
       if (!guestFirstName || !guestLastName || !guestEmail || !guestCountry || !guestPhone || !checkInDate || !checkOutDate || !guests) {
+        console.log("🔴 SERVER: Missing required booking information");
         return res.status(400).json({ message: "Missing required booking information" });
       }
 
