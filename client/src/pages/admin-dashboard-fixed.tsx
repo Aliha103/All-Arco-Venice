@@ -256,6 +256,13 @@ export default function AdminDashboard() {
     refetchInterval: 100, // 100ms refresh for real-time user data updates
   });
 
+  const { data: activityTimeline } = useQuery<any[]>({
+    queryKey: ["/api/activity-timeline"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time timeline updates
+  });
+
   // Booking status alert monitoring effect
   useEffect(() => {
     if (!bookings) return;

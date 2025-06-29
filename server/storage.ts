@@ -171,6 +171,10 @@ export interface IStorage {
   updateHeroImage(id: number, data: Partial<HeroImage>): Promise<void>;
   deleteHeroImage(id: number): Promise<void>;
   updateHeroImageOrder(id: number, displayOrder: number): Promise<void>;
+
+  // Activity timeline operations
+  getActivityTimeline(): Promise<ActivityTimeline[]>;
+  addActivityTimeline(timeline: InsertActivityTimeline): Promise<ActivityTimeline>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1055,6 +1059,23 @@ export class DatabaseStorage implements IStorage {
       .update(heroImages)
       .set({ displayOrder, updatedAt: new Date() })
       .where(eq(heroImages.id, id));
+  }
+
+  // Activity timeline operations
+  async getActivityTimeline(): Promise<ActivityTimeline[]> {
+    const timeline = await db
+      .select()
+      .from(activityTimeline)
+      .orderBy(desc(activityTimeline.createdAt));
+    return timeline;
+  }
+
+  async addActivityTimeline(timelineData: InsertActivityTimeline): Promise<ActivityTimeline> {
+    const [timeline] = await db
+      .insert(activityTimeline)
+      .values(timelineData)
+      .returning();
+    return timeline;
   }
 }
 
