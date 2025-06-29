@@ -270,7 +270,7 @@ export default function AdminDashboard() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     
-    // Find bookings that need status decision (check-in day passed and not checked in)
+    // Find bookings that need status decision (check-in day has completely passed)
     const needingStatusDecision = bookings.filter(booking => {
       const checkInDate = new Date(booking.checkInDate);
       
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
       
       return (
         booking.status === 'confirmed' && // Still confirmed (not checked-in)
-        today >= checkInDate && // Check-in day has arrived or passed
+        today > checkInDate && // Check-in day has completely passed (not on the same day)
         booking.bookingSource !== 'blocked' // Not a blocked booking
       );
     });
@@ -1492,7 +1492,7 @@ export default function AdminDashboard() {
               <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <h3 className="font-semibold text-orange-800 mb-2">Action Required</h3>
                 <p className="text-sm text-orange-700 mb-3">
-                  The check-in day has passed for this booking. Please decide the booking status before proceeding with other admin tasks.
+                  The check-in day has completely passed for this booking. Please decide the booking status before proceeding with other admin tasks.
                 </p>
                 
                 <div className="space-y-2 text-sm">
