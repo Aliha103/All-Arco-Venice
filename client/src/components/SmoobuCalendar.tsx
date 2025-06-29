@@ -144,6 +144,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     smoobuBookings.forEach(booking => {
       const checkInDate = new Date(booking.checkInDate);
       const checkOutDate = new Date(booking.checkOutDate);
+      
+      // For booking spans, we include check-in and check-out days to show the visual span
+      // But exclude the check-out day from occupied days (handled elsewhere)
       const bookingDays = eachDayOfInterval({ start: checkInDate, end: checkOutDate });
       
       // Only include days that are in the current month view
@@ -155,10 +158,10 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         spans.push({
           booking,
           days: monthDays,
-          startDay: monthDays[0],
-          endDay: monthDays[monthDays.length - 1],
-          isCheckIn: isSameDay(checkInDate, monthDays[0]),
-          isCheckOut: isSameDay(checkOutDate, monthDays[monthDays.length - 1])
+          startDay: checkInDate, // Always use actual check-in date
+          endDay: checkOutDate, // Always use actual check-out date
+          isCheckIn: true, // This booking has a check-in
+          isCheckOut: true // This booking has a check-out
         });
       }
     });
@@ -191,16 +194,38 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const handleDateClick = (date: Date) => {
     if (!isSameMonth(date, currentMonth)) return;
     
-    const existingBookings = getBookingsForDay(date);
-    if (existingBookings.length > 0) {
+    // Rule 1: Admin cannot select previous days, only current day and future
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const clickedDate = new Date(date);
+    clickedDate.setHours(0, 0, 0, 0);
+    
+    if (clickedDate < today) {
       toast({
         title: "Date Unavailable",
-        description: "This date is already booked",
+        description: "Cannot select previous dates. Only current and future dates are available.",
         variant: "destructive",
       });
       return;
     }
-
+    
+    // Rule 2: Check if admin can book on this date
+    const checkInBooking = bookingForCheckIn(date);
+    const checkOutBooking = bookingForCheckOut(date);
+    
+    // If there's a check-in booking, date is fully occupied
+    if (checkInBooking) {
+      toast({
+        title: "Date Unavailable", 
+        description: "This date already has a check-in booking",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // If there's only a check-out booking, admin can still book check-in (Rule 2)
+    // This is allowed, so we proceed
+    
     setSelectedDate(date);
     setShowBookingForm(true);
   };
@@ -306,24 +331,54 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         {daysInMonth.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
-          const hasBooking = bookingSpans.some(span => 
-            span.days.some((spanDay: Date) => isSameDay(spanDay, day))
-          );
+          
+          // Check date availability based on new rules
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dayDate = new Date(day);
+          dayDate.setHours(0, 0, 0, 0);
+          
+          const isPastDate = dayDate < today;
+          const checkInBooking = bookingForCheckIn(day);
+          const checkOutBooking = bookingForCheckOut(day);
+          
+          // Date is clickable if: not past date AND no check-in booking
+          const isClickable = !isPastDate && !checkInBooking;
+          const hasCheckOutOnly = checkOutBooking && !checkInBooking;
 
           return (
             <div
               key={day.toISOString()}
               className={`
-                relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 text-xs
-                ${hasBooking ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
+                relative h-24 border-r border-b border-gray-200 transition-all duration-200 text-xs
+                ${isPastDate ? 'bg-gray-100 cursor-not-allowed opacity-60' : 
+                  checkInBooking ? 'bg-red-50 cursor-not-allowed' :
+                  hasCheckOutOnly ? 'bg-yellow-50 cursor-pointer hover:bg-green-50' :
+                  'bg-white cursor-pointer hover:bg-green-50'}
                 ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
                 ${!isCurrentMonthDay ? 'opacity-50' : ''}
               `}
-              onClick={() => handleDateClick(day)}
+              onClick={() => isClickable ? handleDateClick(day) : null}
             >
-              <span className="absolute top-1 left-1 text-gray-500 font-medium z-20">
+              <span className={`absolute top-1 left-1 font-medium z-20 ${
+                isPastDate ? 'text-gray-400' : 
+                checkInBooking ? 'text-red-600' :
+                hasCheckOutOnly ? 'text-yellow-600' :
+                'text-gray-500'
+              }`}>
                 {format(day, 'd')}
               </span>
+              
+              {/* Visual indicators */}
+              {isPastDate && (
+                <span className="absolute top-1 right-1 text-gray-400 text-xs">×</span>
+              )}
+              {hasCheckOutOnly && (
+                <span className="absolute bottom-1 right-1 text-yellow-600 text-xs font-bold">CO</span>
+              )}
+              {checkInBooking && (
+                <span className="absolute bottom-1 right-1 text-red-600 text-xs font-bold">CI</span>
+              )}
             </div>
           );
         })}
@@ -350,18 +405,12 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             
             let leftPos, widthPercent;
             
-            if (span.isCheckIn && span.isCheckOut) {
-              // Same day: use middle 10% + some padding
-              leftPos = `${(startCol * cellWidth) + (cellWidth * 0.4)}%`;
-              widthPercent = `${cellWidth * 0.2}%`;
-            } else {
-              // Multi-day: from check-in area (55% of start cell) to check-out area (45% of end cell)
-              const startAtCheckIn = startCol * cellWidth + (cellWidth * 0.55); // Start of check-in area (55% into start cell)
-              const endAtCheckOut = endCol * cellWidth + (cellWidth * 0.45); // End of check-out area (45% into end cell)
-              
-              leftPos = `${startAtCheckIn}%`;
-              widthPercent = `${endAtCheckOut - startAtCheckIn}%`;
-            }
+            // All bookings: span from check-in area (55% of start cell) to check-out area (45% of end cell)
+            const startAtCheckIn = startCol * cellWidth + (cellWidth * 0.55); // Start of check-in area (55% into start cell)
+            const endAtCheckOut = endCol * cellWidth + (cellWidth * 0.45); // End of check-out area (45% into end cell)
+            
+            leftPos = `${startAtCheckIn}%`;
+            widthPercent = `${endAtCheckOut - startAtCheckIn}%`;
             
             return (
               <div
