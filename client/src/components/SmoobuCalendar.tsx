@@ -406,7 +406,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="w-[50%] sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
+    <div className="w-screen sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200">
       {/* Mobile-optimized Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-8 p-2 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-2 sm:space-y-0">
         
