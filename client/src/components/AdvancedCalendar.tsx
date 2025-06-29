@@ -357,11 +357,11 @@ export default function AdvancedCalendar() {
                     {format(day, "d")}
                   </div>
                   
-                  {/* Enhanced continuous booking display with seamless pipes */}
-                  <div className="relative flex-1 mt-2 overflow-visible">
-                    {dayBookings.slice(0, 3).map((booking, bookingIndex) => {
+                  {/* Professional continuous booking display matching screenshot */}
+                  <div className="relative flex-1 mt-1 overflow-visible">
+                    {dayBookings.slice(0, 4).map((booking, bookingIndex) => {
                       const position = booking.position;
-                      const topOffset = bookingIndex * 32; // Increased spacing
+                      const topOffset = 6 + (bookingIndex * 26); // Professional spacing
                       
                       return (
                         <div 
@@ -369,97 +369,63 @@ export default function AdvancedCalendar() {
                           className="absolute left-0 right-0 overflow-visible"
                           style={{ 
                             top: `${topOffset}px`,
-                            height: '28px',
+                            height: '20px',
                             zIndex: 20 + bookingIndex
                           }}
                         >
-                          {/* Seamless continuous booking with 45%-10%-45% layout */}
+                          {/* Continuous booking bar with professional styling */}
                           <div className="relative w-full h-full overflow-visible">
-                            {position === 'middle' ? (
-                              /* Full width bar for middle spans */
-                              <div 
-                                className={`h-full w-full ${getSourceColor(booking.source)} flex items-center justify-center`}
-                                title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
-                              >
-                                <span className="text-white text-sm font-bold truncate px-2">
-                                  {booking.guestName.split(' ')[0]}
-                                </span>
-                              </div>
-                            ) : (
-                              /* Split layout for check-in/check-out */
-                              <div className="h-full w-full flex items-center">
-                                {/* Check-out area (left side - 45% width) */}
-                                <div 
-                                  className={`
-                                    h-full flex items-center justify-center text-xs font-medium relative
-                                    ${position === 'checkout' ? 
-                                      `${getSourceColor(booking.source)} rounded-l-lg` : 
-                                      'bg-transparent'
-                                    }
-                                  `}
-                                  style={{ width: '45%' }}
-                                  title={position === 'checkout' ? `Check-out: ${booking.guestName}` : ''}
-                                >
-                                  {position === 'checkout' && (
-                                    <>
-                                      <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                                        <span className="text-white text-xs font-bold">↑</span>
-                                      </div>
-                                      <span className="text-white text-sm font-bold truncate px-2">
-                                        {booking.guestName.split(' ')[1] || booking.guestName.split(' ')[0]}
-                                      </span>
-                                    </>
-                                  )}
+                            <div 
+                              className={`
+                                h-full w-full ${getSourceColor(booking.source)} 
+                                flex items-center justify-center text-xs font-medium relative
+                                rounded-md shadow-sm border border-opacity-20 border-white
+                              `}
+                              title={`${booking.guestName} - ${getSourceLabel(booking.source)} (${format(new Date(booking.checkInDate), 'MMM d')} - ${format(new Date(booking.checkOutDate), 'MMM d')})`}
+                            >
+                              {/* Professional guest name display */}
+                              <span className="text-white text-xs font-semibold truncate px-2 drop-shadow-sm">
+                                {booking.guestName}
+                              </span>
+                              
+                              {/* Check-in indicator circle */}
+                              {position === 'checkin' && (
+                                <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
+                                  <div className="w-3 h-3 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-sm">
+                                    <span className="text-xs font-bold text-gray-700">→</span>
+                                  </div>
                                 </div>
-                                
-                                {/* 10% space between */}
-                                <div style={{ width: '10%' }} />
-                                
-                                {/* Check-in area (right side - 45% width) */}
-                                <div 
-                                  className={`
-                                    h-full flex items-center justify-center text-xs font-medium relative
-                                    ${position === 'checkin' ? 
-                                      `${getSourceColor(booking.source)} rounded-r-lg` : 
-                                      'bg-transparent'
-                                    }
-                                  `}
-                                  style={{ width: '45%' }}
-                                  title={position === 'checkin' ? `Check-in: ${booking.guestName}` : ''}
-                                >
-                                  {position === 'checkin' && (
-                                    <>
-                                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                                        <span className="text-white text-xs font-bold">↓</span>
-                                      </div>
-                                      <span className="text-white text-sm font-bold truncate px-2">
-                                        {booking.guestName.split(' ')[0]}
-                                      </span>
-                                    </>
-                                  )}
+                              )}
+                              
+                              {/* Check-out indicator circle */}
+                              {position === 'checkout' && (
+                                <div className="absolute left-1 top-1/2 transform -translate-y-1/2">
+                                  <div className="w-3 h-3 bg-white bg-opacity-90 rounded-full flex items-center justify-center shadow-sm">
+                                    <span className="text-xs font-bold text-gray-700">←</span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                             
-                            {/* Seamless connecting bridges that eliminate gaps */}
-                            {(position === 'checkin' || position === 'middle' || position === 'checkout') && !isLastColumnOfRow && (
+                            {/* Seamless horizontal connections */}
+                            {(position === 'checkin' || position === 'middle') && !isLastColumnOfRow && (
                               <div 
                                 className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
                                 style={{ 
-                                  right: '0px',
-                                  width: '1px',
-                                  zIndex: 40
+                                  right: '-1px',
+                                  width: '2px',
+                                  zIndex: 35
                                 }}
                               />
                             )}
                             
-                            {(position === 'checkout' || position === 'middle' || position === 'checkin') && !isFirstColumnOfRow && (
+                            {(position === 'checkout' || position === 'middle') && !isFirstColumnOfRow && (
                               <div 
                                 className={`absolute top-0 h-full ${getSourceColor(booking.source)}`}
                                 style={{ 
-                                  left: '0px',
-                                  width: '1px',
-                                  zIndex: 40
+                                  left: '-1px',
+                                  width: '2px',
+                                  zIndex: 35
                                 }}
                               />
                             )}
@@ -469,17 +435,17 @@ export default function AdvancedCalendar() {
                     })}
                     
                     {/* Overflow indicator */}
-                    {dayBookings.length > 3 && (
+                    {dayBookings.length > 4 && (
                       <div 
-                        className="absolute text-xs text-gray-600 font-medium bg-gray-100 px-2 py-1 rounded border"
+                        className="absolute text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded border border-gray-200"
                         style={{ 
-                          top: `${3 * 32}px`,
+                          top: `${6 + (4 * 26)}px`,
                           left: '50%',
                           transform: 'translateX(-50%)',
                           zIndex: 30
                         }}
                       >
-                        +{dayBookings.length - 3} more
+                        +{dayBookings.length - 4} more
                       </div>
                     )}
                   </div>
