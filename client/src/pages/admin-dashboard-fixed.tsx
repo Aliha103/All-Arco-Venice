@@ -1451,19 +1451,6 @@ export default function AdminDashboard() {
                     
                     <DropdownMenuItem
                       onClick={() => {
-                        // Check if booking is in the future (security restriction)
-                        const today = new Date().toISOString().split('T')[0];
-                        const checkInDate = selectedBooking?.checkInDate;
-                        
-                        if (checkInDate && checkInDate > today) {
-                          toast({
-                            title: "Action Not Allowed",
-                            description: "Status changes can only be made for current or past bookings, not future bookings.",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
-                        
                         // Use setTimeout to ensure proper dialog transition
                         setTimeout(() => {
                           setStatusActionBooking(selectedBooking);
