@@ -509,7 +509,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]> {
-    let conditions = [not(eq(bookings.bookingSource, "blocked"))]; // Exclude blocked dates from listings
+    let conditions = [];
+    
+    // Always exclude blocked dates from booking listings (they're administrative blocks)
+    conditions.push(or(
+      eq(bookings.bookingSource, "direct"),
+      eq(bookings.bookingSource, "airbnb"), 
+      eq(bookings.bookingSource, "booking.com"),
+      eq(bookings.bookingSource, "custom")
+    ));
     
     if (filters?.status) {
       conditions.push(eq(bookings.status, filters.status as any));
@@ -776,7 +784,12 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(bookings.status, "confirmed"),
-          ne(bookings.bookingSource, "blocked") // Exclude blocked dates from analytics
+          or(
+            eq(bookings.bookingSource, "direct"),
+            eq(bookings.bookingSource, "airbnb"),
+            eq(bookings.bookingSource, "booking.com"),
+            eq(bookings.bookingSource, "custom")
+          ) // Only count actual reservations, not blocked dates
         )
       );
 

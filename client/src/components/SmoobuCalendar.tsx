@@ -239,22 +239,22 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     checkOutDate.setDate(checkOutDate.getDate() + formData.nights);
 
     if (formData.mode === "blocked") {
-      // Block dates with gray color and blocking reason
+      // Block dates - administrative blocks with no payment or guest info
       const blockData = {
-        guestFirstName: "Blocked",
-        guestLastName: formData.blockReason || "Date",
-        guestEmail: "blocked@system.com",
-        guestCountry: "System",
+        guestFirstName: "BLOCKED",
+        guestLastName: formData.blockReason || "Period",
+        guestEmail: "system@blocked.com",
+        guestCountry: "Administrative",
         guestPhone: "000-000-0000",
         checkInDate: format(selectedDate, 'yyyy-MM-dd'),
         checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
-        guests: 1,
+        guests: 0, // No guests for blocked dates
         paymentMethod: "property",
         hasPet: false,
         createdBy: "admin",
         bookedForSelf: false,
         bookingSource: "blocked",
-        blockReason: formData.blockReason || "Admin blocked",
+        blockReason: formData.blockReason || "Administrative block",
         totalPrice: 0, // No earnings for blocked dates
       };
       createBookingMutation.mutate(blockData);
