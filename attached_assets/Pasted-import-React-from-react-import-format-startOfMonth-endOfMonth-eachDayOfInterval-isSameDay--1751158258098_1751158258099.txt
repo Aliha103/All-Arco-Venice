@@ -1,0 +1,65 @@
+import React from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+
+interface Booking {
+  id: number;
+  guestName: string;
+  checkIn: Date;
+  checkOut: Date;
+  source: 'Airbnb' | 'Booking' | 'Direct';
+}
+
+interface CalendarProps {
+  bookings: Booking[];
+  month?: Date;
+}
+
+const BookingCalendar: React.FC<CalendarProps> = ({ bookings, month = new Date() }) => {
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(month),
+    end: endOfMonth(month),
+  });
+
+  const sourceColors = {
+    Airbnb: 'bg-red-200 text-red-800',
+    Booking: 'bg-blue-200 text-blue-800',
+    Direct: 'bg-green-200 text-green-800',
+  };
+
+  const bookingForCheckIn = (day: Date) => bookings.find(booking => isSameDay(booking.checkIn, day));
+  const bookingForCheckOut = (day: Date) => bookings.find(booking => isSameDay(booking.checkOut, day));
+
+  return (
+    <div className="max-w-7xl mx-auto my-8 p-4 bg-white shadow-lg rounded-lg">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        Bookings for {format(month, 'MMMM yyyy')}
+      </h2>
+      <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
+        {daysInMonth.map((day) => (
+          <div key={day.toISOString()} className="relative h-24 border-r border-b border-gray-200 flex text-xs">
+            <span className="absolute top-1 left-1 text-gray-500">
+              {format(day, 'd')}
+            </span>
+            <div className="w-[45%] h-full flex items-center justify-center">
+              {bookingForCheckOut(day) && (
+                <div className={`rounded-full px-1 py-0.5 truncate ${sourceColors[bookingForCheckOut(day)!.source]}`}>
+                  {bookingForCheckOut(day)!.guestName}
+                </div>
+              )}
+            </div>
+            <div className="w-[10%] h-full" />
+            <div className="w-[45%] h-full flex items-center justify-center">
+              {bookingForCheckIn(day) && (
+                <div className={`rounded-full px-1 py-0.5 truncate ${sourceColors[bookingForCheckIn(day)!.source]}`}>
+                  {bookingForCheckIn(day)!.guestName}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default BookingCalendar;

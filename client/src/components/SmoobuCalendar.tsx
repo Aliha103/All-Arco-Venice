@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, parseISO, isToday, isWithinInterval } from 'date-fns';
+import { format, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, isSameDay, parseISO, isToday, isWithinInterval } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +121,20 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     return smoobuBookings.filter((booking) =>
       isWithinInterval(day, { start: booking.checkIn, end: booking.checkOut }),
     );
+  };
+
+  const bookingForCheckIn = (day: Date) => {
+    return smoobuBookings.find(booking => {
+      const checkInDate = new Date(booking.checkInDate);
+      return isSameDay(checkInDate, day);
+    });
+  };
+  
+  const bookingForCheckOut = (day: Date) => {
+    return smoobuBookings.find(booking => {
+      const checkOutDate = new Date(booking.checkOutDate);
+      return isSameDay(checkOutDate, day);
+    });
   };
 
   const sourceColors = {
@@ -256,10 +270,11 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid - Smoobu style */}
+      {/* Calendar grid - Smoobu style with split-day layout */}
       <div className="grid grid-cols-7 gap-1 border-t border-l border-gray-200">
         {daysInMonth.map((day) => {
-          const dayBookings = getBookingsForDay(day);
+          const checkInBooking = bookingForCheckIn(day);
+          const checkOutBooking = bookingForCheckOut(day);
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
@@ -267,31 +282,41 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <div
               key={day.toISOString()}
               className={`
-                relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200
-                ${dayBookings.length > 0 ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
+                relative h-24 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 flex text-xs
+                ${(checkInBooking || checkOutBooking) ? 'bg-gray-50' : 'bg-white hover:bg-green-50'}
                 ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
                 ${!isCurrentMonthDay ? 'opacity-50' : ''}
               `}
               onClick={() => handleDateClick(day)}
             >
-              <span className="text-xs absolute top-1 left-1 text-gray-500 font-medium">
+              <span className="absolute top-1 left-1 text-gray-500 font-medium">
                 {format(day, 'd')}
               </span>
-              {dayBookings.map((booking, index) => (
-                <div
-                  key={booking.id}
-                  className={`text-xs rounded-full px-2 py-0.5 absolute truncate ${
-                    sourceColors[booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
-                  }`}
-                  style={{
-                    bottom: `${4 + index * 16}px`,
-                    left: '4px',
-                    right: '4px'
-                  }}
-                >
-                  {booking.bookingSource?.charAt(0).toUpperCase() || 'M'}. {booking.guestName}
-                </div>
-              ))}
+              
+              {/* Check-out area (45%) */}
+              <div className="w-[45%] h-full flex items-center justify-center">
+                {checkOutBooking && (
+                  <div className={`rounded-full px-1 py-0.5 truncate ${
+                    sourceColors[checkOutBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+                  }`}>
+                    {checkOutBooking.guestName}
+                  </div>
+                )}
+              </div>
+              
+              {/* Middle space (10%) */}
+              <div className="w-[10%] h-full" />
+              
+              {/* Check-in area (45%) */}
+              <div className="w-[45%] h-full flex items-center justify-center">
+                {checkInBooking && (
+                  <div className={`rounded-full px-1 py-0.5 truncate ${
+                    sourceColors[checkInBooking.bookingSource as keyof typeof sourceColors] || sourceColors.manual
+                  }`}>
+                    {checkInBooking.guestName}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
