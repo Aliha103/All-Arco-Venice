@@ -613,7 +613,9 @@ export class DatabaseStorage implements IStorage {
         or(
           eq(bookings.status, "confirmed"),
           eq(bookings.status, "checked_in")
-        ),
+        )
+      );
+      conditions.push(
         or(
           eq(bookings.bookingSource, "direct"),
           eq(bookings.bookingSource, "airbnb"), 
