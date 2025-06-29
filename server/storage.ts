@@ -28,7 +28,7 @@ import {
   type HeroImage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, gte, lte, lt, gt, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -509,7 +509,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]> {
-    let conditions = [];
+    let conditions = [not(eq(bookings.bookingSource, "blocked"))]; // Exclude blocked dates from listings
     
     if (filters?.status) {
       conditions.push(eq(bookings.status, filters.status as any));
@@ -519,9 +519,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(bookings.userId, filters.userId));
     }
     
-    const query = conditions.length > 0 
-      ? db.select().from(bookings).where(and(...conditions))
-      : db.select().from(bookings);
+    const query = db.select().from(bookings).where(and(...conditions));
     
     return await query.orderBy(desc(bookings.createdAt));
   }
@@ -775,7 +773,12 @@ export class DatabaseStorage implements IStorage {
         totalRevenue: sql<number>`COALESCE(SUM(${bookings.totalPrice}), 0)::numeric`,
       })
       .from(bookings)
-      .where(eq(bookings.status, "confirmed"));
+      .where(
+        and(
+          eq(bookings.status, "confirmed"),
+          ne(bookings.bookingSource, "blocked") // Exclude blocked dates from analytics
+        )
+      );
 
     const [reviewStats] = await db
       .select({
