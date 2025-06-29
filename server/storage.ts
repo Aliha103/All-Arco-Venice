@@ -8,6 +8,7 @@ import {
   aboutContent,
   promotions,
   heroImages,
+  activityTimeline,
   type User,
   type UpsertUser,
   type InsertBooking,
@@ -26,6 +27,8 @@ import {
   type Promotion,
   type InsertHeroImage,
   type HeroImage,
+  type InsertActivityTimeline,
+  type ActivityTimeline,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not } from "drizzle-orm";

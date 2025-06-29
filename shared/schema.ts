@@ -229,6 +229,23 @@ export const heroImages = pgTable("hero_images", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Activity timeline for tracking all booking events
+export const activityTimeline = pgTable("activity_timeline", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").references(() => bookings.id),
+  actionType: varchar("action_type", { length: 50 }).notNull(), // 'created', 'modified', 'cancelled', 'checked_in', 'no_show', 'postponed'
+  description: text("description").notNull(),
+  guestName: varchar("guest_name", { length: 255 }).notNull(),
+  guestEmail: varchar("guest_email", { length: 255 }),
+  checkInDate: date("check_in_date"),
+  checkOutDate: date("check_out_date"),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }),
+  bookingSource: varchar("booking_source", { length: 50 }),
+  performedBy: varchar("performed_by", { length: 255 }), // Who performed the action (admin, guest, system)
+  metadata: jsonb("metadata"), // Additional data about the change
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
@@ -337,6 +354,11 @@ export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
   updatedAt: true,
 });
 
+export const insertActivityTimelineSchema = createInsertSchema(activityTimeline).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const upsertUserSchema = createInsertSchema(users);
 
 // Local signup schema
@@ -391,3 +413,5 @@ export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type Promotion = typeof promotions.$inferSelect;
 export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
 export type HeroImage = typeof heroImages.$inferSelect;
+export type InsertActivityTimeline = z.infer<typeof insertActivityTimelineSchema>;
+export type ActivityTimeline = typeof activityTimeline.$inferSelect;

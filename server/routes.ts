@@ -1551,6 +1551,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Activity timeline routes
+  app.get('/api/activity-timeline', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const timeline = await storage.getActivityTimeline();
+      res.json(timeline);
+    } catch (error) {
+      console.error("Error fetching activity timeline:", error);
+      res.status(500).json({ message: "Failed to fetch activity timeline" });
+    }
+  });
+
+  app.post('/api/activity-timeline', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const timelineData = req.body;
+      const timeline = await storage.addActivityTimeline(timelineData);
+      res.json(timeline);
+    } catch (error: any) {
+      console.error("Error adding activity timeline:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   // Users management routes
   app.get('/api/users', isAuthenticated, async (req: any, res) => {
     try {
