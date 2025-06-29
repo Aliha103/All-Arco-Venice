@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, isSameDay, parseISO, isToday, isWithinInterval } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -64,13 +64,26 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch bookings for calendar display (includes blocks)
+  // Fetch bookings for calendar display (includes blocks) with 100ms refresh
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings/calendar', format(currentMonth, 'yyyy'), format(currentMonth, 'MM')],
     queryFn: () => 
       fetch(`/api/bookings/calendar/${format(currentMonth, 'yyyy')}/${format(currentMonth, 'MM')}`)
         .then(res => res.json()),
+    refetchInterval: 100, // 100ms real-time refresh
+    refetchIntervalInBackground: true,
   });
+
+  // Real-time calendar updates effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/bookings/calendar', format(currentMonth, 'yyyy'), format(currentMonth, 'MM')] 
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [currentMonth, queryClient]);
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -345,25 +358,76 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto my-6 p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+    <div className="max-w-7xl mx-auto my-6 p-8 bg-gradient-to-br from-white to-gray-50 shadow-2xl rounded-2xl border border-gray-200">
+      {/* Advanced Header with enhanced navigation and status */}
+      <div className="flex items-center justify-between mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToPreviousMonth}
+            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
+          >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-2xl font-semibold text-gray-800">
-            {format(currentMonth, 'MMMM yyyy')}
-          </h2>
-          <Button variant="outline" size="sm" onClick={goToNextMonth}>
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-800 mb-1">
+              {format(currentMonth, 'MMMM yyyy')}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {bookings.length} bookings • {bookings.filter(b => b.bookingSource === 'blocked').length} blocked dates
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToNextMonth}
+            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={goToToday}>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={goToToday}
+            className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all duration-200 hover:scale-105"
+          >
+            <CalendarIcon className="w-4 h-4 mr-2" />
             Today
           </Button>
+          
+          {/* Enhanced source color legend with animations */}
+          <div className="flex items-center gap-6 text-xs bg-gray-50 p-3 rounded-lg border">
+            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+              <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm animate-pulse"></div>
+              <span className="font-medium">Airbnb</span>
+            </div>
+            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+              <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm animate-pulse"></div>
+              <span className="font-medium">Booking.com</span>
+            </div>
+            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+              <div className="w-4 h-4 bg-green-500 rounded-full shadow-sm animate-pulse"></div>
+              <span className="font-medium">Direct</span>
+            </div>
+            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+              <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm animate-pulse"></div>
+              <span className="font-medium">Manual</span>
+            </div>
+            <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+              <div className="w-4 h-4 blocked-stripe-mini rounded-full shadow-sm"></div>
+              <span className="font-medium">Blocked</span>
+            </div>
+          </div>
+          
+          {/* Real-time status indicator */}
+          <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+            <span className="font-medium">Live 100ms</span>
+          </div>
         </div>
       </div>
 
@@ -400,8 +464,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         ))}
       </div>
 
-      {/* Calendar grid with continuous booking spans */}
-      <div className="grid grid-cols-7 gap-0 border-t border-l border-gray-200 relative">
+      {/* Advanced Calendar grid with enhanced visual design */}
+      <div className="grid grid-cols-7 gap-0 border-t-2 border-l-2 border-gray-300 relative shadow-inner rounded-lg overflow-hidden bg-white">
         {daysInMonth.map((day, dayIndex) => {
           const isCurrentDay = isToday(day);
           const isCurrentMonthDay = isSameMonth(day, currentMonth);
@@ -428,29 +492,54 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <div
               key={day.toISOString()}
               className={`
-                relative h-24 border-r border-b border-gray-200 transition-all duration-200 text-xs
-                ${hasBlockedBooking ? 'blocked-stripe cursor-not-allowed' :
-                  isPastDate ? 'bg-gray-100 cursor-not-allowed opacity-60' : 
-                  checkInBooking ? 'bg-red-50 cursor-not-allowed' :
-                  hasCheckOutOnly ? 'bg-yellow-50 cursor-pointer hover:bg-green-50' :
-                  'bg-white cursor-pointer hover:bg-green-50'}
-                ${isCurrentDay ? 'ring-2 ring-blue-400 ring-inset' : ''}
-                ${!isCurrentMonthDay ? 'opacity-50' : ''}
+                relative h-28 border-r-2 border-b-2 border-gray-200 transition-all duration-300 text-xs
+                transform hover:scale-[1.02] hover:z-20 hover:shadow-lg
+                ${hasBlockedBooking ? 'blocked-stripe cursor-not-allowed hover:scale-100' :
+                  isPastDate ? 'bg-gradient-to-br from-gray-100 to-gray-200 cursor-not-allowed opacity-60 hover:scale-100' : 
+                  checkInBooking ? 'bg-gradient-to-br from-red-50 to-red-100 cursor-not-allowed hover:scale-100 shadow-inner' :
+                  hasCheckOutOnly ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 cursor-pointer hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:shadow-md' :
+                  'bg-gradient-to-br from-white to-gray-50 cursor-pointer hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:shadow-md'}
+                ${isCurrentDay ? 'ring-3 ring-blue-500 ring-inset shadow-md bg-gradient-to-br from-blue-50 to-blue-100' : ''}
+                ${!isCurrentMonthDay ? 'opacity-40' : ''}
               `}
               onClick={() => isClickable ? handleDateClick(day) : null}
             >
-              <span className={`absolute top-1 left-1 font-medium z-20 ${
-                isPastDate ? 'text-gray-400' : 
-                checkInBooking ? 'text-red-600' :
-                hasCheckOutOnly ? 'text-yellow-600' :
-                'text-gray-500'
+              {/* Enhanced date number with gradient background */}
+              <div className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-20 transition-all duration-300 ${
+                isCurrentDay ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-300 ring-offset-1' :
+                isPastDate ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-600' : 
+                checkInBooking ? 'bg-gradient-to-br from-red-400 to-red-500 text-white shadow-md' :
+                hasCheckOutOnly ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-md' :
+                hasBlockedBooking ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md' :
+                'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 hover:from-green-400 hover:to-green-500 hover:text-white hover:shadow-md'
               }`}>
                 {format(day, 'd')}
-              </span>
+              </div>
               
-              {/* Visual indicators */}
+              {/* Enhanced visual indicators with animations */}
               {isPastDate && (
-                <span className="absolute top-1 right-1 text-gray-400 text-xs">×</span>
+                <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                  ×
+                </div>
+              )}
+              
+              {hasCheckOutOnly && (
+                <div className="absolute top-2 right-2 w-8 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  CO
+                </div>
+              )}
+              
+              {checkInBooking && (
+                <div className="absolute top-2 right-2 w-8 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  CI
+                </div>
+              )}
+              
+              {/* Add a subtle plus icon for clickable dates */}
+              {isClickable && !hasBlockedBooking && (
+                <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity duration-200">
+                  <Plus className="w-3 h-3" />
+                </div>
               )}
               
               
@@ -499,11 +588,12 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                   transform: 'translateY(-50%)'
                 }}
               >
-                <div className={`w-full h-full flex items-center justify-center text-xs font-medium px-2 ${
-                  span.isCheckIn && span.isCheckOut ? 'rounded-full' :
+                <div className={`w-full h-full flex items-center justify-center text-xs font-bold px-2 shadow-lg border-2 border-white
+                  transition-all duration-300 hover:scale-105 hover:shadow-xl hover:z-30
+                  ${span.isCheckIn && span.isCheckOut ? 'rounded-full' :
                   span.isCheckIn ? 'rounded-l-full' :
-                  span.isCheckOut ? 'rounded-r-full' : ''
-                } ${sourceColors[span.booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
+                  span.isCheckOut ? 'rounded-r-full' : ''}
+                  ${sourceColors[span.booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
                   <span className="truncate">
                     {span.booking.guestFirstName} {span.booking.guestLastName}
                   </span>
