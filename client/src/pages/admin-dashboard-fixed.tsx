@@ -266,12 +266,16 @@ export default function AdminDashboard() {
     // Find bookings that need status decision (check-in day passed and not checked in)
     const needingStatusDecision = bookings.filter(booking => {
       const checkInDate = new Date(booking.checkInDate);
-      const dayAfterCheckIn = new Date(checkInDate);
-      dayAfterCheckIn.setDate(dayAfterCheckIn.getDate() + 1);
+      
+      // Set times to compare dates only (not times)
+      checkInDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      console.log(`🔍 Checking booking ${booking.id}: checkIn=${booking.checkInDate}, status=${booking.status}, today=${todayStr}`);
       
       return (
         booking.status === 'confirmed' && // Still confirmed (not checked-in)
-        today >= dayAfterCheckIn && // Day after check-in has started
+        today >= checkInDate && // Check-in day has arrived or passed
         booking.bookingSource !== 'blocked' // Not a blocked booking
       );
     });
