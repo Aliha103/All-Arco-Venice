@@ -341,7 +341,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="px-2 sm:px-6 pb-4 sm:pb-6">
                 <div className="w-full overflow-x-auto">
-                  <div className="w-[45%] sm:w-full min-w-[320px] sm:min-w-0">
+                  <div className="w-[50%] sm:w-full min-w-[320px] sm:min-w-0">
                     <SmoobuCalendar />
                   </div>
                 </div>
