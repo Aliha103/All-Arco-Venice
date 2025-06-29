@@ -55,6 +55,25 @@ interface Analytics {
   averageRating: number;
 }
 
+interface UserDetails {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  dateOfBirth?: string;
+  country?: string;
+  mobileNumber?: string;
+  referralCode: string;
+  totalReferrals: number;
+  referredBy?: string;
+  referrerName?: string;
+  credits: number;
+  provider: string;
+  totalBookings: number;
+  totalSpent: number;
+  isRegistered: boolean;
+}
+
 interface Booking {
   id: number;
   guestFirstName: string;
@@ -130,6 +149,8 @@ export default function AdminDashboard() {
   
   // State management
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
   const [pricingForm, setPricingForm] = useState({
     basePrice: 0,
     cleaningFee: 0,
@@ -203,6 +224,12 @@ export default function AdminDashboard() {
     retry: false,
   });
 
+  const { data: users } = useQuery<UserDetails[]>({
+    queryKey: ["/api/users"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+  });
+
   // Authentication check with early return
   if (isLoading) {
     return (
@@ -260,7 +287,7 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-8">
           {/* Advanced responsive tab navigation */}
           <div className="w-full overflow-x-auto scrollbar-hide">
-            <TabsList className="inline-flex w-full min-w-fit sm:grid sm:grid-cols-6 lg:grid-cols-6 h-auto bg-muted/50 p-1 rounded-lg">
+            <TabsList className="inline-flex w-full min-w-fit sm:grid sm:grid-cols-7 lg:grid-cols-7 h-auto bg-muted/50 p-1 rounded-lg">
               {/* Mobile: Horizontal scroll layout, Tablet+: Grid layout */}
               <TabsTrigger 
                 value="overview" 
@@ -303,6 +330,13 @@ export default function AdminDashboard() {
               >
                 <span className="hidden md:inline">Pricing</span>
                 <span className="md:hidden">Price</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="users" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Users</span>
+                <span className="md:hidden">User</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -372,6 +406,109 @@ export default function AdminDashboard() {
                   <div className="w-full max-w-full overflow-hidden">
                     <SmoobuCalendar />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Users Tab - User Management with Popup Details */}
+          <TabsContent value="users" className="space-y-4 sm:space-y-6">
+            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                  <div>
+                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">User Management</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+                      View and manage registered users and their booking history
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="space-y-4">
+                  {users && users.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {users.map((user) => (
+                        <Card 
+                          key={user.id} 
+                          className="p-3 sm:p-4 hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUserDetails(true);
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-sm sm:text-base text-gray-900">
+                                  {user.firstName} {user.lastName}
+                                </h3>
+                                <p className="text-xs sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-[150px]">
+                                  {user.email}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge 
+                              variant={user.isRegistered ? "default" : "secondary"}
+                              className={`text-xs ${
+                                user.isRegistered 
+                                  ? "bg-green-100 text-green-800 border-green-200" 
+                                  : "bg-gray-100 text-gray-600 border-gray-200"
+                              }`}
+                            >
+                              {user.isRegistered ? "Registered" : "Guest"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
+                              <span className="text-gray-500">Bookings:</span>
+                              <span className="font-medium">{user.totalBookings}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
+                              <span className="text-gray-500">Total Spent:</span>
+                              <span className="font-medium">€{user.totalSpent}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
+                              <span className="text-gray-500">Referrals:</span>
+                              <span className="font-medium">{user.totalReferrals}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Users className="w-3 h-3" />
+                              <span>{user.provider}</span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs hover:bg-blue-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUser(user);
+                                setShowUserDetails(true);
+                              }}
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 sm:py-12">
+                      <Users className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No Users Found</h3>
+                      <p className="text-sm sm:text-base text-gray-500">
+                        No registered users or booking guests found in the system.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
