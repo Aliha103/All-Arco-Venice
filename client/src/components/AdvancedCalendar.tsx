@@ -381,7 +381,7 @@ export default function AdvancedCalendar() {
                                 flex items-center justify-center text-xs font-medium relative
                                 rounded-md shadow-sm border border-opacity-20 border-white
                               `}
-                              title={`${booking.guestName} - ${getSourceLabel(booking.source)} (${format(new Date(booking.checkInDate), 'MMM d')} - ${format(new Date(booking.checkOutDate), 'MMM d')})`}
+                              title={`${booking.guestName} - ${getSourceLabel(booking.source)}`}
                             >
                               {/* Professional guest name display */}
                               <span className="text-white text-xs font-semibold truncate px-2 drop-shadow-sm">
