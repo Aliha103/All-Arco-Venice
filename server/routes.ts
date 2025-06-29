@@ -1063,8 +1063,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin booking status update
-  app.put('/api/bookings/:id/status', isAuthenticated, async (req: any, res) => {
+  // Admin booking status update with enhanced functionality
+  app.patch('/api/bookings/:id/status', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -1076,15 +1076,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingId = parseInt(req.params.id);
       const { status } = req.body;
       
-      if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
+      if (!['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'no_show'].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
+      console.log(`🔵 SERVER: Updating booking ${bookingId} status to ${status}`);
       await storage.updateBookingStatus(bookingId, status);
-      res.json({ message: "Booking status updated successfully" });
+      
+      // Broadcast status update via WebSocket
+      broadcastToAdmins({
+        type: 'booking_status_updated',
+        data: { bookingId, status }
+      });
+
+      res.json({ message: "Booking status updated successfully", bookingId, status });
     } catch (error) {
       console.error("Error updating booking status:", error);
       res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
+  // Booking postponement endpoint
+  app.patch('/api/bookings/:id/postpone', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { newCheckInDate, newCheckOutDate, newCheckInTime, newCheckOutTime } = req.body;
+      
+      if (!newCheckInDate || !newCheckOutDate) {
+        return res.status(400).json({ message: "New check-in and check-out dates are required" });
+      }
+
+      console.log(`🔵 SERVER: Postponing booking ${bookingId} to ${newCheckInDate} - ${newCheckOutDate}`);
+      
+      // Get the original booking to calculate new city tax
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Calculate new city tax based on new dates
+      const originalCheckIn = new Date(booking.checkInDate);
+      const originalCheckOut = new Date(booking.checkOutDate);
+      const newCheckIn = new Date(newCheckInDate);
+      const newCheckOut = new Date(newCheckOutDate);
+      
+      const originalNights = Math.ceil((originalCheckOut.getTime() - originalCheckIn.getTime()) / (1000 * 60 * 60 * 24));
+      const newNights = Math.ceil((newCheckOut.getTime() - newCheckIn.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate new city tax (€4 per person per night, max 5 nights)
+      const maxTaxNights = Math.min(newNights, 5);
+      const newCityTax = booking.guests * 4 * maxTaxNights;
+
+      console.log(`🔵 SERVER: City tax recalculated from original ${originalNights} nights to ${newNights} nights, new tax: €${newCityTax}`);
+
+      // Update booking with new dates and recalculated city tax
+      await storage.postponeBooking(bookingId, {
+        newCheckInDate,
+        newCheckOutDate,
+        newCheckInTime: newCheckInTime || "15:00",
+        newCheckOutTime: newCheckOutTime || "10:00",
+        newCityTax
+      });
+      
+      // Broadcast postponement via WebSocket
+      broadcastToAdmins({
+        type: 'booking_postponed',
+        data: { bookingId, newCheckInDate, newCheckOutDate, newCityTax }
+      });
+
+      res.json({ 
+        message: "Booking postponed successfully", 
+        bookingId, 
+        newCheckInDate, 
+        newCheckOutDate,
+        newCityTax,
+        originalNights,
+        newNights
+      });
+    } catch (error) {
+      console.error("Error postponing booking:", error);
+      res.status(500).json({ message: "Failed to postpone booking" });
     }
   });
 

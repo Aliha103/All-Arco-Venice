@@ -183,6 +183,21 @@ export default function AdminDashboard() {
   const [dragOverImageId, setDragOverImageId] = useState<number | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+  
+  // Booking status alert system state
+  const [pendingStatusBookings, setPendingStatusBookings] = useState<Booking[]>([]);
+  const [showStatusAlert, setShowStatusAlert] = useState(false);
+  const [statusActionBooking, setStatusActionBooking] = useState<Booking | null>(null);
+  
+  // Postponement functionality state
+  const [showPostponeDialog, setShowPostponeDialog] = useState(false);
+  const [postponeBooking, setPostponeBooking] = useState<Booking | null>(null);
+  const [postponeForm, setPostponeForm] = useState({
+    newCheckInDate: "",
+    newCheckOutDate: "",
+    newCheckInTime: "15:00",
+    newCheckOutTime: "10:00",
+  });
 
   // Data queries
   const { data: analytics } = useQuery<Analytics>({
@@ -240,6 +255,161 @@ export default function AdminDashboard() {
     retry: false,
     refetchInterval: 100, // 100ms refresh for real-time user data updates
   });
+
+  // Booking status alert monitoring effect
+  useEffect(() => {
+    if (!bookings) return;
+    
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Find bookings that need status decision (check-in day passed and not checked in)
+    const needingStatusDecision = bookings.filter(booking => {
+      const checkInDate = new Date(booking.checkInDate);
+      const dayAfterCheckIn = new Date(checkInDate);
+      dayAfterCheckIn.setDate(dayAfterCheckIn.getDate() + 1);
+      
+      return (
+        booking.status === 'confirmed' && // Still confirmed (not checked-in)
+        today >= dayAfterCheckIn && // Day after check-in has started
+        booking.bookingSource !== 'blocked' // Not a blocked booking
+      );
+    });
+    
+    setPendingStatusBookings(needingStatusDecision);
+    setShowStatusAlert(needingStatusDecision.length > 0);
+    
+    // Auto-open status alert if there are pending bookings
+    if (needingStatusDecision.length > 0 && !statusActionBooking) {
+      setStatusActionBooking(needingStatusDecision[0]);
+    }
+  }, [bookings, statusActionBooking]);
+
+  // Mutation for updating booking status
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      return apiRequest(`/api/bookings/${bookingId}/status`, {
+        method: "PATCH",
+        body: { status }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Booking Status Updated",
+        description: "The booking status has been successfully updated.",
+      });
+      setStatusActionBooking(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update booking status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for postponing booking
+  const postponeBookingMutation = useMutation({
+    mutationFn: async (data: {
+      bookingId: number;
+      newCheckInDate: string;
+      newCheckOutDate: string;
+      newCheckInTime: string;
+      newCheckOutTime: string;
+    }) => {
+      return apiRequest(`/api/bookings/${data.bookingId}/postpone`, {
+        method: "PATCH",
+        body: {
+          newCheckInDate: data.newCheckInDate,
+          newCheckOutDate: data.newCheckOutDate,
+          newCheckInTime: data.newCheckInTime,
+          newCheckOutTime: data.newCheckOutTime,
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Booking Postponed",
+        description: "The booking has been successfully postponed. City tax has been recalculated.",
+      });
+      setShowPostponeDialog(false);
+      setPostponeBooking(null);
+      setPostponeForm({
+        newCheckInDate: "",
+        newCheckOutDate: "",
+        newCheckInTime: "15:00",
+        newCheckOutTime: "10:00",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to postpone booking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Function to handle booking status decision
+  const handleStatusDecision = (status: 'checked_in' | 'no_show') => {
+    if (!statusActionBooking) return;
+    
+    updateBookingStatusMutation.mutate({
+      bookingId: statusActionBooking.id,
+      status
+    });
+  };
+
+  // Function to handle postponement
+  const handlePostponeBooking = (booking: Booking) => {
+    const totalNights = Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (totalNights <= 1) {
+      toast({
+        title: "Cannot Postpone",
+        description: "Only multi-night bookings can be postponed.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPostponeBooking(booking);
+    setPostponeForm({
+      newCheckInDate: "",
+      newCheckOutDate: "",
+      newCheckInTime: "15:00",
+      newCheckOutTime: "10:00",
+    });
+    setShowPostponeDialog(true);
+  };
+
+  // Function to calculate postponement details
+  const calculatePostponementDetails = () => {
+    if (!postponeBooking || !postponeForm.newCheckInDate || !postponeForm.newCheckOutDate) return null;
+
+    const originalNights = Math.ceil((new Date(postponeBooking.checkOutDate).getTime() - new Date(postponeBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
+    const newNights = Math.ceil((new Date(postponeForm.newCheckOutDate).getTime() - new Date(postponeForm.newCheckInDate).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate new city tax (€4 per person per night, max 5 nights)
+    const maxTaxNights = Math.min(newNights, 5);
+    const newCityTax = postponeBooking.guests * 4 * maxTaxNights;
+    
+    // Original city tax
+    const originalMaxTaxNights = Math.min(originalNights, 5);
+    const originalCityTax = postponeBooking.guests * 4 * originalMaxTaxNights;
+    
+    return {
+      originalNights,
+      newNights,
+      originalCityTax,
+      newCityTax,
+      cityTaxDifference: newCityTax - originalCityTax,
+      totalPrice: postponeBooking.totalPrice // Keep same total price
+    };
+  };
 
   // Authentication check with early return
   if (isLoading) {
@@ -1063,6 +1233,212 @@ export default function AdminDashboard() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Status Alert Dialog */}
+      <Dialog open={showStatusAlert && !!statusActionBooking} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-orange-600">
+              <Clock className="w-5 h-5" />
+              <span>Booking Status Required</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {statusActionBooking && (
+            <div className="space-y-4">
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h3 className="font-semibold text-orange-800 mb-2">Action Required</h3>
+                <p className="text-sm text-orange-700 mb-3">
+                  The check-in day has passed for this booking. Please decide the booking status before proceeding with other admin tasks.
+                </p>
+                
+                <div className="space-y-2 text-sm">
+                  <div><strong>Guest:</strong> {statusActionBooking.guestFirstName} {statusActionBooking.guestLastName}</div>
+                  <div><strong>Check-in:</strong> {new Date(statusActionBooking.checkInDate).toLocaleDateString()}</div>
+                  <div><strong>Check-out:</strong> {new Date(statusActionBooking.checkOutDate).toLocaleDateString()}</div>
+                  <div><strong>Confirmation:</strong> {statusActionBooking.confirmationCode}</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  What happened with this booking?
+                </p>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    onClick={() => handleStatusDecision('checked_in')}
+                    disabled={updateBookingStatusMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Guest Checked In
+                  </Button>
+                  
+                  <Button
+                    onClick={() => handleStatusDecision('no_show')}
+                    disabled={updateBookingStatusMutation.isPending}
+                    variant="destructive"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Mark as No-show
+                  </Button>
+
+                  {(() => {
+                    const totalNights = Math.ceil((new Date(statusActionBooking.checkOutDate).getTime() - new Date(statusActionBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
+                    if (totalNights > 1) {
+                      return (
+                        <Button
+                          onClick={() => handlePostponeBooking(statusActionBooking)}
+                          disabled={updateBookingStatusMutation.isPending}
+                          variant="outline"
+                          className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Postpone to Next Day
+                        </Button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+
+                {updateBookingStatusMutation.isPending && (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">Updating status...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Postponement Dialog */}
+      <Dialog open={showPostponeDialog} onOpenChange={setShowPostponeDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Calendar className="w-5 h-5" />
+              <span>Postpone Booking</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {postponeBooking && (
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Current Booking</h3>
+                <div className="space-y-1 text-sm text-blue-700">
+                  <div><strong>Guest:</strong> {postponeBooking.guestFirstName} {postponeBooking.guestLastName}</div>
+                  <div><strong>Original Dates:</strong> {new Date(postponeBooking.checkInDate).toLocaleDateString()} - {new Date(postponeBooking.checkOutDate).toLocaleDateString()}</div>
+                  <div><strong>Total Price:</strong> €{postponeBooking.totalPrice.toFixed(2)} (will remain same)</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newCheckInDate">New Check-in Date</Label>
+                    <Input
+                      id="newCheckInDate"
+                      type="date"
+                      value={postponeForm.newCheckInDate}
+                      onChange={(e) => setPostponeForm({ ...postponeForm, newCheckInDate: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newCheckOutDate">New Check-out Date</Label>
+                    <Input
+                      id="newCheckOutDate"
+                      type="date"
+                      value={postponeForm.newCheckOutDate}
+                      onChange={(e) => setPostponeForm({ ...postponeForm, newCheckOutDate: e.target.value })}
+                      min={postponeForm.newCheckInDate || new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newCheckInTime">New Check-in Time</Label>
+                    <Input
+                      id="newCheckInTime"
+                      type="time"
+                      value={postponeForm.newCheckInTime}
+                      onChange={(e) => setPostponeForm({ ...postponeForm, newCheckInTime: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newCheckOutTime">New Check-out Time</Label>
+                    <Input
+                      id="newCheckOutTime"
+                      type="time"
+                      value={postponeForm.newCheckOutTime}
+                      onChange={(e) => setPostponeForm({ ...postponeForm, newCheckOutTime: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {(() => {
+                  const details = calculatePostponementDetails();
+                  if (details) {
+                    return (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <h3 className="font-semibold text-gray-800 mb-2">Postponement Summary</h3>
+                        <div className="space-y-1 text-sm text-gray-700">
+                          <div><strong>Nights:</strong> {details.originalNights} → {details.newNights}</div>
+                          <div><strong>City Tax:</strong> €{details.originalCityTax} → €{details.newCityTax} (difference: {details.cityTaxDifference >= 0 ? '+' : ''}€{details.cityTaxDifference})</div>
+                          <div><strong>Total Price:</strong> €{details.totalPrice.toFixed(2)} (unchanged)</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => setShowPostponeDialog(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!postponeBooking || !postponeForm.newCheckInDate || !postponeForm.newCheckOutDate) return;
+                    
+                    postponeBookingMutation.mutate({
+                      bookingId: postponeBooking.id,
+                      newCheckInDate: postponeForm.newCheckInDate,
+                      newCheckOutDate: postponeForm.newCheckOutDate,
+                      newCheckInTime: postponeForm.newCheckInTime,
+                      newCheckOutTime: postponeForm.newCheckOutTime,
+                    });
+                  }}
+                  disabled={!postponeForm.newCheckInDate || !postponeForm.newCheckOutDate || postponeBookingMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {postponeBookingMutation.isPending ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Postponing...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Confirm Postponement
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           )}
