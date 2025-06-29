@@ -527,7 +527,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {/* Clean Date Number */}
                 <div className="absolute top-2 left-2 z-20">
                   <div
-                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] bg-red-500 text-white font-normal"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal bg-[#ffffff] text-[#1f2937]"
                   >
                     {format(day, "d")}
                   </div>
