@@ -1533,7 +1533,12 @@ export default function AdminDashboard() {
       </Dialog>
 
       {/* Booking Status Alert Dialog */}
-      <Dialog open={showStatusAlert && !!statusActionBooking} onOpenChange={() => {}}>
+      <Dialog open={showStatusAlert && !!statusActionBooking} onOpenChange={(open) => {
+        if (!open) {
+          setStatusActionBooking(null);
+          setShowStatusAlert(false);
+        }
+      }}>
         <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2 text-orange-600">
@@ -1661,7 +1666,12 @@ export default function AdminDashboard() {
       </Dialog>
 
       {/* Check-out Status Alert Dialog */}
-      <Dialog open={showCheckOutAlert && !!checkOutActionBooking} onOpenChange={() => {}}>
+      <Dialog open={showCheckOutAlert && !!checkOutActionBooking} onOpenChange={(open) => {
+        if (!open) {
+          setCheckOutActionBooking(null);
+          setShowCheckOutAlert(false);
+        }
+      }}>
         <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2 text-green-600">
