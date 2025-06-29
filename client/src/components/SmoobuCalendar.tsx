@@ -661,7 +661,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
             <div className="flex gap-3">
               <Button 
                 onClick={handleCreateBooking}
-                disabled={createBookingMutation.isPending || (formData.mode === "manual" && !formData.guestName)}
+                disabled={createBookingMutation.isPending || 
+                  (formData.mode === "manual" && (!formData.guestFirstName || !formData.guestLastName || !formData.guestEmail)) ||
+                  (formData.mode === "blocked" && !formData.blockReason)}
                 className="flex-1"
               >
                 {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
