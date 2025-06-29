@@ -1546,10 +1546,7 @@ export default function AdminDashboard() {
                   })()}
 
                   {/* Undo No-show button for no-show bookings */}
-                  {(() => {
-                    console.log('🔍 Status check:', statusActionBooking.status, 'for booking', statusActionBooking.id);
-                    return (statusActionBooking.status === 'no_show' || statusActionBooking.status === 'no-show');
-                  })() && (
+                  {(statusActionBooking.status === 'no_show' || statusActionBooking.status === 'no-show') && (
                     <Button
                       onClick={() => undoNoShowMutation.mutate(statusActionBooking.id)}
                       disabled={undoNoShowMutation.isPending}
