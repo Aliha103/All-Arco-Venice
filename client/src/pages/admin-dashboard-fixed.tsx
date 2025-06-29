@@ -419,6 +419,104 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Bookings Tab - All Bookings from Database */}
+          <TabsContent value="bookings" className="space-y-4 sm:space-y-6">
+            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                  <div>
+                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">All Bookings</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+                      Manage all property bookings with real-time updates from database
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="space-y-4">
+                  {bookings && bookings.length > 0 ? (
+                    <div className="space-y-3 sm:space-y-4">
+                      {bookings.map((booking) => (
+                        <Card 
+                          key={booking.id} 
+                          className="p-3 sm:p-4 lg:p-6 hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowBookingDetails(true);
+                          }}
+                        >
+                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                  {booking.guestFirstName?.charAt(0)}{booking.guestLastName?.charAt(0)}
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-gray-900">
+                                    {booking.guestFirstName} {booking.guestLastName}
+                                  </h3>
+                                  <p className="text-xs sm:text-sm text-gray-500">
+                                    {booking.guestEmail}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
+                                <div>
+                                  <span className="text-gray-500 block">Check-in</span>
+                                  <span className="font-medium">{new Date(booking.checkInDate).toLocaleDateString()}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500 block">Check-out</span>
+                                  <span className="font-medium">{new Date(booking.checkOutDate).toLocaleDateString()}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500 block">Guests</span>
+                                  <span className="font-medium">{booking.guests}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500 block">Source</span>
+                                  <span className="font-medium capitalize">{booking.bookingSource}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                              <Badge 
+                                variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'}
+                                className={`text-xs ${
+                                  booking.status === 'confirmed' 
+                                    ? 'bg-green-100 text-green-800 border-green-200' 
+                                    : booking.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                    : 'bg-red-100 text-red-800 border-red-200'
+                                }`}
+                              >
+                                {booking.status}
+                              </Badge>
+                              <div className="text-right">
+                                <p className="font-semibold text-sm sm:text-base lg:text-lg">€{booking.totalPrice}</p>
+                                <p className="text-xs text-gray-500">{booking.paymentMethod}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 sm:py-12">
+                      <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No Bookings Found</h3>
+                      <p className="text-sm sm:text-base text-gray-500">
+                        No bookings found in the database. Create your first booking to get started.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Users Tab - User Management with Popup Details */}
           <TabsContent value="users" className="space-y-4 sm:space-y-6">
             <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -679,6 +777,171 @@ export default function AdminDashboard() {
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   View Bookings
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Details Popup Modal */}
+      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                {selectedBooking?.guestFirstName?.charAt(0)}{selectedBooking?.guestLastName?.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">
+                  {selectedBooking?.guestFirstName} {selectedBooking?.guestLastName}
+                </h2>
+                <p className="text-sm text-gray-500">Booking #{selectedBooking?.id}</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedBooking && (
+            <div className="space-y-6 mt-4">
+              {/* Booking Status */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="font-medium">Booking Status</span>
+                <Badge 
+                  variant={selectedBooking.status === 'confirmed' ? 'default' : selectedBooking.status === 'pending' ? 'secondary' : 'destructive'}
+                  className={`${
+                    selectedBooking.status === 'confirmed' 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : selectedBooking.status === 'pending'
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                      : 'bg-red-100 text-red-800 border-red-200'
+                  }`}
+                >
+                  {selectedBooking.status}
+                </Badge>
+              </div>
+
+              {/* Guest Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Guest Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{selectedBooking.guestEmail}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedBooking.guestPhone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Phone</p>
+                        <p className="font-medium">{selectedBooking.guestPhone}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedBooking.guestCountry && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Country</p>
+                        <p className="font-medium">{selectedBooking.guestCountry}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Guests</p>
+                      <p className="font-medium">{selectedBooking.guests}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Booking Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-600">Check-in Date</p>
+                    <p className="font-semibold text-blue-800">
+                      {new Date(selectedBooking.checkInDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-600">Check-out Date</p>
+                    <p className="font-semibold text-green-800">
+                      {new Date(selectedBooking.checkOutDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-purple-600">Booking Source</p>
+                    <p className="font-semibold text-purple-800 capitalize">{selectedBooking.bookingSource}</p>
+                  </div>
+                  
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <p className="text-sm text-orange-600">Payment Method</p>
+                    <p className="font-semibold text-orange-800 capitalize">{selectedBooking.paymentMethod}</p>
+                  </div>
+                </div>
+                
+                {selectedBooking.confirmationCode && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600">Confirmation Code</p>
+                    <p className="font-semibold font-mono text-xs">{selectedBooking.confirmationCode}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Pricing Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">€{selectedBooking.basePrice}</div>
+                    <p className="text-sm text-blue-800">Base Price</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">€{selectedBooking.totalPrice}</div>
+                    <p className="text-sm text-green-800">Total Price</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {selectedBooking.nights || Math.ceil((new Date(selectedBooking.checkOutDate).getTime() - new Date(selectedBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))}
+                    </div>
+                    <p className="text-sm text-purple-800">Nights</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBookingDetails(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Booking modification will be available soon.",
+                    });
+                  }}
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Edit Booking
                 </Button>
               </div>
             </div>
