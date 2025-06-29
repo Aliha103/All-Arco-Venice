@@ -315,7 +315,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {format(day, 'd')}
               </span>
               
-              {/* Seamless booking span */}
+              {/* Seamless pipe-like booking span */}
               {booking && spanInfo && (
                 <div className="absolute top-1/2 -translate-y-1/2 h-6 flex items-center text-xs font-medium"
                      style={{
@@ -324,7 +324,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                        width: spanInfo.isMiddle ? 'calc(100% + 2px)' : 'auto'
                      }}>
                   <div className={`w-full h-full flex items-center justify-center px-2 ${
-                    spanInfo.isCheckIn || spanInfo.isCheckOut ? 'rounded-full' : ''
+                    spanInfo.isCheckIn ? 'rounded-l-full' : spanInfo.isCheckOut ? 'rounded-r-full' : ''
                   } ${sourceColors[booking.bookingSource as keyof typeof sourceColors] || sourceColors.manual}`}>
                     <span className="truncate">
                       {booking.guestFirstName} {booking.guestLastName}
