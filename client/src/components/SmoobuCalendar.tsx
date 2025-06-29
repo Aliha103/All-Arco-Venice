@@ -529,7 +529,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 {/* Clean Date Number */}
                 <div className="absolute top-2 left-2 z-20">
                   <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[12px] font-normal ${
                       isCurrentDay
                         ? "bg-blue-500 text-white shadow-md"
                         : isPastDate
@@ -547,20 +547,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                   </div>
                 </div>
 
-                {/* Simple Status Indicators */}
-                {hasCheckOutOnly && !checkInBooking && (
-                  <div className="absolute bottom-1 right-1 text-xs font-bold text-yellow-700 bg-yellow-200 px-1 py-0.5 rounded-sm">
-                    OUT
-                  </div>
-                )}
-
-                {checkInBooking && (
-                  <div className="absolute bottom-1 right-1 text-xs font-bold text-red-700 bg-red-200 px-1 py-0.5 rounded-sm">
-                    IN
-                  </div>
-                )}
-              </div>
-            );
+                
+              );
           })}
         </div>
 
