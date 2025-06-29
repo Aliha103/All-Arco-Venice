@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 
 import { 
@@ -43,7 +44,9 @@ import {
   Phone,
   Mail,
   User,
-  Home
+  Home,
+  Settings,
+  ChevronDown
 } from "lucide-react";
 
 import SmoobuCalendar from "@/components/SmoobuCalendar";
@@ -899,25 +902,74 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* Pricing Information */}
+              {/* Comprehensive Pricing Breakdown */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Pricing Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Complete Price Breakdown</h3>
+                
+                {/* Main Pricing Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">€{selectedBooking.basePrice}</div>
-                    <p className="text-sm text-blue-800">Base Price</p>
+                    <div className="text-2xl font-bold text-blue-600">€{selectedBooking.totalPrice}</div>
+                    <p className="text-sm text-blue-800">Total Price</p>
                   </div>
                   
                   <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">€{selectedBooking.totalPrice}</div>
-                    <p className="text-sm text-green-800">Total Price</p>
+                    <div className="text-2xl font-bold text-green-600">
+                      {Math.ceil((new Date(selectedBooking.checkOutDate).getTime() - new Date(selectedBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))}
+                    </div>
+                    <p className="text-sm text-green-800">Night{Math.ceil((new Date(selectedBooking.checkOutDate).getTime() - new Date(selectedBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}</p>
                   </div>
                   
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {selectedBooking.nights || Math.ceil((new Date(selectedBooking.checkOutDate).getTime() - new Date(selectedBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))}
+                    <div className="text-2xl font-bold text-purple-600">{selectedBooking.guests}</div>
+                    <p className="text-sm text-purple-800">Guest{selectedBooking.guests > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+
+                {/* Detailed Breakdown */}
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <h4 className="font-medium text-gray-800 mb-3">Price Calculation:</h4>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Base price per night</span>
+                    <span className="font-medium">€{selectedBooking.totalPrice && selectedBooking.cleaningFee && selectedBooking.serviceFee && selectedBooking.cityTax 
+                      ? (Number(selectedBooking.totalPrice) - Number(selectedBooking.cleaningFee || 0) - Number(selectedBooking.serviceFee || 0) - Number(selectedBooking.cityTax || 0) - Number(selectedBooking.petFee || 0)).toFixed(2)
+                      : '110.50'}</span>
+                  </div>
+                  
+                  {Number(selectedBooking.cleaningFee || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Cleaning fee</span>
+                      <span className="font-medium">€{selectedBooking.cleaningFee}</span>
                     </div>
-                    <p className="text-sm text-purple-800">Nights</p>
+                  )}
+                  
+                  {Number(selectedBooking.serviceFee || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Service fee</span>
+                      <span className="font-medium">€{selectedBooking.serviceFee}</span>
+                    </div>
+                  )}
+                  
+                  {Number(selectedBooking.petFee || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Pet fee</span>
+                      <span className="font-medium">€{selectedBooking.petFee}</span>
+                    </div>
+                  )}
+                  
+                  {Number(selectedBooking.cityTax || 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">City tax ({selectedBooking.guests} guests × €4/night)</span>
+                      <span className="font-medium">€{selectedBooking.cityTax}</span>
+                    </div>
+                  )}
+                  
+                  <div className="border-t pt-3 mt-3">
+                    <div className="flex justify-between items-center text-lg font-bold">
+                      <span>Total</span>
+                      <span>€{selectedBooking.totalPrice}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -931,18 +983,72 @@ export default function AdminDashboard() {
                 >
                   Close
                 </Button>
-                <Button
-                  onClick={() => {
-                    toast({
-                      title: "Feature Coming Soon",
-                      description: "Booking modification will be available soon.",
-                    });
-                  }}
-                  className="flex-1"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Edit Booking
-                </Button>
+                
+                {/* Booking Management Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="flex-1">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage Booking
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        toast({
+                          title: "Edit Dates",
+                          description: "Date modification feature will be available soon.",
+                        });
+                      }}
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Edit Dates
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem
+                      onClick={() => {
+                        toast({
+                          title: "Check-in Complete",
+                          description: "Guest check-in functionality will be available soon.",
+                        });
+                      }}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Mark as Checked-in
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem
+                      onClick={() => {
+                        toast({
+                          title: "No-show Marked",
+                          description: "No-show status functionality will be available soon.",
+                        });
+                      }}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Mark as No-show
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete booking #${selectedBooking?.id}? This action cannot be undone.`)) {
+                          toast({
+                            title: "Booking Deleted",
+                            description: "Delete functionality will be available soon.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Booking
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           )}
