@@ -367,6 +367,12 @@ export default function AdminDashboard() {
   const handleStatusDecision = (status: 'checked_in' | 'no_show') => {
     if (!statusActionBooking) return;
     
+    // Immediately show feedback
+    toast({
+      title: "Updating Status...",
+      description: `Marking booking as ${status === 'checked_in' ? 'checked-in' : 'no-show'}`,
+    });
+    
     updateBookingStatusMutation.mutate({
       bookingId: statusActionBooking.id,
       status
@@ -1354,23 +1360,25 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="newCheckInDate">New Check-in Date</Label>
+                    <Label htmlFor="newCheckInDate" className="text-base font-semibold text-blue-700">New Check-in Day</Label>
                     <Input
                       id="newCheckInDate"
                       type="date"
                       value={postponeForm.newCheckInDate}
                       onChange={(e) => setPostponeForm({ ...postponeForm, newCheckInDate: e.target.value })}
                       min={new Date().toISOString().split('T')[0]}
+                      className="border-blue-300 focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="newCheckOutDate">New Check-out Date</Label>
+                    <Label htmlFor="newCheckOutDate" className="text-base font-semibold text-blue-700">New Check-out Day</Label>
                     <Input
                       id="newCheckOutDate"
                       type="date"
                       value={postponeForm.newCheckOutDate}
                       onChange={(e) => setPostponeForm({ ...postponeForm, newCheckOutDate: e.target.value })}
                       min={postponeForm.newCheckInDate || new Date().toISOString().split('T')[0]}
+                      className="border-blue-300 focus:border-blue-500"
                     />
                   </div>
                 </div>
