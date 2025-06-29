@@ -340,6 +340,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           const startCol = startIndex % 7;
           const endCol = endIndex % 7;
           
+          // Calculate vertical offset for multiple bookings on the same day
+          const verticalOffset = spanIndex * 28; // 28px spacing between booking bars
+          
           // Single row span
           if (startRow === endRow) {
             return (
@@ -347,7 +350,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 key={`span-${span.booking.id}`}
                 className="absolute z-10"
                 style={{
-                  top: `${startRow * 96 + 48}px`, // 96px = h-24, 48px = center
+                  top: `${startRow * 96 + 48 + verticalOffset}px`, // 96px = h-24, 48px = center
                   left: `${(startCol * (100/7)) + 1}%`,
                   width: `${((endCol - startCol + 1) * (100/7)) - 0.3}%`,
                   height: '24px',
@@ -380,7 +383,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 key={`span-${span.booking.id}-row-${row}`}
                 className="absolute z-10"
                 style={{
-                  top: `${row * 96 + 48}px`,
+                  top: `${row * 96 + 48 + verticalOffset}px`,
                   left: `${(rowStartCol * (100/7)) + 0.1}%`,
                   width: `${((rowEndCol - rowStartCol + 1) * (100/7)) - 0.2}%`,
                   height: '24px',
