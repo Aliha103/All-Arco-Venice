@@ -5,17 +5,13 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/auth/user"],
     retry: false,
-    staleTime: 0, // Always check server for fresh data
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Prevent excessive refetching
     refetchInterval: false,
     refetchOnMount: true,
-    refetchOnReconnect: true, // Refetch when reconnecting
+    refetchOnReconnect: false,
     enabled: true,
   });
-
-  console.log('🔴 useAuth hook - Current user:', user);
-  console.log('🔴 useAuth hook - Is authenticated:', !!user);
-  console.log('🔴 useAuth hook - Is loading:', isLoading);
 
   return {
     user,

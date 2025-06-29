@@ -24,7 +24,7 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       
-      {/* Always show Landing page at root */}
+      {/* Landing page for non-authenticated users */}
       <Route path="/" component={Landing} />
       
       {/* Public booking page */}
@@ -33,15 +33,12 @@ function Router() {
       {/* Bookings page - accessible to everyone for lookup functionality */}
       <Route path="/bookings" component={BookingsPage} />
       
-      {/* Protected routes only accessible when authenticated */}
-      {isAuthenticated && (
-        <>
-          <Route path="/dashboard" component={AdminDashboard} />
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/checkout" component={Checkout} />
-          <Route path="/settings" component={Settings} />
-        </>
-      )}
+      {/* Always accessible routes - auth handled inside components */}
+      <Route path="/dashboard" component={AdminDashboard} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/checkout" component={Checkout} />
+      <Route path="/settings" component={Settings} />
+      
       <Route component={NotFound} />
     </Switch>
   );

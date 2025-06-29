@@ -139,8 +139,35 @@ const formatDate = (dateString: string) => {
 };
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+
+  // Handle authentication loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle unauthorized access - redirect to login
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Access Required</h1>
+          <p className="text-gray-600 mb-6">You need to be logged in as an admin to access this dashboard.</p>
+          <Button onClick={() => window.location.href = '/login'} className="bg-blue-600 hover:bg-blue-700">
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const [activeTab, setActiveTab] = useState("overview");
   const [pricingForm, setPricingForm] = useState({
     basePrice: 0,
