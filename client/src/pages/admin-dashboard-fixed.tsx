@@ -255,93 +255,124 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Advanced Responsive Main Content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 xl:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-8">
-          {/* Mobile-optimized tab navigation */}
-          <div className="w-full overflow-x-auto">
-            <TabsList className="grid w-full grid-cols-6 min-w-[600px] sm:min-w-0 h-auto">
-              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Overview</span>
-                <span className="sm:hidden">Stats</span>
+          {/* Advanced responsive tab navigation */}
+          <div className="w-full overflow-x-auto scrollbar-hide">
+            <TabsList className="inline-flex w-full min-w-fit sm:grid sm:grid-cols-6 lg:grid-cols-6 h-auto bg-muted/50 p-1 rounded-lg">
+              {/* Mobile: Horizontal scroll layout, Tablet+: Grid layout */}
+              <TabsTrigger 
+                value="overview" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Overview</span>
+                <span className="md:hidden">Stats</span>
               </TabsTrigger>
-              <TabsTrigger value="bookings" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Bookings</span>
-                <span className="sm:hidden">Book</span>
+              <TabsTrigger 
+                value="bookings" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Bookings</span>
+                <span className="md:hidden">Book</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Calendar</span>
-                <span className="sm:hidden">Cal</span>
+              <TabsTrigger 
+                value="calendar" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Calendar</span>
+                <span className="md:hidden">Cal</span>
               </TabsTrigger>
-              <TabsTrigger value="messages" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Messages</span>
-                <span className="sm:hidden">Msg</span>
+              <TabsTrigger 
+                value="messages" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Messages</span>
+                <span className="md:hidden">Msg</span>
               </TabsTrigger>
-              <TabsTrigger value="reviews" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Reviews</span>
-                <span className="sm:hidden">Rev</span>
+              <TabsTrigger 
+                value="reviews" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Reviews</span>
+                <span className="md:hidden">Rev</span>
               </TabsTrigger>
-              <TabsTrigger value="pricing" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <span className="hidden sm:inline">Pricing</span>
-                <span className="sm:hidden">Price</span>
+              <TabsTrigger 
+                value="pricing" 
+                className="flex-shrink-0 sm:flex-1 text-xs sm:text-sm lg:text-base px-3 sm:px-4 lg:px-6 py-2 sm:py-3 whitespace-nowrap transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <span className="hidden md:inline">Pricing</span>
+                <span className="md:hidden">Price</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          {/* Overview Tab - Advanced Responsive */}
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              <Card className="transition-all duration-200 hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Total Bookings</CardTitle>
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.totalBookings || 0}</div>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{analytics?.totalBookings || 0}</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Total reservations</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <Card className="transition-all duration-200 hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">€{analytics?.totalRevenue || 0}</div>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">€{analytics?.totalRevenue || 0}</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Gross earnings</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Occupancy Rate</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <Card className="transition-all duration-200 hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Occupancy Rate</CardTitle>
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.occupancyRate || 0}%</div>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{analytics?.occupancyRate || 0}%</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Booking efficiency</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
+              <Card className="transition-all duration-200 hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Average Rating</CardTitle>
+                  <Star className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.averageRating || 0}</div>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{analytics?.averageRating || 0}</div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Guest satisfaction</p>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Calendar Tab */}
+          {/* Calendar Tab - Advanced Responsive */}
           <TabsContent value="calendar" className="space-y-4 sm:space-y-6">
-            <Card className="overflow-hidden">
-              <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
-                <CardTitle className="text-lg sm:text-xl">Booking Calendar</CardTitle>
-                <CardDescription className="text-sm sm:text-base">
-                  Manage bookings and availability
-                </CardDescription>
+            <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                  <div>
+                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">Booking Calendar</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+                      Manage bookings and availability with real-time updates
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Live Updates</span>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="px-2 sm:px-6 pb-4 sm:pb-6">
-                <div className="w-full overflow-x-auto">
-                  <div className="w-full max-w-full sm:w-full min-w-[320px] sm:min-w-0 overflow-hidden">
+              <CardContent className="p-0 sm:p-2 lg:p-4">
+                <div className="w-full overflow-x-auto scrollbar-hide">
+                  <div className="w-full max-w-full overflow-hidden">
                     <SmoobuCalendar />
                   </div>
                 </div>
