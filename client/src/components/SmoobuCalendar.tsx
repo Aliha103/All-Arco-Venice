@@ -87,6 +87,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     nights: 1,
     manualPrice: 0,
     blockReason: "",
+    checkInTime: "15:00",
+    checkOutTime: "10:00",
   });
 
   const { toast } = useToast();
@@ -144,6 +146,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         nights: 1,
         manualPrice: 0,
         blockReason: "",
+        checkInTime: "15:00",
+        checkOutTime: "10:00",
       });
       toast({
         title: "Success",
@@ -333,6 +337,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           nights: 1,
           manualPrice: 0,
           blockReason: "",
+          checkInTime: "15:00",
+          checkOutTime: "10:00",
         });
         queryClient.invalidateQueries({
           queryKey: [
@@ -363,6 +369,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         guestPhone: "000-000-0000",
         checkInDate: format(selectedDate, "yyyy-MM-dd"),
         checkOutDate: format(checkOutDate, "yyyy-MM-dd"),
+        checkInTime: formData.checkInTime || "15:00",
+        checkOutTime: formData.checkOutTime || "10:00",
         guests: formData.guests,
         paymentMethod: "property",
         hasPet: false,
@@ -387,6 +395,8 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
       nights: 1,
       manualPrice: 0,
       blockReason: "",
+      checkInTime: "15:00",
+      checkOutTime: "10:00",
     });
   };
 
