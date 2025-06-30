@@ -170,6 +170,15 @@ export interface IStorage {
   updatePromotionStatus(id: number, isActive: boolean): Promise<void>;
   deletePromotion(id: number): Promise<void>;
 
+  // Promo codes operations
+  getPromoCodes(): Promise<PromoCode[]>;
+  createPromoCode(promoCode: InsertPromoCode): Promise<PromoCode>;
+  deletePromoCode(id: number): Promise<void>;
+
+  // Pricing settings operations
+  getPricingSettings(): Promise<PricingSettings | undefined>;
+  updatePricingSettings(settings: InsertPricingSettings): Promise<PricingSettings>;
+
   // Hero images operations
   getHeroImages(): Promise<HeroImage[]>;
   getActiveHeroImages(): Promise<HeroImage[]>;
@@ -1132,6 +1141,75 @@ export class DatabaseStorage implements IStorage {
       .values(timelineData)
       .returning();
     return timeline;
+  }
+
+  // Promo codes operations
+  async getPromoCodes(): Promise<PromoCode[]> {
+    const codes = await db
+      .select()
+      .from(promoCodes)
+      .orderBy(desc(promoCodes.createdAt));
+    return codes;
+  }
+
+  async createPromoCode(promoCodeData: InsertPromoCode): Promise<PromoCode> {
+    const [promoCode] = await db
+      .insert(promoCodes)
+      .values(promoCodeData)
+      .returning();
+    return promoCode;
+  }
+
+  async deletePromoCode(id: number): Promise<void> {
+    await db.delete(promoCodes).where(eq(promoCodes.id, id));
+  }
+
+  // Pricing settings operations
+  async getPricingSettings(): Promise<PricingSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(pricingSettings)
+      .limit(1);
+    
+    // If no settings exist, create default ones
+    if (!settings) {
+      const defaultSettings = {
+        basePrice: "150.00",
+        cleaningFee: "25.00",
+        petFee: "35.00",
+        discountWeekly: 10,
+        discountMonthly: 20,
+      };
+      const [created] = await db
+        .insert(pricingSettings)
+        .values(defaultSettings)
+        .returning();
+      return created;
+    }
+    
+    return settings;
+  }
+
+  async updatePricingSettings(settingsData: InsertPricingSettings): Promise<PricingSettings> {
+    // First, try to get existing settings
+    const existing = await this.getPricingSettings();
+    
+    if (existing) {
+      // Update existing settings
+      const [updated] = await db
+        .update(pricingSettings)
+        .set({ ...settingsData, updatedAt: new Date() })
+        .where(eq(pricingSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new settings if none exist
+      const [created] = await db
+        .insert(pricingSettings)
+        .values(settingsData)
+        .returning();
+      return created;
+    }
   }
 }
 

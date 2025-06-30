@@ -1190,16 +1190,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      // Return default pricing settings for now
-      const defaultPricing = {
-        basePrice: 150,
-        cleaningFee: 25,
-        petFee: 35,
-        discountWeekly: 10,
-        discountMonthly: 20
-      };
+      // Get pricing settings from database
+      const settings = await storage.getPricingSettings();
       
-      res.json(defaultPricing);
+      if (settings) {
+        // Convert decimal strings to numbers for frontend
+        const pricingData = {
+          basePrice: parseFloat(settings.basePrice),
+          cleaningFee: parseFloat(settings.cleaningFee),
+          petFee: parseFloat(settings.petFee),
+          discountWeekly: settings.discountWeekly,
+          discountMonthly: settings.discountMonthly
+        };
+        res.json(pricingData);
+      } else {
+        res.status(404).json({ message: "Pricing settings not found" });
+      }
     } catch (error) {
       console.error("Error fetching pricing settings:", error);
       res.status(500).json({ message: "Failed to fetch pricing settings" });
@@ -1217,14 +1223,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { basePrice, cleaningFee, petFee, discountWeekly, discountMonthly } = req.body;
       
-      // For now, just return success - in a real app you'd store these in the database
+      // Convert numbers to decimal strings for database storage
+      const settingsData = {
+        basePrice: basePrice.toString(),
+        cleaningFee: cleaningFee.toString(),
+        petFee: petFee.toString(),
+        discountWeekly: discountWeekly,
+        discountMonthly: discountMonthly
+      };
+      
+      // Update pricing settings in database
+      const updatedSettings = await storage.updatePricingSettings(settingsData);
+      
+      // Convert back to numbers for response
       res.json({ 
         message: "Pricing settings updated successfully",
-        basePrice,
-        cleaningFee,
-        petFee,
-        discountWeekly,
-        discountMonthly
+        basePrice: parseFloat(updatedSettings.basePrice),
+        cleaningFee: parseFloat(updatedSettings.cleaningFee),
+        petFee: parseFloat(updatedSettings.petFee),
+        discountWeekly: updatedSettings.discountWeekly,
+        discountMonthly: updatedSettings.discountMonthly
       });
     } catch (error) {
       console.error("Error updating pricing settings:", error);
