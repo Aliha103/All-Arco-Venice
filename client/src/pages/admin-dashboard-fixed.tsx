@@ -1515,7 +1515,20 @@ export default function AdminDashboard() {
                 <p className="text-sm text-orange-700 mb-3">
                   {statusActionBooking.status === 'checked_in' 
                     ? 'This booking is currently marked as checked-in. Do you want to undo the check-in status?'
-                    : 'The check-in day has completely passed for this booking. Please decide the booking status before proceeding with other admin tasks.'
+                    : (() => {
+                        const today = new Date();
+                        const checkInDate = new Date(statusActionBooking.checkInDate);
+                        today.setHours(0, 0, 0, 0);
+                        checkInDate.setHours(0, 0, 0, 0);
+                        
+                        if (today > checkInDate && statusActionBooking.status === 'confirmed') {
+                          return 'The check-in day has completely passed for this booking. Please decide the booking status before proceeding with other admin tasks.';
+                        } else if (today.getTime() === checkInDate.getTime()) {
+                          return 'This is the check-in day for this booking. You can update the status as needed.';
+                        } else {
+                          return 'You can manage the status of this booking. Note: Status changes for future bookings may be restricted.';
+                        }
+                      })()
                   }
                 </p>
                 
