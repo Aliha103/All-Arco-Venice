@@ -172,6 +172,23 @@ export default function AdminDashboard() {
     endDate: "",
     description: "",
   });
+  
+  // Enhanced pricing management state
+  const [pricingMode, setPricingMode] = useState<'manual' | 'percentage'>('manual');
+  const [percentageChange, setPercentageChange] = useState(0);
+  const [showPromotionForm, setShowPromotionForm] = useState(false);
+  const [showPromoCodeForm, setShowPromoCodeForm] = useState(false);
+  const [promoCodeForm, setPromoCodeForm] = useState({
+    code: "",
+    discountType: "percentage" as "percentage" | "fixed",
+    discountValue: 0,
+    description: "",
+    usageLimit: null as number | null,
+    minOrderAmount: 0,
+    maxDiscountAmount: null as number | null,
+    startDate: "",
+    endDate: "",
+  });
   const [heroImageForm, setHeroImageForm] = useState({
     url: "",
     alt: "",
@@ -180,7 +197,6 @@ export default function AdminDashboard() {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string>("");
-  const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [showHeroImageForm, setShowHeroImageForm] = useState(false);
   const [draggedImageId, setDraggedImageId] = useState<number | null>(null);
   const [dragOverImageId, setDragOverImageId] = useState<number | null>(null);
@@ -253,6 +269,13 @@ export default function AdminDashboard() {
     enabled: isAuthenticated && (user as any)?.role === 'admin',
     retry: false,
     refetchInterval: 100, // 100ms refresh for real-time promotions updates
+  });
+
+  const { data: promoCodes } = useQuery<PromoCode[]>({
+    queryKey: ["/api/promo-codes"],
+    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    retry: false,
+    refetchInterval: 100, // 100ms refresh for real-time promo codes updates
   });
 
   const { data: heroImages } = useQuery<HeroImage[]>({

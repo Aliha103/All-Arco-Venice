@@ -216,6 +216,24 @@ export const promotions = pgTable("promotions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Promo codes
+export const promoCodes = pgTable("promo_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  discountType: varchar("discount_type", { enum: ["percentage", "fixed"] }).notNull(),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  usageLimit: integer("usage_limit").default(null), // null = unlimited
+  usageCount: integer("usage_count").default(0),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }).default("0.00"),
+  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }).default(null),
+  isActive: boolean("is_active").default(true),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Hero images
 export const heroImages = pgTable("hero_images", {
   id: serial("id").primaryKey(),
@@ -346,6 +364,19 @@ export const insertPromotionSchema = createInsertSchema(promotions).omit({
   updatedAt: true,
 }).extend({
   discountPercentage: z.number().min(0).max(100),
+});
+
+export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(3, "Code must be at least 3 characters").max(50, "Code too long"),
+  discountValue: z.number().positive("Discount value must be positive"),
+  usageLimit: z.number().positive().optional().nullable(),
+  minOrderAmount: z.number().min(0).optional(),
+  maxDiscountAmount: z.number().positive().optional().nullable(),
 });
 
 export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
