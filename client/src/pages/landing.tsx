@@ -69,10 +69,22 @@ export default function Landing() {
   const isAdmin = user?.email === 'admin@allarco.com';
 
   /* ------------------------------------------------------------------ */
-  //  Image gallery state
+  //  Data queries
   /* ------------------------------------------------------------------ */
   const { data: heroImages } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images/active"],
+    retry: false,
+  });
+
+  // Fetch pricing settings from database
+  const { data: pricingSettings } = useQuery<{
+    basePrice: number;
+    cleaningFee: number;
+    petFee: number;
+    discountWeekly: number;
+    discountMonthly: number;
+  }>({
+    queryKey: ["/api/pricing-settings"],
     retry: false,
   });
 
@@ -237,9 +249,12 @@ export default function Landing() {
   },[checkIn,checkOut])
 
   /* ------------------------------------------------------------------ */
-  //  Pricing helpers
+  //  Pricing helpers - use database settings with fallbacks
   /* ------------------------------------------------------------------ */
-  const base = 110.5, service=15
+  const base = pricingSettings?.basePrice || 110.5;
+  const cleaningFee = pricingSettings?.cleaningFee || 25;
+  const petFee = pricingSettings?.petFee || 25;
+  const service = 15;
   const nights=(!checkIn||!checkOut)?1:Math.max(1,(new Date(checkOut).getTime()-new Date(checkIn).getTime())/86_400_000)
   
   // Cleaning fee: €25 for 1 night, €35 for 2+ nights
@@ -536,7 +551,7 @@ export default function Landing() {
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-lg md:text-xl font-semibold text-gray-900">€110.50 <span className="text-sm md:text-base font-normal">/night</span></div>
+                  <div className="text-lg md:text-xl font-semibold text-gray-900">€{base.toFixed(2)} <span className="text-sm md:text-base font-normal">/night</span></div>
                   <div className="flex items-center justify-end space-x-1 mt-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-xs md:text-sm text-green-600">Available</span>
@@ -572,7 +587,7 @@ export default function Landing() {
                 
                 <div className="text-right">
                   <div className="text-base sm:text-lg font-semibold text-gray-900 transition-all duration-200 active:scale-105">
-                    €110.50 <span className="text-xs sm:text-sm font-normal">/night</span>
+                    €{base.toFixed(2)} <span className="text-xs sm:text-sm font-normal">/night</span>
                   </div>
                   <div className="flex items-center justify-end space-x-1 mt-1">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
