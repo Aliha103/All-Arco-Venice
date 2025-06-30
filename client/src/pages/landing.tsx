@@ -493,7 +493,7 @@ export default function Landing() {
               
               {/* Right: Price */}
               <div className="text-right">
-                <div className="text-xl xl:text-2xl font-semibold text-gray-900">€110.50 <span className="text-base xl:text-lg font-normal">/night</span></div>
+                <div className="text-xl xl:text-2xl font-semibold text-gray-900">€{base.toFixed(2)} <span className="text-base xl:text-lg font-normal">/night</span></div>
                 <div className="flex items-center justify-end space-x-1 mt-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-xs xl:text-sm text-green-600">Available</span>
@@ -1160,7 +1160,7 @@ export default function Landing() {
                       <PawPrint className="w-5 h-5 mr-2 text-gray-600" />
                       <div>
                         <div className="font-medium text-gray-900">Pets</div>
-                        <div className="text-xs text-gray-500">€20 fee</div>
+                        <div className="text-xs text-gray-500">€{petFee.toFixed(2)} fee</div>
                       </div>
                     </div>
                     <button
