@@ -1860,7 +1860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         checkInDate: booking.checkInDate,
         checkOutDate: booking.checkOutDate,
         guestEmail: booking.guestEmail,
-        createdAt: new Date()
+        bookingId: bookingId,
+        totalPrice: booking.totalPrice.toString()
       });
 
       res.json({ message: "No-show status reverted successfully" });
@@ -1906,10 +1907,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add activity timeline entry
       await storage.addActivityTimeline({
-        activityType: 'booking_dates_changed',
+        actionType: 'booking_dates_changed',
         description: `Booking dates changed from ${oldBooking.checkInDate} - ${oldBooking.checkOutDate} to ${newCheckInDate} - ${newCheckOutDate}`,
+        guestName: `${oldBooking.guestFirstName} ${oldBooking.guestLastName}`,
         bookingId: bookingId,
-        createdAt: new Date()
+        totalPrice: oldBooking.totalPrice.toString(),
+        guestEmail: oldBooking.guestEmail,
+        checkInDate: newCheckInDate,
+        checkOutDate: newCheckOutDate
       });
 
       res.json({ message: "Booking dates updated successfully" });
@@ -1941,10 +1946,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add activity timeline entry
       await storage.addActivityTimeline({
-        activityType: 'booking_cancelled',
+        actionType: 'booking_cancelled',
         description: `Booking #${bookingId} cancelled by admin - dates now available for new bookings`,
+        guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
         bookingId: bookingId,
-        createdAt: new Date()
+        totalPrice: booking.totalPrice.toString(),
+        guestEmail: booking.guestEmail,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate
       });
 
       res.json({ message: "Booking cancelled successfully - dates are now available" });
