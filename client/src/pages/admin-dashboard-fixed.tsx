@@ -48,7 +48,8 @@ import {
   User,
   Home,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Search
 } from "lucide-react";
 
 import SmoobuCalendar from "@/components/SmoobuCalendar";
@@ -198,6 +199,14 @@ export default function AdminDashboard() {
   
   // Postponement functionality state
   const [showPostponeDialog, setShowPostponeDialog] = useState(false);
+  
+  // Booking search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+
+
   const [postponeBooking, setPostponeBooking] = useState<Booking | null>(null);
   const [postponeForm, setPostponeForm] = useState({
     newCheckInDate: "",
@@ -877,20 +886,98 @@ export default function AdminDashboard() {
           <TabsContent value="bookings" className="space-y-4 sm:space-y-6">
             <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <CardHeader className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 border-b border-gray-100">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                  <div>
-                    <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">All Bookings</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
-                      Manage all property bookings with real-time updates from database
-                    </CardDescription>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                    <div>
+                      <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold">All Bookings</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1">
+                        Manage all property bookings with real-time updates from database
+                      </CardDescription>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {filteredBookings.length} of {bookings?.length || 0} bookings
+                    </div>
                   </div>
+                  
+                  {/* Search and Filter Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search by name, email, confirmation..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+
+                    {/* Status Filter */}
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="pending">Pending</option>
+                      <option value="checked_in">Checked In</option>
+                      <option value="checked_out">Checked Out</option>
+                      <option value="no_show">No Show</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+
+                    {/* Source Filter */}
+                    <select
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Sources</option>
+                      <option value="direct">Direct</option>
+                      <option value="airbnb">Airbnb</option>
+                      <option value="booking.com">Booking.com</option>
+                      <option value="manual">Manual</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="custom">Custom</option>
+                    </select>
+
+                    {/* Payment Filter */}
+                    <select
+                      value={paymentFilter}
+                      onChange={(e) => setPaymentFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Payment Methods</option>
+                      <option value="online">Paid Online</option>
+                      <option value="property">Pay at Property</option>
+                    </select>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  {(searchQuery || statusFilter !== 'all' || sourceFilter !== 'all' || paymentFilter !== 'all') && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('all');
+                          setSourceFilter('all');
+                          setPaymentFilter('all');
+                        }}
+                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="space-y-4">
-                  {bookings && bookings.length > 0 ? (
+                  {filteredBookings && filteredBookings.length > 0 ? (
                     <div className="space-y-3 sm:space-y-4">
-                      {bookings.map((booking) => (
+                      {filteredBookings.map((booking) => (
                         <Card 
                           key={booking.id} 
                           className="p-3 sm:p-4 lg:p-6 hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300"
