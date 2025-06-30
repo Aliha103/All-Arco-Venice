@@ -247,6 +247,17 @@ export const heroImages = pgTable("hero_images", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Pricing settings table
+export const pricingSettings = pgTable("pricing_settings", {
+  id: serial("id").primaryKey(),
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull().default("150.00"),
+  cleaningFee: decimal("cleaning_fee", { precision: 10, scale: 2 }).notNull().default("25.00"),
+  petFee: decimal("pet_fee", { precision: 10, scale: 2 }).notNull().default("35.00"),
+  discountWeekly: integer("discount_weekly").notNull().default(10),
+  discountMonthly: integer("discount_monthly").notNull().default(20),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Activity timeline for tracking all booking events
 export const activityTimeline = pgTable("activity_timeline", {
   id: serial("id").primaryKey(),
@@ -385,6 +396,11 @@ export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
   updatedAt: true,
 });
 
+export const insertPricingSettingsSchema = createInsertSchema(pricingSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export const insertActivityTimelineSchema = createInsertSchema(activityTimeline).omit({
   id: true,
   createdAt: true,
@@ -442,6 +458,10 @@ export type InsertAboutContent = z.infer<typeof insertAboutContentSchema>;
 export type AboutContent = typeof aboutContent.$inferSelect;
 export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type Promotion = typeof promotions.$inferSelect;
+export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
+export type PromoCode = typeof promoCodes.$inferSelect;
+export type InsertPricingSettings = z.infer<typeof insertPricingSettingsSchema>;
+export type PricingSettings = typeof pricingSettings.$inferSelect;
 export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
 export type HeroImage = typeof heroImages.$inferSelect;
 export type InsertActivityTimeline = z.infer<typeof insertActivityTimelineSchema>;
