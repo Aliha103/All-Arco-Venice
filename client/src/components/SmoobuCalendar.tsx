@@ -163,13 +163,15 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
     },
   });
 
-  // Convert bookings to SmoobuBooking format
-  const smoobuBookings: SmoobuBooking[] = bookings.map((booking) => ({
-    ...booking,
-    guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
-    checkIn: parseISO(booking.checkInDate),
-    checkOut: parseISO(booking.checkOutDate),
-  }));
+  // Convert bookings to SmoobuBooking format with safe array handling
+  const smoobuBookings: SmoobuBooking[] = Array.isArray(bookings) 
+    ? bookings.map((booking) => ({
+        ...booking,
+        guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
+        checkIn: parseISO(booking.checkInDate),
+        checkOut: parseISO(booking.checkOutDate),
+      }))
+    : [];
 
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentMonth),

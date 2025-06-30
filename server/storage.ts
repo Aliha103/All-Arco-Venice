@@ -31,7 +31,7 @@ import {
   type ActivityTimeline,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not, ne } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -709,7 +709,7 @@ export class DatabaseStorage implements IStorage {
 
     // Always exclude cancelled bookings from calendar display
     conditions.push(
-      ne(bookings.status, "cancelled")
+      not(eq(bookings.status, "cancelled"))
     );
 
     if (!includeBlocks) {
