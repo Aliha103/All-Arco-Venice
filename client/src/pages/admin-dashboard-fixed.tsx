@@ -472,6 +472,40 @@ export default function AdminDashboard() {
     },
   });
 
+  // Mutation for updating pricing settings
+  const updatePricingMutation = useMutation({
+    mutationFn: async (pricingData: PricingSettings) => {
+      const response = await fetch('/api/pricing-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pricingData),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update pricing");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pricing-settings"] });
+      toast({
+        title: "Success",
+        description: "Pricing settings updated successfully. Changes apply to new bookings only.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update pricing settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+
+
   // Mutation for editing booking dates
   const editDatesMutation = useMutation({
     mutationFn: async ({ bookingId, newCheckInDate, newCheckOutDate }: { 
@@ -1370,24 +1404,37 @@ export default function AdminDashboard() {
                   )}
 
                   <Button 
-                    onClick={() => {
-                      // Handle pricing update with API call
-                      updatePricingMutation.mutate(pricingForm);
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/pricing-settings', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(pricingForm),
+                        });
+                        
+                        if (!response.ok) {
+                          throw new Error('Failed to update pricing');
+                        }
+                        
+                        queryClient.invalidateQueries({ queryKey: ["/api/pricing-settings"] });
+                        toast({
+                          title: "Success",
+                          description: "Pricing settings updated successfully. Changes apply to new bookings only.",
+                        });
+                      } catch (error: any) {
+                        toast({
+                          title: "Error",
+                          description: error.message || "Failed to update pricing settings",
+                          variant: "destructive",
+                        });
+                      }
                     }}
-                    disabled={updatePricingMutation.isPending}
                     className="w-full"
                   >
-                    {updatePricingMutation.isPending ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Update Pricing
-                      </>
-                    )}
+                    <Settings className="w-4 h-4 mr-2" />
+                    Update Pricing
                   </Button>
                 </CardContent>
               </Card>
