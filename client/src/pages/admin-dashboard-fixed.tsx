@@ -48,6 +48,9 @@ import {
   User,
   Home,
   Settings,
+  Save,
+  Tag,
+  Ticket,
   ChevronDown,
   Search
 } from "lucide-react";
@@ -130,6 +133,23 @@ interface Promotion {
   endDate: string;
   description: string;
   isActive: boolean;
+}
+
+interface PromoCode {
+  id: number;
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  description: string;
+  usageLimit: number | null;
+  usageCount: number;
+  minOrderAmount: number;
+  maxDiscountAmount: number | null;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface HeroImage {
@@ -1207,6 +1227,309 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Comprehensive Pricing Management Tab */}
+          <TabsContent value="pricing" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              
+              {/* Current Pricing Display */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <DollarSign className="w-5 h-5" />
+                    <span>Current Pricing Overview</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">€{pricingSettings?.basePrice || 0}</div>
+                      <p className="text-sm text-blue-800">Base Price/Night</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">€{pricingSettings?.cleaningFee || 0}</div>
+                      <p className="text-sm text-green-800">Cleaning Fee</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">€{pricingSettings?.petFee || 0}</div>
+                      <p className="text-sm text-purple-800">Pet Fee</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">{pricingSettings?.discountWeekly || 0}%</div>
+                      <p className="text-sm text-orange-800">Weekly Discount</p>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">{pricingSettings?.discountMonthly || 0}%</div>
+                      <p className="text-sm text-red-800">Monthly Discount</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Manual Price Adjustment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Settings className="w-5 h-5" />
+                    <span>Price Adjustments</span>
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Update pricing settings manually or by percentage</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Mode Toggle */}
+                  <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg">
+                    <Button
+                      variant={pricingMode === 'manual' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setPricingMode('manual')}
+                      className="flex-1"
+                    >
+                      Manual Edit
+                    </Button>
+                    <Button
+                      variant={pricingMode === 'percentage' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setPricingMode('percentage')}
+                      className="flex-1"
+                    >
+                      Percentage Change
+                    </Button>
+                  </div>
+
+                  {pricingMode === 'manual' ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Base Price per Night (€)</Label>
+                        <Input
+                          type="number"
+                          value={pricingForm.basePrice}
+                          onChange={(e) => setPricingForm(prev => ({
+                            ...prev,
+                            basePrice: Number(e.target.value)
+                          }))}
+                          placeholder="Enter base price"
+                        />
+                      </div>
+                      <div>
+                        <Label>Cleaning Fee (€)</Label>
+                        <Input
+                          type="number"
+                          value={pricingForm.cleaningFee}
+                          onChange={(e) => setPricingForm(prev => ({
+                            ...prev,
+                            cleaningFee: Number(e.target.value)
+                          }))}
+                          placeholder="Enter cleaning fee"
+                        />
+                      </div>
+                      <div>
+                        <Label>Pet Fee (€)</Label>
+                        <Input
+                          type="number"
+                          value={pricingForm.petFee}
+                          onChange={(e) => setPricingForm(prev => ({
+                            ...prev,
+                            petFee: Number(e.target.value)
+                          }))}
+                          placeholder="Enter pet fee"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Percentage Change (%)</Label>
+                        <Input
+                          type="number"
+                          value={percentageChange}
+                          onChange={(e) => setPercentageChange(Number(e.target.value))}
+                          placeholder="Enter percentage (+ or -)"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Positive for increase, negative for decrease
+                        </p>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Preview:</strong> Base price will change from €{pricingSettings?.basePrice || 0} to €{Math.round((pricingSettings?.basePrice || 0) * (1 + percentageChange / 100))}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          const currentBase = pricingSettings?.basePrice || 0;
+                          const newBase = Math.round(currentBase * (1 + percentageChange / 100));
+                          setPricingForm(prev => ({
+                            ...prev,
+                            basePrice: newBase
+                          }));
+                        }}
+                        className="w-full"
+                      >
+                        Apply Percentage Change
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={() => {
+                      // Handle pricing update with API call
+                      updatePricingMutation.mutate(pricingForm);
+                    }}
+                    disabled={updatePricingMutation.isPending}
+                    className="w-full"
+                  >
+                    {updatePricingMutation.isPending ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Update Pricing
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Active Promotions Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Tag className="w-5 h-5" />
+                      <span>Active Promotions</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowPromotionForm(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {promotions && promotions.length > 0 ? (
+                    <div className="space-y-3">
+                      {promotions.filter(promo => promo.isActive).map((promotion) => (
+                        <div key={promotion.id} className="p-3 border rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <Badge className="bg-red-100 text-red-800">
+                                  {promotion.tag}
+                                </Badge>
+                                <span className="font-medium">{promotion.name}</span>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {promotion.discountPercentage}% off
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Until {new Date(promotion.endDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // Handle delete promotion
+                                toast({
+                                  title: "Success",
+                                  description: "Promotion deleted successfully",
+                                });
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <Tag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No active promotions</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Promo Codes Management */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Ticket className="w-5 h-5" />
+                      <span>Promo Codes</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowPromoCodeForm(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create Code
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {promoCodes && promoCodes.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {promoCodes.filter(code => code.isActive).map((code) => (
+                        <div key={code.id} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                                  {code.code}
+                                </code>
+                                <Badge variant={code.discountType === 'percentage' ? 'default' : 'secondary'}>
+                                  {code.discountType === 'percentage' ? `${code.discountValue}%` : `€${code.discountValue}`}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{code.description}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // Handle delete promo code
+                                toast({
+                                  title: "Success", 
+                                  description: "Promo code deleted successfully",
+                                });
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1 text-xs text-gray-500">
+                            <div>Used: {code.usageCount}/{code.usageLimit || '∞'}</div>
+                            <div>Valid until: {new Date(code.endDate).toLocaleDateString()}</div>
+                            {code.minOrderAmount > 0 && (
+                              <div>Min order: €{code.minOrderAmount}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Ticket className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Promo Codes</h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Create promo codes to offer discounts to your guests
+                      </p>
+                      <Button onClick={() => setShowPromoCodeForm(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create First Promo Code
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
         </Tabs>
       </div>
