@@ -707,6 +707,11 @@ export class DatabaseStorage implements IStorage {
       gt(bookings.checkOutDate, startDate)
     ];
 
+    // Always exclude cancelled bookings from calendar display
+    conditions.push(
+      ne(bookings.status, "cancelled")
+    );
+
     if (!includeBlocks) {
       // Exclude blocked dates for regular booking lists
       conditions.push(
@@ -724,7 +729,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
     }
-    // If includeBlocks is true, include ALL bookings (including blocks) for calendar display
+    // If includeBlocks is true, include blocks and active bookings (but exclude cancelled)
 
     return await db
       .select()
