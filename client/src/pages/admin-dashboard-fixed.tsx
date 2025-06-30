@@ -278,6 +278,29 @@ export default function AdminDashboard() {
     refetchInterval: 100, // 100ms refresh for real-time timeline updates
   });
 
+  // Filter and search bookings
+  const filteredBookings = bookings?.filter(booking => {
+    // Search query filter
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+      booking.guestFirstName?.toLowerCase().includes(searchLower) ||
+      booking.guestLastName?.toLowerCase().includes(searchLower) ||
+      booking.guestEmail?.toLowerCase().includes(searchLower) ||
+      booking.confirmationCode?.toLowerCase().includes(searchLower) ||
+      `${booking.guestFirstName} ${booking.guestLastName}`.toLowerCase().includes(searchLower);
+
+    // Status filter
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+
+    // Source filter  
+    const matchesSource = sourceFilter === 'all' || booking.bookingSource === sourceFilter;
+
+    // Payment filter
+    const matchesPayment = paymentFilter === 'all' || booking.paymentMethod === paymentFilter;
+
+    return matchesSearch && matchesStatus && matchesSource && matchesPayment;
+  }) || [];
+
   // Booking status alert monitoring effect
   useEffect(() => {
     if (!bookings) return;
