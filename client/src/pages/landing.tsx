@@ -257,21 +257,24 @@ export default function Landing() {
   const service = 15;
   const nights=(!checkIn||!checkOut)?1:Math.max(1,(new Date(checkOut).getTime()-new Date(checkIn).getTime())/86_400_000)
   
-  // Cleaning fee: €25 for 1 night, €35 for 2+ nights
-  const clean = nights === 1 ? 25 : 35
+  // Use dynamic cleaning fee from database
+  const clean = cleaningFee;
   
-  // Discount system: 5% for 7+ days, 10% for 14+ days
+  // Discount system: use database settings
+  const weeklyDiscount = pricingSettings?.discountWeekly || 5;
+  const monthlyDiscount = pricingSettings?.discountMonthly || 10;
+  
   const getDiscount = (nights: number) => {
-    if (nights >= 14) return 0.10; // 10% discount for 14+ days
-    if (nights >= 7) return 0.05;  // 5% discount for 7+ days
+    if (nights >= 14) return monthlyDiscount / 100; // Monthly discount for 14+ days
+    if (nights >= 7) return weeklyDiscount / 100;   // Weekly discount for 7+ days
     return 0;
   }
   
   const discount = getDiscount(nights)
   const discNight = base * (1 - discount)
   
-  // Pet fee: €15 for 1-2 nights, €25 for 3+ nights
-  const pet = hasPet ? (nights <= 2 ? 15 : 25) : 0
+  // Use dynamic pet fee from database
+  const pet = hasPet ? petFee : 0
   const total=discNight*nights+clean+service+pet
 
   /* ------------------------------------------------------------------ */
@@ -779,20 +782,26 @@ export default function Landing() {
                   {checkIn && checkOut && (
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span>€110.50 × {Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))} night</span>
-                        <span>€{(110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)}</span>
+                        <span>€{base.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                        <span>€{(base * nights).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Cleaning fee</span>
-                        <span>€25.00</span>
+                        <span>€{cleaningFee.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Service fee</span>
-                        <span>€15.00</span>
+                        <span>€{service.toFixed(2)}</span>
                       </div>
+                      {hasPet && (
+                        <div className="flex justify-between">
+                          <span>Pet fee</span>
+                          <span>€{petFee.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span>€{((110.50 * Math.max(1, Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)))) + 25 + 15).toFixed(2)}</span>
+                        <span>€{(base * nights + cleaningFee + service + (hasPet ? petFee : 0)).toFixed(2)}</span>
                       </div>
                     </div>
                   )}
