@@ -35,6 +35,18 @@ interface Booking {
   cityTax: number;
   createdAt: string;
   bookedForSelf: boolean;
+  // Optional discount and promotion fields
+  lengthOfStayDiscount?: number;
+  lengthOfStayDiscountPercent?: number;
+  promotionDiscount?: number;
+  promotionDiscountPercent?: number;
+  activePromotion?: string;
+  promoCodeDiscount?: number;
+  promoCodeDiscountPercent?: number;
+  appliedPromoCode?: string;
+  voucherDiscount?: number;
+  appliedVoucher?: string;
+  referralCredit?: number;
 }
 
 export default function BookingsPage() {
@@ -66,6 +78,36 @@ export default function BookingsPage() {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  // Calculate number of nights between dates
+  const calculateNights = (checkIn: string, checkOut: string) => {
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    return Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  // Calculate subtotal (before taxes)
+  const calculateSubtotal = (booking: any) => {
+    const nights = calculateNights(booking.checkInDate, booking.checkOutDate);
+    const baseAmount = Number(booking.basePrice) * nights;
+    const lengthOfStayDiscount = Number(booking.lengthOfStayDiscount || 0);
+    const promotionDiscount = Number(booking.promotionDiscount || 0);
+    const promoCodeDiscount = Number(booking.promoCodeDiscount || 0);
+    const voucherDiscount = Number(booking.voucherDiscount || 0);
+    const cleaningFee = Number(booking.cleaningFee || 0);
+    const serviceFee = Number(booking.serviceFee || 0);
+    const petFee = Number(booking.petFee || 0);
+    const referralCredit = Number(booking.referralCredit || 0);
+    
+    return baseAmount - lengthOfStayDiscount - promotionDiscount - promoCodeDiscount - voucherDiscount + cleaningFee + serviceFee + petFee - referralCredit;
+  };
+
+  // Calculate correct total amount
+  const calculateTotal = (booking: any) => {
+    const subtotal = calculateSubtotal(booking);
+    const cityTax = Number(booking.cityTax || 0);
+    return subtotal + cityTax;
   };
 
   const getStatusBadge = (status: string, paymentStatus: string) => {
@@ -177,7 +219,7 @@ export default function BookingsPage() {
           </div>
           <div className="text-right">
             {getStatusBadge(booking.status, booking.paymentStatus)}
-            <p className="text-lg font-bold text-gray-900 mt-1">€{Number(booking.totalPrice).toFixed(2)}</p>
+            <p className="text-lg font-bold text-gray-900 mt-1">€{calculateTotal(booking).toFixed(2)}</p>
           </div>
         </div>
 
@@ -371,7 +413,7 @@ export default function BookingsPage() {
                             Total
                           </span>
                           <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                            €{Number(lookupResult.totalPrice).toFixed(2)}
+                            €{calculateTotal(lookupResult).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -466,7 +508,7 @@ export default function BookingsPage() {
                             </div>
                             <div className="text-sm">
                               <div className="text-xl font-bold bg-gradient-to-r from-emerald-700 to-green-600 bg-clip-text text-transparent">
-                                €{userBookings.reduce((total, booking) => total + Number(booking.totalPrice), 0).toFixed(0)}
+                                €{userBookings.reduce((total, booking) => total + calculateTotal(booking), 0).toFixed(0)}
                               </div>
                               <div className="text-emerald-600 text-xs font-medium">total value</div>
                             </div>
@@ -652,31 +694,77 @@ export default function BookingsPage() {
                 <h3 className="font-semibold text-lg mb-3">Pricing Breakdown</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>Base Price:</span>
-                    <span>€{Number(selectedBooking.basePrice).toFixed(2)}</span>
+                    <span>€{Number(selectedBooking.basePrice).toFixed(2)} × {calculateNights(selectedBooking.checkInDate, selectedBooking.checkOutDate)} night{calculateNights(selectedBooking.checkInDate, selectedBooking.checkOutDate) !== 1 ? 's' : ''}</span>
+                    <span>€{(Number(selectedBooking.basePrice) * calculateNights(selectedBooking.checkInDate, selectedBooking.checkOutDate)).toFixed(2)}</span>
                   </div>
+                  
+                  {/* Length of Stay Discount */}
+                  {Number(selectedBooking.lengthOfStayDiscount || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Length of stay discount ({selectedBooking.lengthOfStayDiscountPercent || 0}%)</span>
+                      <span>-€{Number(selectedBooking.lengthOfStayDiscount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Promotion Discount */}
+                  {Number(selectedBooking.promotionDiscount || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Promotion: {selectedBooking.activePromotion} ({selectedBooking.promotionDiscountPercent}% off)</span>
+                      <span>-€{Number(selectedBooking.promotionDiscount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Promo Code Discount */}
+                  {Number(selectedBooking.promoCodeDiscount || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Promo code: {selectedBooking.appliedPromoCode} ({selectedBooking.promoCodeDiscountPercent}% off)</span>
+                      <span>-€{Number(selectedBooking.promoCodeDiscount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Voucher Discount */}
+                  {Number(selectedBooking.voucherDiscount || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Voucher: {selectedBooking.appliedVoucher}</span>
+                      <span>-€{Number(selectedBooking.voucherDiscount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
-                    <span>Cleaning Fee:</span>
+                    <span>🧹 Cleaning fee</span>
                     <span>€{Number(selectedBooking.cleaningFee).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Service Fee:</span>
+                    <span>🛎️ Service fee</span>
                     <span>€{Number(selectedBooking.serviceFee).toFixed(2)}</span>
                   </div>
                   {Number(selectedBooking.petFee) > 0 && (
                     <div className="flex justify-between">
-                      <span>Pet Fee:</span>
+                      <span>🐾 Pet fee</span>
                       <span>€{Number(selectedBooking.petFee).toFixed(2)}</span>
                     </div>
                   )}
+                  
+                  {/* Referral Credit */}
+                  {Number(selectedBooking.referralCredit || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Referral credit</span>
+                      <span>-€{Number(selectedBooking.referralCredit).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
-                    <span>City Tax:</span>
+                    <span>📊 Subtotal</span>
+                    <span>€{calculateSubtotal(selectedBooking).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>🏛️ Taxes</span>
                     <span>€{Number(selectedBooking.cityTax).toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
-                    <span>Total:</span>
-                    <span>€{Number(selectedBooking.totalPrice).toFixed(2)}</span>
+                    <span>💎 Total Amount</span>
+                    <span>€{calculateTotal(selectedBooking).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

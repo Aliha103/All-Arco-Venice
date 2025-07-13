@@ -8,6 +8,9 @@ import {
   aboutContent,
   promotions,
   promoCodes,
+  promoCodeUsage,
+  vouchers,
+  voucherUsage,
   pricingSettings,
   heroImages,
   activityTimeline,
@@ -29,15 +32,95 @@ import {
   type Promotion,
   type InsertPromoCode,
   type PromoCode,
+  type InsertPromoCodeUsage,
+  type PromoCodeUsage,
   type InsertPricingSettings,
   type PricingSettings,
   type InsertHeroImage,
   type HeroImage,
   type InsertActivityTimeline,
   type ActivityTimeline,
-} from "@shared/schema";
+} from "../shared/schema";
+// PMS imports removed - not available in current schema
 import { db } from "./db";
 import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not, ne } from "drizzle-orm";
+
+// Temporary PMS type definitions
+interface PMSIntegration {
+  id: string;
+  name: string;
+  platform: string;
+  status: string;
+  lastSync: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  bookingsCount: number;
+}
+
+interface InsertPMSIntegration {
+  id: string;
+  name: string;
+  platform: string;
+  status: string;
+  lastSync: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  bookingsCount: number;
+}
+
+interface PMSBooking {
+  id: string;
+  start: Date;
+  end: Date;
+  guestName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface InsertPMSBooking {
+  id: string;
+  start: Date;
+  end: Date;
+  guestName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PMSReview {
+  id: string;
+  date: Date;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface InsertPMSReview {
+  id: string;
+  date: Date;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PMSMessage {
+  id: string;
+  timestamp: Date;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface InsertPMSMessage {
+  id: string;
+  timestamp: Date;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -47,9 +130,12 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   createLocalUser(userData: { firstName: string; lastName: string; email: string; password: string; referralCode?: string }): Promise<User>;
   createAdminUser(userData: { firstName: string; lastName: string; email: string; password: string }): Promise<User>;
+  createUser(userData: { firstName: string; lastName: string; email: string; password?: string; profileImageUrl?: string; provider?: string; providerId?: string; role?: string }): Promise<User>;
   incrementReferralCount(userId: string): Promise<void>;
   updateUserProfile(userId: string, data: Partial<User>): Promise<User>;
+  updateUser(userId: string, data: Partial<User>): Promise<User>;
   deductUserCredits(userId: string, amount: number): Promise<void>;
+  addUserCredits(userId: string, amount: number): Promise<void>;
   getAllUsersWithDetails(): Promise<Array<{
     id: string;
     firstName: string;
@@ -78,15 +164,20 @@ export interface IStorage {
     guestPhone: string;
     checkInDate: string;
     checkOutDate: string;
+    checkInTime?: string;
+    checkOutTime?: string;
     guests: number;
     paymentMethod: "online" | "property";
     hasPet?: boolean;
     referralCode?: string;
+    promoCode?: string;
+    voucherCode?: string;
+    creditsUsed?: number;
     createdBy?: "admin" | "guest";
     bookedForSelf?: boolean;
     userId?: string;
     blockReason?: string;
-    bookingSource?: string;
+    bookingSource?: "direct" | "airbnb" | "booking.com" | "custom" | "blocked";
   }): Promise<Booking>;
   getBookings(filters?: { status?: string; userId?: string }): Promise<Booking[]>;
   getBooking(id: number): Promise<Booking | undefined>;
@@ -97,7 +188,7 @@ export interface IStorage {
   checkAvailability(checkIn: string, checkOut: string, excludeBookingId?: number): Promise<boolean>;
   getBookingsByDateRange(startDate: string, endDate: string): Promise<Booking[]>;
   associateBookingWithUser(bookingId: number, userId: string): Promise<void>;
-  calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string): Promise<{
+  calculateBookingPricing(checkIn: string, checkOut: string, guests: number, hasPet: boolean, referralCode?: string, promoCode?: string, voucherCode?: string): Promise<{
     basePrice: number;
     totalNights: number;
     priceBeforeDiscount: number;
@@ -109,7 +200,16 @@ export interface IStorage {
     petFee: number;
     cityTax: number;
     referralCredit: number;
+    promoCodeDiscount: number;
+    promoCodeDiscountPercent: number;
+    appliedPromoCode: string | null;
+    voucherDiscount: number;
+    appliedVoucher: string | null;
     totalPrice: number;
+    promotionDiscount: number;
+    promotionDiscountPercent: number;
+    activePromotion: string | null;
+    originalPrice: number;
   }>;
   
   // Property image operations
@@ -126,7 +226,14 @@ export interface IStorage {
   
   // Reviews operations
   getReviews(): Promise<Review[]>;
+  getAllReviews(): Promise<Review[]>;
   addReview(review: InsertReview): Promise<Review>;
+  addGuestReview(review: any): Promise<Review>;
+  getReviewByBookingAndEmail(bookingId: number, guestEmail: string): Promise<Review | null>;
+  getReviewByBookingId(bookingId: number): Promise<Review | null>;
+  approveReview(reviewId: number): Promise<Review>;
+  rejectReview(reviewId: number, reason?: string): Promise<Review>;
+  getPendingReviews(): Promise<Review[]>;
   getReviewStats(): Promise<{
     averageRating: number;
     totalCount: number;
@@ -174,6 +281,10 @@ export interface IStorage {
   getPromoCodes(): Promise<PromoCode[]>;
   createPromoCode(promoCode: InsertPromoCode): Promise<PromoCode>;
   deletePromoCode(id: number): Promise<void>;
+  validatePromoCode(code: string): Promise<PromoCode | null>;
+  recordPromoCodeUsage(usage: InsertPromoCodeUsage): Promise<PromoCodeUsage>;
+  getPromoCodeUsage(promoCodeId: number): Promise<PromoCodeUsage[]>;
+  getPromoCodeWithUsage(promoCodeId: number): Promise<{ promoCode: PromoCode; usage: PromoCodeUsage[] } | null>;
 
   // Pricing settings operations
   getPricingSettings(): Promise<PricingSettings | undefined>;
@@ -190,22 +301,162 @@ export interface IStorage {
   // Activity timeline operations
   getActivityTimeline(): Promise<ActivityTimeline[]>;
   addActivityTimeline(timeline: InsertActivityTimeline): Promise<ActivityTimeline>;
+  
+  // PMS operations
+  getPMSIntegrations(): Promise<PMSIntegration[]>;
+  createPMSIntegration(integration: Omit<InsertPMSIntegration, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSIntegration>;
+  getPMSIntegration(id: string): Promise<PMSIntegration | undefined>;
+  deletePMSIntegration(id: string): Promise<void>;
+  updatePMSIntegrationSync(id: string): Promise<void>;
+  updatePMSIntegrationStatus(id: string, status: string): Promise<void>;
+  updatePMSIntegrationBookingCount(id: string, count: number): Promise<void>;
+  
+  getPMSBookings(): Promise<PMSBooking[]>;
+  createPMSBooking(booking: Omit<InsertPMSBooking, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSBooking>;
+  
+  getPMSReviews(): Promise<PMSReview[]>;
+  createPMSReview(review: Omit<InsertPMSReview, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSReview>;
+  
+  getPMSMessages(): Promise<PMSMessage[]>;
+  createPMSMessage(message: Omit<InsertPMSMessage, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSMessage>;
+  markPMSMessageAsRead(id: string): Promise<void>;
+  
+  // Team Management operations
+  getAllRoles(): Promise<any[]>;
+  getAllTeamMembers(): Promise<any[]>;
+  createTeamMember(data: any): Promise<any>;
+  getTeamMemberByUserId(userId: string): Promise<any | null>;
+  updateTeamMemberStatus(id: string, isActive: boolean): Promise<void>;
+  deleteTeamMember(id: string): Promise<void>;
+  resetTeamMemberPassword(id: string): Promise<string>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // In-memory storage for team management (until proper DB tables are created)
+  private teamMembers: any[] = [];
+  private roles: any[] = [];
+  
+  constructor() {
+    // Initialize with default admin user
+    this.teamMembers = [
+      {
+        id: '1',
+        userId: '1',
+        email: 'admin@allarco.com',
+        firstName: 'Hassan',
+        lastName: 'Cheema',
+        role: {
+          id: '1',
+          name: 'admin',
+          displayName: 'Administrator',
+          color: '#3b82f6',
+          permissions: ['bookings:view', 'bookings:create', 'users:view', 'analytics:view']
+        },
+        customPermissions: [],
+        restrictions: [],
+        allowedFeatures: [],
+        allowedProperties: [],
+        accessLevel: 'full',
+        isActive: true,
+        lastAccessAt: new Date().toISOString(),
+        expiresAt: null,
+        createdAt: new Date().toISOString(),
+        riskScore: 15,
+        deviceInfo: {},
+        location: {}
+      }
+    ];
+  }
+  
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      password: users.password,
+      dateOfBirth: users.dateOfBirth,
+      country: users.country,
+      mobileNumber: users.mobileNumber,
+      referralCode: users.referralCode,
+      referredBy: users.referredBy,
+      referrerName: users.referrerName,
+      totalReferrals: users.totalReferrals,
+      accountCredits: users.accountCredits,
+      authProvider: users.authProvider,
+      providerId: users.providerId,
+      role: users.role,
+      totpSecret: users.totpSecret,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdBy: users.createdBy,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.id, id));
+    
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      password: users.password,
+      dateOfBirth: users.dateOfBirth,
+      country: users.country,
+      mobileNumber: users.mobileNumber,
+      referralCode: users.referralCode,
+      referredBy: users.referredBy,
+      referrerName: users.referrerName,
+      totalReferrals: users.totalReferrals,
+      accountCredits: users.accountCredits,
+      authProvider: users.authProvider,
+      providerId: users.providerId,
+      role: users.role,
+      // Include columns that now exist in database after migration
+      totpSecret: users.totpSecret,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdBy: users.createdBy,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.email, email));
+    
     return user;
   }
 
   async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.referralCode, referralCode));
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      password: users.password,
+      dateOfBirth: users.dateOfBirth,
+      country: users.country,
+      mobileNumber: users.mobileNumber,
+      referralCode: users.referralCode,
+      referredBy: users.referredBy,
+      referrerName: users.referrerName,
+      totalReferrals: users.totalReferrals,
+      accountCredits: users.accountCredits,
+      authProvider: users.authProvider,
+      providerId: users.providerId,
+      role: users.role,
+      totpSecret: users.totpSecret,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdBy: users.createdBy,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.referralCode, referralCode));
+    
     return user;
   }
 
@@ -304,6 +555,42 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createUser(userData: { firstName: string; lastName: string; email: string; password?: string; profileImageUrl?: string; provider?: string; providerId?: string; role?: string }): Promise<User> {
+    const provider = userData.provider || "local";
+    const id = `${provider}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Generate a unique referral code for new user
+    let newReferralCode: string;
+    let isUnique = false;
+    
+    while (!isUnique) {
+      newReferralCode = `${userData.firstName.substring(0, 2).toUpperCase()}${userData.lastName.substring(0, 2).toUpperCase()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const existingUser = await this.getUserByReferralCode(newReferralCode);
+      if (!existingUser) {
+        isUnique = true;
+      }
+    }
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        password: userData.password || "", // Empty password for OAuth users
+        profileImageUrl: userData.profileImageUrl,
+        referralCode: newReferralCode!,
+        authProvider: provider as "local" | "google" | "replit",
+        providerId: userData.providerId,
+        role: userData.role as "guest" | "admin" | "team_member" || "guest",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return user;
+  }
+
   async incrementReferralCount(userId: string): Promise<void> {
     await db
       .update(users)
@@ -326,11 +613,33 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
   async deductUserCredits(userId: string, amount: number): Promise<void> {
     await db
       .update(users)
       .set({
         accountCredits: sql`${users.accountCredits} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async addUserCredits(userId: string, amount: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        accountCredits: sql`${users.accountCredits} + ${amount}`,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
@@ -345,16 +654,20 @@ export class DatabaseStorage implements IStorage {
     guestPhone: string;
     checkInDate: string;
     checkOutDate: string;
+    checkInTime?: string;
+    checkOutTime?: string;
     guests: number;
     paymentMethod: "online" | "property";
     hasPet?: boolean;
     referralCode?: string;
+    promoCode?: string;
+    voucherCode?: string;
     creditsUsed?: number;
     createdBy?: "admin" | "guest";
     bookedForSelf?: boolean;
     userId?: string;
     blockReason?: string;
-    bookingSource?: string;
+    bookingSource?: "direct" | "airbnb" | "booking.com" | "custom" | "blocked";
   }): Promise<Booking> {
     // Calculate comprehensive pricing
     const pricing = await this.calculateBookingPricing(
@@ -362,7 +675,9 @@ export class DatabaseStorage implements IStorage {
       bookingData.checkOutDate,
       bookingData.guests,
       bookingData.hasPet || false,
-      bookingData.referralCode
+      bookingData.referralCode,
+      bookingData.promoCode,
+      bookingData.voucherCode
     );
 
     // Handle referral user lookup
@@ -416,7 +731,18 @@ export class DatabaseStorage implements IStorage {
         lengthOfStayDiscount: pricing.lengthOfStayDiscount.toString(),
         lengthOfStayDiscountPercent: pricing.lengthOfStayDiscountPercent,
         referralCredit: pricing.referralCredit.toString(),
-        totalDiscountAmount: (pricing.lengthOfStayDiscount + pricing.referralCredit).toString(),
+        
+        // Promotion and voucher discounts
+        promotionDiscount: pricing.promotionDiscount.toString(),
+        promotionDiscountPercent: pricing.promotionDiscountPercent,
+        activePromotion: pricing.activePromotion || null,
+        promoCodeDiscount: pricing.promoCodeDiscount.toString(),
+        promoCodeDiscountPercent: pricing.promoCodeDiscountPercent,
+        appliedPromoCode: pricing.appliedPromoCode || null,
+        voucherDiscount: pricing.voucherDiscount.toString(),
+        appliedVoucher: pricing.appliedVoucher || null,
+        
+        totalDiscountAmount: pricing.totalDiscountAmount.toString(),
         
         // Final pricing
         totalPrice: pricing.totalPrice.toString(),
@@ -444,7 +770,75 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
+    // Record promo code usage if a promo code was applied
+    if (bookingData.promoCode && pricing.appliedPromoCode) {
+      const validPromoCode = await this.validatePromoCode(bookingData.promoCode.toUpperCase());
+      if (validPromoCode) {
+        await this.recordPromoCodeUsage({
+          promoCodeId: validPromoCode.id,
+          bookingId: booking.id,
+          userId: bookingData.userId || null,
+          guestEmail: bookingData.guestEmail,
+          guestName: `${bookingData.guestFirstName} ${bookingData.guestLastName}`,
+          discountAmount: pricing.promoCodeDiscount.toString(),
+        });
+      }
+    }
+    
+    // Record voucher usage if a voucher was applied
+
+
+
+
+    if (bookingData.voucherCode && pricing.appliedVoucher) {
+
+
+      try {
+        // Find the voucher by code to get its ID
+        const [voucher] = await db.select().from(vouchers).where(eq(vouchers.code, bookingData.voucherCode.toUpperCase())).limit(1);
+        
+        if (voucher) {
+
+          await this.recordVoucherUsage({
+            voucherId: voucher.id,
+            bookingId: booking.id,
+            userId: bookingData.userId || null,
+            guestEmail: bookingData.guestEmail,
+            guestName: `${bookingData.guestFirstName} ${bookingData.guestLastName}`,
+            discountAmount: pricing.voucherDiscount.toString(),
+            bookingAmount: (pricing.priceBeforeDiscount + pricing.cleaningFee + pricing.serviceFee + pricing.petFee + pricing.cityTax - pricing.referralCredit).toString(),
+            checkInDate: bookingData.checkInDate,
+            checkOutDate: bookingData.checkOutDate,
+          });
+
+        } else {
+
+        }
+      } catch (error) {
+
+      }
+    } else {
+
+    }
+    
     return booking;
+  }
+
+  async recordVoucherUsage(usage: { voucherId: number; bookingId: number; userId: string | null; guestEmail: string; guestName: string; discountAmount: string; bookingAmount: string; checkInDate: string; checkOutDate: string; }): Promise<void> {
+    // Record the usage
+    await db
+      .insert(voucherUsage)
+      .values(usage)
+      .returning();
+
+    // Increment the usage count
+    await db
+      .update(vouchers)
+      .set({
+        usageCount: sql`${vouchers.usageCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(vouchers.id, usage.voucherId));
   }
 
   async getBookingByConfirmationCode(code: string): Promise<Booking | undefined> {
@@ -460,7 +854,9 @@ export class DatabaseStorage implements IStorage {
     checkOut: string, 
     guests: number, 
     hasPet: boolean, 
-    referralCode?: string
+    referralCode?: string,
+    promoCode?: string,
+    voucherCode?: string
   ): Promise<{
     basePrice: number;
     totalNights: number;
@@ -473,9 +869,22 @@ export class DatabaseStorage implements IStorage {
     petFee: number;
     cityTax: number;
     referralCredit: number;
+    promoCodeDiscount: number;
+    promoCodeDiscountPercent: number;
+    appliedPromoCode: string | null;
+    voucherDiscount: number;
+    appliedVoucher: string | null;
     totalPrice: number;
+    promotionDiscount: number;
+    promotionDiscountPercent: number;
+    activePromotion: string | null;
+    totalDiscountAmount: number;
+    originalPrice: number;
   }> {
-    const basePrice = 110.50; // €110.50 per night
+
+    // Fetch dynamic pricing from database
+    const pricingSettings = await this.getPricingSettings();
+    const basePrice = parseFloat(pricingSettings?.basePrice || "110.50");
     const serviceFee = 15.00;
     
     // Calculate nights
@@ -483,8 +892,10 @@ export class DatabaseStorage implements IStorage {
     const checkOutDate = new Date(checkOut);
     const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Cleaning fee: €25 for 1 night, €35 for 2+ nights
-    const cleaningFee = totalNights === 1 ? 25.00 : 35.00;
+    // Dynamic cleaning fee based on stay duration (configurable)
+    const cleaningFeeShortStay = parseFloat(pricingSettings?.cleaningFeeShortStay || "25.00");
+    const cleaningFeeLongStay = parseFloat(pricingSettings?.cleaningFeeLongStay || "35.00");
+    const cleaningFee = totalNights <= 2 ? cleaningFeeShortStay : cleaningFeeLongStay;
     
     // Base pricing
     const priceBeforeDiscount = basePrice * totalNights;
@@ -498,10 +909,11 @@ export class DatabaseStorage implements IStorage {
     }
     
     const lengthOfStayDiscount = priceBeforeDiscount * (lengthOfStayDiscountPercent / 100);
-    const priceAfterDiscount = priceBeforeDiscount - lengthOfStayDiscount;
     
-    // Pet fee: €15 for 1-2 nights, €25 for 3+ nights
-    const petFee = hasPet ? (totalNights <= 2 ? 15.00 : 25.00) : 0;
+    // Dynamic pet cleaning fee based on stay duration (configurable, only if pet is present)
+    const petFeeShortStay = parseFloat(pricingSettings?.petFeeShortStay || "15.00");
+    const petFeeLongStay = parseFloat(pricingSettings?.petFeeLongStay || "25.00");
+    const petFee = hasPet ? (totalNights <= 2 ? petFeeShortStay : petFeeLongStay) : 0;
     
     // City tax: 4€ per adult (16+) per night, maximum 5 nights
     const taxableNights = Math.min(totalNights, 5);
@@ -516,9 +928,110 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Final total calculation
+    // Check for active promotions
+    const activePromotions = await this.getActivePromotions();
+    let promotionDiscount = 0;
+    let promotionDiscountPercent = 0;
+    let activePromotion: string | null = null;
+    
+    if (activePromotions.length > 0) {
+      // Use the highest discount promotion if multiple are active
+      const bestPromotion = activePromotions.reduce((best, current) => 
+        current.discountPercentage > best.discountPercentage ? current : best
+      );
+      
+      promotionDiscountPercent = bestPromotion.discountPercentage;
+      activePromotion = bestPromotion.name;
+      // Apply promotion discount to the base price before other calculations
+      promotionDiscount = priceBeforeDiscount * (promotionDiscountPercent / 100);
+    }
+
+    // Check for promo code discounts
+    let promoCodeDiscount = 0;
+    let promoCodeDiscountPercent = 0;
+    let appliedPromoCode: string | null = null;
+    
+    if (promoCode) {
+      const validPromoCode = await this.validatePromoCode(promoCode.toUpperCase());
+      if (validPromoCode) {
+        appliedPromoCode = validPromoCode.code;
+        
+        if (validPromoCode.discountType === 'percentage') {
+          promoCodeDiscountPercent = Number(validPromoCode.discountValue);
+          promoCodeDiscount = priceBeforeDiscount * (promoCodeDiscountPercent / 100);
+          
+          // Apply max discount amount if specified
+          if (validPromoCode.maxDiscountAmount) {
+            const maxDiscount = Number(validPromoCode.maxDiscountAmount);
+            promoCodeDiscount = Math.min(promoCodeDiscount, maxDiscount);
+          }
+        } else if (validPromoCode.discountType === 'fixed') {
+          promoCodeDiscount = Number(validPromoCode.discountValue);
+        }
+        
+        // Check minimum order amount
+        if (validPromoCode.minOrderAmount && priceBeforeDiscount < Number(validPromoCode.minOrderAmount)) {
+          promoCodeDiscount = 0;
+          promoCodeDiscountPercent = 0;
+          appliedPromoCode = null;
+        }
+      }
+    }
+    
+    // Check for voucher discounts
+    let voucherDiscount = 0;
+    let appliedVoucher: string | null = null;
+    
+    if (voucherCode) {
+      // Calculate total booking amount for voucher validation (base price + fees)
+      const totalBookingAmount = priceBeforeDiscount + cleaningFee + serviceFee + petFee + cityTax - referralCredit;
+
+
+
+
+
+
+
+
+      const validVoucher = await this.validateVoucher(voucherCode.toUpperCase(), totalBookingAmount);
+
+      if (validVoucher) {
+        appliedVoucher = validVoucher.code;
+        
+        if (validVoucher.discountType === 'percentage') {
+          voucherDiscount = priceBeforeDiscount * (Number(validVoucher.discountValue) / 100);
+          
+          // Apply max discount amount if specified
+          if (validVoucher.maxDiscountAmount && Number(validVoucher.maxDiscountAmount) > 0) {
+            const maxDiscount = Number(validVoucher.maxDiscountAmount);
+            voucherDiscount = Math.min(voucherDiscount, maxDiscount);
+          }
+        } else if (validVoucher.discountType === 'fixed') {
+          voucherDiscount = Number(validVoucher.discountValue);
+        }
+
+      } else {
+
+      }
+    }
+    
+    // Calculate price after all discounts (promotions, promo codes, vouchers)
+    const totalDiscountFromPromotionsAndCodes = promotionDiscount + promoCodeDiscount + voucherDiscount;
+    const priceAfterDiscount = priceBeforeDiscount - totalDiscountFromPromotionsAndCodes;
+    
+    // Calculate total discount amount (includes all discounts and credits)
+    const totalDiscountAmount = promotionDiscount + promoCodeDiscount + voucherDiscount + lengthOfStayDiscount + referralCredit;
+    
+    // Final total calculation: price after discount + fees - referral credit
     const totalPrice = priceAfterDiscount + cleaningFee + serviceFee + petFee + cityTax - referralCredit;
     
+    // Store original total for display purposes
+    const originalPrice = priceBeforeDiscount + cleaningFee + serviceFee + petFee + cityTax;
+
+
+
+
+
     return {
       basePrice,
       totalNights,
@@ -531,15 +1044,25 @@ export class DatabaseStorage implements IStorage {
       petFee,
       cityTax,
       referralCredit,
-      totalPrice: Math.max(0, totalPrice) // Ensure non-negative
+      promoCodeDiscount,
+      promoCodeDiscountPercent,
+      appliedPromoCode,
+      voucherDiscount,
+      appliedVoucher,
+      totalPrice: Math.max(0, totalPrice), // Ensure non-negative
+      promotionDiscount,
+      promotionDiscountPercent,
+      activePromotion,
+      totalDiscountAmount,
+      originalPrice: Math.max(0, originalPrice)
     };
   }
 
   private generateConfirmationCode(): string {
-    // Generate 8-character alphanumeric confirmation code
+    // Generate ARCO-prefixed confirmation code with 6 random characters
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
+    let result = 'ARCO';
+    for (let i = 0; i < 6; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
@@ -623,13 +1146,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, bookingId));
   }
 
-  async getBooking(bookingId: number): Promise<Booking | undefined> {
-    const [booking] = await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, bookingId));
-    return booking;
-  }
 
   async getBookingById(id: number): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
@@ -650,7 +1166,7 @@ export class DatabaseStorage implements IStorage {
         checkOutDate: data.newCheckOutDate,
         checkInTime: data.newCheckInTime,
         checkOutTime: data.newCheckOutTime,
-        cityTax: data.newCityTax,
+        cityTax: data.newCityTax.toString(),
         updatedAt: new Date(),
         modificationDate: new Date()
       })
@@ -661,6 +1177,38 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(bookings)
       .set({ paymentStatus: paymentStatus as any, updatedAt: new Date() })
+      .where(eq(bookings.id, id));
+  }
+
+  async updateBookingPaymentInfo(id: number, data: {
+    paymentReceived: boolean;
+    paymentReceivedBy: string | null;
+    paymentReceivedAt: string | null;
+  }): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ 
+        paymentReceived: data.paymentReceived,
+        paymentReceivedBy: data.paymentReceivedBy,
+        paymentReceivedAt: data.paymentReceivedAt ? new Date(data.paymentReceivedAt) : null,
+        updatedAt: new Date()
+      })
+      .where(eq(bookings.id, id));
+  }
+
+  async updateBookingCityTaxInfo(id: number, data: {
+    cityTaxCollected: boolean;
+    cityTaxCollectedBy: string | null;
+    cityTaxCollectedAt: string | null;
+  }): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ 
+        cityTaxCollected: data.cityTaxCollected,
+        cityTaxCollectedBy: data.cityTaxCollectedBy,
+        cityTaxCollectedAt: data.cityTaxCollectedAt ? new Date(data.cityTaxCollectedAt) : null,
+        updatedAt: new Date()
+      })
       .where(eq(bookings.id, id));
   }
 
@@ -731,17 +1279,17 @@ export class DatabaseStorage implements IStorage {
       // Exclude blocked dates for regular booking lists
       conditions.push(
         or(
-          eq(bookings.status, "confirmed"),
-          eq(bookings.status, "checked_in")
-        )
+          eq(bookings.status, "confirmed" as any),
+          eq(bookings.status, "checked_in" as any)
+        ) as any
       );
       conditions.push(
         or(
-          eq(bookings.bookingSource, "direct"),
-          eq(bookings.bookingSource, "airbnb"), 
-          eq(bookings.bookingSource, "booking.com"),
-          eq(bookings.bookingSource, "custom")
-        )
+          eq(bookings.bookingSource, "direct" as any),
+          eq(bookings.bookingSource, "airbnb" as any), 
+          eq(bookings.bookingSource, "booking.com" as any),
+          eq(bookings.bookingSource, "custom" as any)
+        ) as any
       );
     }
     // If includeBlocks is true, include blocks and active bookings (but exclude cancelled)
@@ -820,9 +1368,76 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reviews.createdAt));
   }
 
+  async getAllReviews(): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .orderBy(desc(reviews.createdAt));
+  }
+
   async addReview(reviewData: InsertReview): Promise<Review> {
     const [review] = await db.insert(reviews).values(reviewData).returning();
     return review;
+  }
+
+  async addGuestReview(reviewData: any): Promise<Review> {
+    const [review] = await db.insert(reviews).values(reviewData).returning();
+    return review;
+  }
+
+  async getReviewByBookingAndEmail(bookingId: number, guestEmail: string): Promise<Review | null> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(and(
+        eq(reviews.bookingId, bookingId),
+        eq(reviews.guestEmail, guestEmail)
+      ));
+    return review || null;
+  }
+
+  async getReviewByBookingId(bookingId: number): Promise<Review | null> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.bookingId, bookingId));
+    return review || null;
+  }
+
+  async approveReview(reviewId: number): Promise<Review> {
+    const [review] = await db
+      .update(reviews)
+      .set({ 
+        isApproved: true, 
+        isVisible: true
+      })
+      .where(eq(reviews.id, reviewId))
+      .returning();
+    return review;
+  }
+
+  async rejectReview(reviewId: number, reason?: string): Promise<Review> {
+    const [review] = await db
+      .update(reviews)
+      .set({ 
+        isApproved: false, 
+        isVisible: false
+      })
+      .where(eq(reviews.id, reviewId))
+      .returning();
+    return review;
+  }
+
+  async getPendingReviews(): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.isApproved, false))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async deleteReview(reviewId: number): Promise<void> {
+    await db.delete(reviews).where(eq(reviews.id, reviewId));
   }
 
   async getReviewStats(): Promise<{
@@ -1005,58 +1620,143 @@ export class DatabaseStorage implements IStorage {
     totalSpent: number;
     isRegistered: boolean;
   }>> {
-    // Get all users
+    // Get all registered users
     const allUsers = await db.select().from(users);
 
-    // Get booking statistics for each user
-    const usersWithDetails = await Promise.all(
-      allUsers.map(async (user) => {
-        // Calculate booking statistics for this user
-        const userBookings = await db
-          .select({
-            count: count(),
-            totalSpent: sql<number>`COALESCE(SUM(${bookings.totalPrice}), 0)`,
-          })
-          .from(bookings)
-          .where(
-            and(
-              eq(bookings.status, 'confirmed'),
-              or(
-                eq(bookings.userId, user.id),
-                eq(bookings.guestEmail, user.email)
-              )
-            )
-          );
-
-        const bookingStats = userBookings[0] || { count: 0, totalSpent: 0 };
-
-        return {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          dateOfBirth: user.dateOfBirth ? (typeof user.dateOfBirth === 'string' ? user.dateOfBirth : user.dateOfBirth.toISOString()) : undefined,
-          country: user.country || undefined,
-          mobileNumber: user.mobileNumber || undefined,
-          referralCode: user.referralCode || '',
-          totalReferrals: user.totalReferrals || 0,
-          referredBy: user.referredBy || undefined,
-          referrerName: user.referrerName || undefined,
-          credits: user.credits || 0,
-          provider: user.replit_id ? 'replit' : 'local',
-          totalBookings: bookingStats.count,
-          totalSpent: Number(bookingStats.totalSpent) || 0,
-          isRegistered: !!user.password || !!user.replit_id,
-        };
+    // Get all bookings to find unregistered users
+    const allBookings = await db
+      .select({
+        guestFirstName: bookings.guestFirstName,
+        guestLastName: bookings.guestLastName,
+        guestEmail: bookings.guestEmail,
+        guestCountry: bookings.guestCountry,
+        guestPhone: bookings.guestPhone,
+        totalPrice: bookings.totalPrice,
+        status: bookings.status,
+        userId: bookings.userId,
       })
-    );
+      .from(bookings)
+      .where(eq(bookings.status, 'confirmed'));
 
-    return usersWithDetails.sort((a, b) => b.totalSpent - a.totalSpent);
+    // Create a map of all unique users (both registered and unregistered)
+    const userMap = new Map();
+
+    // Add registered users
+    for (const user of allUsers) {
+      // Calculate booking statistics for this user
+      const userBookings = await db
+        .select({
+          count: count(),
+          totalSpent: sql<number>`COALESCE(SUM(${bookings.totalPrice}), 0)`,
+        })
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.status, 'confirmed'),
+            or(
+              eq(bookings.userId, user.id),
+              eq(bookings.guestEmail, user.email)
+            )
+          )
+        );
+
+      const bookingStats = userBookings[0] || { count: 0, totalSpent: 0 };
+
+      userMap.set(user.email, {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        dateOfBirth: user.dateOfBirth || undefined,
+        country: user.country || undefined,
+        mobileNumber: user.mobileNumber || undefined,
+        referralCode: user.referralCode || '',
+        totalReferrals: user.totalReferrals || 0,
+        referredBy: user.referredBy || undefined,
+        referrerName: user.referrerName || undefined,
+        credits: user.accountCredits ? Number(user.accountCredits) : 0,
+        provider: user.authProvider || 'local',
+        totalBookings: bookingStats.count,
+        totalSpent: Number(bookingStats.totalSpent) || 0,
+        isRegistered: true,
+      });
+    }
+
+    // Add unregistered users from bookings
+    const unregisteredBookings = new Map();
+    for (const booking of allBookings) {
+      if (!userMap.has(booking.guestEmail)) {
+        if (!unregisteredBookings.has(booking.guestEmail)) {
+          unregisteredBookings.set(booking.guestEmail, {
+            firstName: booking.guestFirstName,
+            lastName: booking.guestLastName,
+            email: booking.guestEmail,
+            country: booking.guestCountry,
+            phone: booking.guestPhone,
+            totalBookings: 0,
+            totalSpent: 0,
+          });
+        }
+        const userData = unregisteredBookings.get(booking.guestEmail);
+        userData.totalBookings += 1;
+        userData.totalSpent += Number(booking.totalPrice);
+      }
+    }
+
+    // Add unregistered users to the map
+    for (const [email, userData] of Array.from(unregisteredBookings.entries())) {
+      userMap.set(email, {
+        id: `unregistered_${email}`,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        dateOfBirth: undefined,
+        country: userData.country || undefined,
+        mobileNumber: userData.phone || undefined,
+        referralCode: '',
+        totalReferrals: 0,
+        referredBy: undefined,
+        referrerName: undefined,
+        credits: 0,
+        provider: 'unregistered',
+        totalBookings: userData.totalBookings,
+        totalSpent: userData.totalSpent,
+        isRegistered: false,
+      });
+    }
+
+    return Array.from(userMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
   }
 
   // Promotions operations
   async getPromotions(): Promise<Promotion[]> {
-    return await db.select().from(promotions).orderBy(desc(promotions.createdAt));
+    const promotionsList = await db.select().from(promotions).orderBy(desc(promotions.createdAt));
+    
+    // Add booking statistics for each promotion
+    const promotionsWithStats = await Promise.all(
+      promotionsList.map(async (promotion) => {
+        const stats = await this.getPromotionBookingStats(promotion.id, promotion.startDate, promotion.endDate);
+        return {
+          ...promotion,
+          bookingCount: stats.bookingCount,
+          totalNights: stats.totalNights,
+          totalSavings: stats.totalSavings
+        };
+      })
+    );
+    
+    return promotionsWithStats;
+  }
+  
+  async getPromotionBookingStats(promotionId: number, startDate: Date, endDate: Date) {
+    // TODO: Implement proper promotion tracking in bookings table
+    // For now, return zeros since we don't have proper tracking of which bookings used specific promotions
+    // Previously this was incorrectly counting ALL bookings during promotion period
+    return {
+      bookingCount: 0,
+      totalNights: 0,
+      totalSavings: '0.00'
+    };
   }
 
   async getActivePromotions(): Promise<Promotion[]> {
@@ -1071,6 +1771,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addPromotion(promotionData: InsertPromotion): Promise<Promotion> {
+    // Only check for active promotions if the new promotion is set to be active
+    if (promotionData.isActive) {
+      const activePromotions = await this.getActivePromotions();
+      if (activePromotions.length > 0) {
+        throw new Error("Cannot add new promotion while another promotion is active. Please deactivate the current promotion first.");
+      }
+    }
+    
     const [promotion] = await db
       .insert(promotions)
       .values(promotionData)
@@ -1079,6 +1787,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePromotionStatus(id: number, isActive: boolean): Promise<void> {
+    if (isActive) {
+      // Check if there's already an active promotion different from this one
+      const activePromotions = await this.getActivePromotions();
+      const conflictingPromotion = activePromotions.find(p => p.id !== id);
+      
+      if (conflictingPromotion) {
+        throw new Error(`Cannot activate promotion. Another promotion "${conflictingPromotion.name}" is already active. Please deactivate it first.`);
+      }
+    }
+    
+    // Update the target promotion
     await db
       .update(promotions)
       .set({ isActive, updatedAt: new Date() })
@@ -1155,13 +1874,126 @@ export class DatabaseStorage implements IStorage {
   async createPromoCode(promoCodeData: InsertPromoCode): Promise<PromoCode> {
     const [promoCode] = await db
       .insert(promoCodes)
-      .values(promoCodeData)
+      .values({
+        ...promoCodeData,
+        discountValue: promoCodeData.discountValue.toString(),
+        minOrderAmount: promoCodeData.minOrderAmount ? promoCodeData.minOrderAmount.toString() : "0.00",
+        maxDiscountAmount: promoCodeData.maxDiscountAmount ? promoCodeData.maxDiscountAmount.toString() : null
+      })
       .returning();
     return promoCode;
   }
 
   async deletePromoCode(id: number): Promise<void> {
     await db.delete(promoCodes).where(eq(promoCodes.id, id));
+  }
+
+  async validatePromoCode(code: string): Promise<PromoCode | null> {
+    const now = new Date();
+    
+    const [promoCode] = await db
+      .select()
+      .from(promoCodes)
+      .where(
+        and(
+          eq(promoCodes.code, code),
+          eq(promoCodes.isActive, true),
+          lte(promoCodes.startDate, now),
+          gte(promoCodes.endDate, now)
+        )
+      );
+
+    if (!promoCode) {
+      return null;
+    }
+
+    // Check usage limit
+    if (promoCode.usageLimit !== null && (promoCode.usageCount || 0) >= promoCode.usageLimit) {
+      return null;
+    }
+
+    return promoCode;
+  }
+
+  async recordPromoCodeUsage(usage: InsertPromoCodeUsage): Promise<PromoCodeUsage> {
+    // Record the usage
+    const [recordedUsage] = await db
+      .insert(promoCodeUsage)
+      .values(usage)
+      .returning();
+
+    // Increment the usage count
+    await db
+      .update(promoCodes)
+      .set({ 
+        usageCount: sql`${promoCodes.usageCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(promoCodes.id, usage.promoCodeId));
+
+    return recordedUsage;
+  }
+
+  async getPromoCodeUsage(promoCodeId: number): Promise<PromoCodeUsage[]> {
+    return await db
+      .select()
+      .from(promoCodeUsage)
+      .where(eq(promoCodeUsage.promoCodeId, promoCodeId))
+      .orderBy(desc(promoCodeUsage.usedAt));
+  }
+
+  async getPromoCodeWithUsage(promoCodeId: number): Promise<{ promoCode: PromoCode; usage: PromoCodeUsage[] } | null> {
+    const [promoCode] = await db
+      .select()
+      .from(promoCodes)
+      .where(eq(promoCodes.id, promoCodeId));
+
+    if (!promoCode) {
+      return null;
+    }
+
+    const usage = await this.getPromoCodeUsage(promoCodeId);
+    
+    return { promoCode, usage };
+  }
+
+  async validateVoucher(code: string, bookingAmount: number): Promise<any | null> {
+    const now = new Date();
+
+
+    const [voucher] = await db
+      .select()
+      .from(vouchers)
+      .where(
+        and(
+          eq(vouchers.code, code),
+          eq(vouchers.isActive, true),
+          lte(vouchers.validFrom, now),
+          gte(vouchers.validUntil, now)
+        )
+      );
+
+    if (!voucher) {
+
+      return null;
+    }
+
+    // Check usage limit
+    if (voucher.usageCount >= voucher.usageLimit) {
+
+      return null;
+    }
+
+    // Check minimum booking amount
+    const minAmount = parseFloat(voucher.minBookingAmount || "0");
+
+
+    if (bookingAmount < minAmount) {
+
+      return null;
+    }
+
+    return voucher;
   }
 
   // Pricing settings operations
@@ -1210,6 +2042,340 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  // Get voucher usage data for a specific booking
+  async getVoucherUsageByBookingId(bookingId: number): Promise<any | null> {
+    const [usage] = await db
+      .select({
+        id: voucherUsage.id,
+        voucherId: voucherUsage.voucherId,
+        bookingId: voucherUsage.bookingId,
+        voucherCode: vouchers.code,
+        discountAmount: voucherUsage.discountAmount,
+        bookingAmount: voucherUsage.bookingAmount,
+        usedAt: voucherUsage.usedAt,
+        guestEmail: voucherUsage.guestEmail,
+        guestName: voucherUsage.guestName,
+        checkInDate: voucherUsage.checkInDate,
+        checkOutDate: voucherUsage.checkOutDate,
+      })
+      .from(voucherUsage)
+      .innerJoin(vouchers, eq(voucherUsage.voucherId, vouchers.id))
+      .where(eq(voucherUsage.bookingId, bookingId))
+      .limit(1);
+
+    return usage || null;
+  }
+
+  // PMS operations implementation
+  async getPMSIntegrations(): Promise<PMSIntegration[]> {
+    try {
+      // Temporarily return empty array instead of querying database
+      // const integrations = await db.select().from(pmsIntegrations).orderBy(desc(pmsIntegrations.createdAt));
+      return [];
+    } catch (error) {
+      console.error('PMS Integrations error:', error);
+      return [];
+    }
+  }
+
+  async createPMSIntegration(integration: Omit<InsertPMSIntegration, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSIntegration> {
+
+    try {
+      const now = new Date();
+      const integrationData = {
+        ...integration,
+        lastSync: now,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const [created] = await db
+        .insert(pmsIntegrations)
+        .values(integrationData)
+        .returning();
+
+      return created;
+    } catch (error) {
+
+      throw error;
+    }
+  }
+
+  async getPMSIntegration(id: string): Promise<PMSIntegration | undefined> {
+    const [integration] = await db.select().from(pmsIntegrations).where(eq(pmsIntegrations.id, id));
+    return integration;
+  }
+
+  async deletePMSIntegration(id: string): Promise<void> {
+    try {
+      console.log(`🗑️  Attempting to delete PMS integration with ID: ${id}`);
+      
+      // Temporarily only delete the integration - skip related data for diagnosis
+      console.log(`🔌 Attempting to delete integration only: ${id}`);
+      const deletedIntegration = await db.delete(pmsIntegrations).where(eq(pmsIntegrations.id, id)).returning();
+      console.log(`🔌 Deleted integration:`, deletedIntegration);
+      
+      if (deletedIntegration.length === 0) {
+        throw new Error(`Integration with ID ${id} was not found or could not be deleted`);
+      }
+      
+      console.log(`✅ Integration deleted successfully`);
+    } catch (error) {
+      console.error(`❌ Error deleting PMS integration ${id}:`, error);
+      console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+      throw error;
+    }
+  }
+
+  async updatePMSIntegrationSync(id: string): Promise<void> {
+    await db
+      .update(pmsIntegrations)
+      .set({ lastSync: new Date(), updatedAt: new Date() })
+      .where(eq(pmsIntegrations.id, id));
+  }
+
+  async updatePMSIntegrationStatus(id: string, status: string): Promise<void> {
+    await db
+      .update(pmsIntegrations)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(pmsIntegrations.id, id));
+  }
+
+  async updatePMSIntegrationBookingCount(id: string, count: number): Promise<void> {
+    await db
+      .update(pmsIntegrations)
+      .set({ bookingsCount: count, updatedAt: new Date() })
+      .where(eq(pmsIntegrations.id, id));
+  }
+
+  async getPMSBookings(): Promise<PMSBooking[]> {
+    try {
+      // Temporarily return empty array instead of querying database
+      // const bookings = await db.select().from(pmsBookings).orderBy(desc(pmsBookings.start));
+      return [];
+    } catch (error) {
+      console.error('PMS Bookings error:', error);
+      return [];
+    }
+  }
+
+  async createPMSBooking(booking: Omit<InsertPMSBooking, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSBooking> {
+
+    try {
+      const [created] = await db
+        .insert(pmsBookings)
+        .values(booking)
+        .returning();
+
+      return created;
+    } catch (error) {
+
+      throw error;
+    }
+  }
+
+  async getPMSReviews(): Promise<PMSReview[]> {
+    try {
+      // Temporarily return empty array instead of querying database
+      // const reviews = await db.select().from(pmsReviews).orderBy(desc(pmsReviews.date));
+      return [];
+    } catch (error) {
+      console.error('PMS Reviews error:', error);
+      return [];
+    }
+  }
+
+  async createPMSReview(review: Omit<InsertPMSReview, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSReview> {
+    const [created] = await db
+      .insert(pmsReviews)
+      .values(review)
+      .returning();
+    return created;
+  }
+
+  async getPMSMessages(): Promise<PMSMessage[]> {
+    try {
+      // Temporarily return empty array instead of querying database
+      // const messages = await db.select().from(pmsMessages).orderBy(desc(pmsMessages.timestamp));
+      return [];
+    } catch (error) {
+      console.error('PMS Messages error:', error);
+      return [];
+    }
+  }
+
+  async createPMSMessage(message: Omit<InsertPMSMessage, 'id' | 'createdAt' | 'updatedAt'>): Promise<PMSMessage> {
+    const [created] = await db
+      .insert(pmsMessages)
+      .values(message)
+      .returning();
+    return created;
+  }
+
+  async markPMSMessageAsRead(id: string): Promise<void> {
+    await db
+      .update(pmsMessages)
+      .set({ read: true, updatedAt: new Date() })
+      .where(eq(pmsMessages.id, id));
+  }
+  
+  // Team Management implementation
+  async getAllRoles(): Promise<any[]> {
+    // Return mock roles data for now since the table may not exist yet
+    return [
+      {
+        id: '1',
+        name: 'admin',
+        displayName: 'Administrator',
+        description: 'Full system access',
+        permissions: ['bookings:view', 'bookings:create', 'users:view', 'analytics:view'],
+        color: '#3b82f6',
+        priority: 100,
+        isActive: true
+      },
+      {
+        id: '2', 
+        name: 'manager',
+        displayName: 'Manager',
+        description: 'Property and booking management',
+        permissions: ['bookings:view', 'bookings:create', 'properties:view'],
+        color: '#059669',
+        priority: 50,
+        isActive: true
+      }
+    ];
+  }
+  
+async getAllTeamMembers(): Promise<any[]> {
+    return this.teamMembers;
+  }
+  
+async createTeamMember(data: any): Promise<any> {
+    // Check if user with this email already exists
+    const existingUser = await this.getUserByEmail(data.email);
+    if (existingUser) {
+      throw new Error('User with this email already exists');
+    }
+    
+    // Find the role to get full role information
+    const roles = await this.getAllRoles();
+    const role = roles.find(r => r.id === data.roleId);
+    
+    if (!role) {
+      throw new Error('Role not found');
+    }
+    
+    const userId = Date.now().toString();
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    
+    // Create user record in database
+    const [createdUser] = await db
+      .insert(users)
+      .values({
+        id: userId,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: hashedPassword,
+        role: 'team_member', // Team members get team_member role
+        authProvider: 'local',
+        isActive: true,
+        createdBy: 'admin',
+        referralCode: `TEAM${userId.slice(-6)}` // Generate referral code
+      })
+      .returning();
+    
+    // Create team member record for admin panel
+    const newMember = {
+      id: userId,
+      userId: userId,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: role,
+      customPermissions: data.customPermissions || [],
+      restrictions: data.restrictions || [],
+      allowedFeatures: data.allowedFeatures || [],
+      allowedProperties: data.allowedProperties || [],
+      accessLevel: data.accessLevel || 'limited',
+      isActive: true,
+      lastAccessAt: null,
+      expiresAt: data.expiresAt || null,
+      createdAt: createdUser.createdAt.toISOString(),
+      updatedAt: createdUser.updatedAt.toISOString(),
+      riskScore: 25, // Default risk score
+      deviceInfo: {},
+      hashedPassword: hashedPassword,
+      location: {}
+    };
+    
+    this.teamMembers.push(newMember);
+    return newMember;
+  }
+
+  async getTeamMemberByUserId(userId: string): Promise<any | null> {
+    // Find the team member by userId
+    const teamMember = this.teamMembers.find(member => member.userId === userId);
+    return teamMember || null;
+  }
+
+  async updateTeamMemberStatus(id: string, isActive: boolean): Promise<void> {
+    // Update in database
+    await db
+      .update(users)
+      .set({ isActive: isActive, updatedAt: new Date() })
+      .where(eq(users.id, id));
+    
+    // Update in-memory record
+    const member = this.teamMembers.find(m => m.id === id);
+    if (member) {
+      member.isActive = isActive;
+    }
+  }
+
+  async deleteTeamMember(id: string): Promise<void> {
+    // Delete from database
+    await db.delete(users).where(eq(users.id, id));
+    
+    // Remove from in-memory array
+    this.teamMembers = this.teamMembers.filter(m => m.id !== id);
+  }
+
+  async resetTeamMemberPassword(id: string): Promise<string> {
+    const member = this.teamMembers.find(m => m.id === id);
+    if (!member) {
+      throw new Error('Member not found');
+    }
+    
+    // Generate new password
+    const newPassword = `temp${Date.now().toString().slice(-6)}`;
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password in database
+    await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, id));
+    
+    // Update in-memory record
+    member.hashedPassword = hashedPassword;
+    
+    return newPassword;
+  }
+
+  async updateTeamMemberAccessLevel(id: string, accessLevel: string): Promise<void> {
+    const member = this.teamMembers.find(m => m.id === id);
+    if (!member) {
+      throw new Error('Member not found');
+    }
+    
+    // Update in-memory record
+    member.accessLevel = accessLevel;
+    member.updatedAt = new Date().toISOString();
   }
 }
 

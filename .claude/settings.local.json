@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(NODE_ENV=development tsx server/index.ts)",
+      "Bash(npx tsx:*)"
+    ],
+    "deny": []
+  }
+}

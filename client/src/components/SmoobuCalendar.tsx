@@ -37,6 +37,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { BookingActionsWrapper } from "@/components/PermissionWrapper";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface Booking {
   id: number;
@@ -75,9 +77,11 @@ interface CalendarProps {
 }
 
 const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
+  const { user } = useAdminAuth();
   const [currentMonth, setCurrentMonth] = useState(initialMonth || new Date());
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [focusedDate, setFocusedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     mode: "manual" as "blocked" | "manual",
     guestFirstName: "",
@@ -94,7 +98,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch bookings for calendar display (includes blocks) with 100ms refresh
+  // Fetch bookings for calendar display (includes blocks)
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: [
       "/api/bookings/calendar",
@@ -105,24 +109,61 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
       fetch(
         `/api/bookings/calendar/${format(currentMonth, "yyyy")}/${format(currentMonth, "MM")}`,
       ).then((res) => res.json()),
-    refetchInterval: 100, // 100ms real-time refresh
+    refetchInterval: false, // Disable auto-refresh
     refetchIntervalInBackground: true,
   });
 
-  // Real-time calendar updates effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      queryClient.invalidateQueries({
-        queryKey: [
-          "/api/bookings/calendar",
-          format(currentMonth, "yyyy"),
-          format(currentMonth, "MM"),
-        ],
-      });
-    }, 100);
+  // Remove duplicate manual interval - using query refetchInterval instead
 
-    return () => clearInterval(interval);
-  }, [currentMonth, queryClient]);
+  // Keyboard navigation effect
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showBookingForm) return; // Don't handle navigation when form is open
+      
+      const currentFocused = focusedDate || new Date();
+      let newFocusedDate: Date;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          newFocusedDate = new Date(currentFocused);
+          newFocusedDate.setDate(currentFocused.getDate() - 1);
+          setFocusedDate(newFocusedDate);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          newFocusedDate = new Date(currentFocused);
+          newFocusedDate.setDate(currentFocused.getDate() + 1);
+          setFocusedDate(newFocusedDate);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          newFocusedDate = new Date(currentFocused);
+          newFocusedDate.setDate(currentFocused.getDate() - 7);
+          setFocusedDate(newFocusedDate);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          newFocusedDate = new Date(currentFocused);
+          newFocusedDate.setDate(currentFocused.getDate() + 7);
+          setFocusedDate(newFocusedDate);
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (focusedDate) {
+            handleDateClick(focusedDate);
+          }
+          break;
+        case 'Escape':
+          setFocusedDate(null);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusedDate, showBookingForm]);
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -258,6 +299,16 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const handleDateClick = (date: Date) => {
     if (!isSameMonth(date, currentMonth)) return;
 
+    // Check if user has permission to perform calendar actions
+    if (!user || (user.role === 'team_member' && user.accessLevel !== 'full')) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to make bookings or block dates. Only administrators and full access team members can perform these actions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Rule 1: Admin cannot select previous days, only current day and future
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -298,8 +349,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   const handleCreateBooking = async () => {
     if (!selectedDate) return;
 
-    console.log("🔵 CLIENT: Creating booking with mode:", formData.mode);
-    console.log("🔵 CLIENT: Form data:", formData);
 
     const checkOutDate = new Date(selectedDate);
     checkOutDate.setDate(checkOutDate.getDate() + formData.nights);
@@ -312,8 +361,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         blockReason: formData.blockReason || "Administrative block",
       };
 
-      console.log("🔵 CLIENT: Creating block dates with data:", blockData);
-
       // Use separate block dates endpoint
       try {
         const response = await fetch("/api/block-dates", {
@@ -324,7 +371,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
 
         if (!response.ok) {
           const error = await response.json();
-          console.error("🔴 CLIENT: Block dates API error:", error);
+
           throw new Error(error.message || "Failed to block dates");
         }
 
@@ -350,7 +397,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
           ],
         });
       } catch (error) {
-        console.error("🔴 CLIENT: Block dates error:", error);
+
         toast({
           title: "Error",
           description:
@@ -382,7 +429,6 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         totalPrice: totalPrice,
       };
 
-      console.log("🔵 CLIENT: Creating manual booking with data:", bookingData);
       createBookingMutation.mutate(bookingData);
     }
   };
@@ -418,9 +464,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
   }
 
   return (
-    <div className="w-full max-w-full sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-lg sm:shadow-2xl rounded-lg sm:rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="w-full max-w-full sm:w-full mx-auto p-1 sm:p-4 lg:p-8 bg-gradient-to-br from-white to-gray-50 shadow-medium rounded-lg sm:rounded-2xl border border-gray-200 overflow-hidden custom-scrollbar">
       {/* Mobile-optimized Header */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-8 p-2 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 space-y-2 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-8 p-2 sm:p-4 glass-effect rounded-lg sm:rounded-xl shadow-soft border border-gray-100 space-y-2 sm:space-y-0">
         
         {/* Mobile: Month/Year and Navigation in one row */}
         <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6">
@@ -500,7 +546,7 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                 key={day.toISOString()}
                 className={`
                   relative h-15 sm:h-24 lg:h-28 border-r border-b border-gray-100 text-xs last:border-r-0
-                  transition-all duration-200 active:scale-95 touch-manipulation
+                  calendar-cell calendar-transition color-transition
                   ${
                     hasBlockedBooking
                       ? "blocked-stripe cursor-not-allowed"
@@ -509,13 +555,35 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
                         : checkInBooking
                           ? "bg-red-50 cursor-not-allowed"
                           : hasCheckOutOnly
-                            ? "bg-yellow-50 cursor-pointer active:bg-yellow-100"
-                            : "bg-white cursor-pointer active:bg-blue-50"
+                            ? "bg-yellow-50 cursor-pointer hover:bg-yellow-100"
+                            : "bg-white cursor-pointer hover:bg-blue-50"
                   }
                   ${isCurrentDay ? "ring-2 ring-blue-500 ring-inset bg-blue-50" : ""}
                   ${!isCurrentMonthDay ? "opacity-40" : ""}
+                  ${focusedDate && isSameDay(focusedDate, day) ? "ring-2 ring-purple-500 ring-inset" : ""}
                 `}
                 onClick={() => (isClickable ? handleDateClick(day) : null)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (isClickable) handleDateClick(day);
+                  }
+                }}
+                tabIndex={isClickable ? 0 : -1}
+                role="button"
+                aria-label={`${
+                  hasBlockedBooking
+                    ? 'Blocked date'
+                    : isPastDate
+                      ? 'Past date, cannot book'
+                      : checkInBooking
+                        ? 'Date occupied, cannot book'
+                        : hasCheckOutOnly
+                          ? 'Check-out date, available for booking'
+                          : 'Available date, click to book'
+                } ${format(day, 'MMMM d, yyyy')}`}
+                aria-pressed={selectedDate && isSameDay(selectedDate, day) ? "true" : "false"}
+                aria-disabled={!isClickable}
               >
                 {/* Clean Date Number */}
                 <div className="absolute top-1 left-1 sm:top-2 sm:left-2 z-20">
@@ -657,8 +725,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
         })}
       </div>
       {/* Mobile-optimized Booking Form Modal */}
-      <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
-        <DialogContent className="max-w-md mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
+      <BookingActionsWrapper user={user}>
+        <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
+          <DialogContent className="max-w-md mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-lg sm:text-xl">
               Create Booking
@@ -884,8 +953,9 @@ const SmoobuCalendar: React.FC<CalendarProps> = ({ month: initialMonth }) => {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </BookingActionsWrapper>
     </div>
   );
 };

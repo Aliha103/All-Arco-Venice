@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Celebration</title>
+</head>
+<body>
+    <h1>Test Celebration for test@test.com</h1>
+    <button onclick="triggerCelebration()">Trigger Test Celebration</button>
+    
+    <script>
+        // Connect to WebSocket to listen for celebrations
+        const ws = new WebSocket('ws://localhost:3000/ws');
+        
+        ws.onopen = function() {
+            console.log('Connected to WebSocket');
+        };
+        
+        ws.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            console.log('Received message:', message);
+            
+            if (message.type === 'celebration_notification') {
+                console.log('🎉 CELEBRATION RECEIVED!');
+                console.log('Target User ID:', message.targetUserId);
+                console.log('Credit Amount:', message.data.creditAmount);
+                console.log('Message:', message.data.messages.primary);
+                
+                // Show alert for demo
+                alert(`🎉 Celebration! User ${message.targetUserId} earned ${message.data.creditAmount}€!`);
+            }
+        };
+        
+        function triggerCelebration() {
+            // Trigger test celebration via custom event
+            const testData = {
+                userId: 'local_1751898895917_pld75ulsh', // test@test.com user ID from the bookings
+                creditAmount: 25,
+                messages: {
+                    primary: '🎉 Congratulations! You\'ve earned 25€ in referral credits!',
+                    secondary: 'Your friend just completed their stay. Keep referring to earn more!',
+                    action: 'You now have credits to use on your next booking!'
+                },
+                animations: {
+                    confetti: true,
+                    fireworks: true,
+                    duration: 5000
+                },
+                referrerEmail: 'test@test.com',
+                referrerName: 'Test User',
+                bookingId: 'test-booking-123',
+                totalNights: 5,
+                timestamp: new Date().toISOString(),
+                celebrationId: 'test-celebration-' + Date.now()
+            };
+            
+            // Simulate receiving the celebration notification
+            const celebrationEvent = new CustomEvent('test-celebration', {
+                detail: { data: testData }
+            });
+            
+            window.dispatchEvent(celebrationEvent);
+            console.log('Test celebration event triggered!');
+        }
+    </script>
+</body>
+</html>

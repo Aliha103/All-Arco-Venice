@@ -3,8 +3,11 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertBookingSchema, insertAmenitySchema, insertPropertyImageSchema, insertReviewSchema, insertMessageSchema, signupSchema, loginSchema, updateUserProfileSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./localAuth";
+import { setupGoogleAuth } from "./googleAuth";
+import { requireAdminAuth, generateTOTPSecret, verifyTOTP, requireMFAVerification } from "./auth";
+import { logAuditEvent } from "./auditLogger";
+import { insertBookingSchema, insertAmenitySchema, insertPropertyImageSchema, insertReviewSchema, insertMessageSchema, signupSchema, loginSchema, updateUserProfileSchema, guestReviewSchema, insertVoucherSchema, insertVoucherUsageSchema, voucherValidationSchema, vouchers, voucherUsage, bookings, users } from "@shared/schema";
 import Stripe from "stripe";
 import bcrypt from "bcryptjs";
 import multer from 'multer';
@@ -12,16 +15,19 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { db } from "./db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 import { loggedOutSessions } from "@shared/schema";
+// import pmsRoutes from "./pms-routes"; // Temporarily disabled
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Skip Stripe initialization for local development
+let stripe: Stripe | undefined;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-05-28.basil",
+  });
+} else {
+  // Stripe not configured - payment features will be disabled
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-05-28.basil",
-});
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -56,6 +62,24 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+  
+  // Setup Google OAuth
+  try {
+    if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && 
+        process.env.GOOGLE_CLIENT_ID !== 'your-google-client-id-here' &&
+        process.env.GOOGLE_CLIENT_SECRET !== 'your-google-client-secret-here') {
+      setupGoogleAuth(app);
+      console.log('✅ Google OAuth configured successfully');
+    } else {
+      console.log('⚠️  Google OAuth not configured - add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env');
+      // Setup minimal routes for testing
+      app.get('/api/auth/google', (req, res) => {
+        res.status(503).json({ error: 'Google OAuth not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env file.' });
+      });
+    }
+  } catch (error) {
+    console.error('❌ Google OAuth setup failed:', error);
+  }
 
   // Serve uploaded files statically
   app.use('/uploads', (req, res, next) => {
@@ -70,42 +94,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Management Endpoints
+
+  // GET all roles
+  app.get('/api/admin/team/roles', async (req, res) => {
+    try {
+      const roles = await storage.getAllRoles();
+      res.json(roles);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch roles' });
+    }
+  });
+
+  // GET all team members
+  app.get('/api/admin/team/members', async (req, res) => {
+    try {
+      const members = await storage.getAllTeamMembers();
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch team members' });
+    }
+  });
+
+  // POST create a new team member
+  app.post('/api/admin/team/members', async (req, res) => {
+    try {
+      const { userId, roleId, email, firstName, lastName, password, customPermissions, restrictions, accessLevel, expiresAt } = req.body;
+      const newMember = await storage.createTeamMember({
+        userId,
+        roleId,
+        email,
+        firstName,
+        lastName,
+        password,
+        customPermissions,
+        restrictions,
+        accessLevel,
+        expiresAt
+      });
+      res.status(201).json(newMember);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to create team member' });
+    }
+  });
+
+  // PATCH update team member status
+  app.patch('/api/admin/team/members/:id/status', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      
+      await storage.updateTeamMemberStatus(id, isActive);
+      res.json({ 
+        message: 'Member status updated successfully',
+        memberId: id,
+        isActive 
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update member status' });
+    }
+  });
+
+  // DELETE team member
+  app.delete('/api/admin/team/members/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTeamMember(id);
+      res.json({ message: 'Team member deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete team member' });
+    }
+  });
+
+  // POST reset team member password
+  app.post('/api/admin/team/members/:id/reset-password', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const newPassword = await storage.resetTeamMemberPassword(id);
+      res.json({ 
+        message: 'Password reset successfully',
+        newPassword 
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
+  // PATCH update team member access level (for testing)
+  app.patch('/api/admin/team/members/:id/access-level', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { accessLevel } = req.body;
+      
+      if (!['full', 'limited', 'read_only', 'custom'].includes(accessLevel)) {
+        return res.status(400).json({ message: 'Invalid access level' });
+      }
+      
+      await storage.updateTeamMemberAccessLevel(id, accessLevel);
+      res.json({ 
+        message: 'Access level updated successfully',
+        accessLevel
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update access level' });
+    }
+  });
+
+  // POST create a new role
+  app.post('/api/admin/team/roles', async (req, res) => {
+    try {
+      const { name, displayName, description, permissions, color } = req.body;
+      const newRole = {
+        id: Date.now().toString(),
+        name,
+        displayName,
+        description,
+        permissions,
+        color,
+        priority: 50,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      res.status(201).json(newRole);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to create role' });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
-    console.log('🔴 SERVER: Auth user endpoint hit');
-    console.log('🔴 SERVER: Session ID:', req.sessionID);
-    console.log('🔴 SERVER: Request user:', req.user);
-    console.log('🔴 SERVER: Is authenticated:', req.isAuthenticated());
-    
     // Check if this session has been logged out
     try {
       const loggedOutSession = await db.select().from(loggedOutSessions).where(eq(loggedOutSessions.sessionId, req.sessionID));
       if (loggedOutSession.length > 0) {
-        console.log('🔴 SERVER: Session found in logged out sessions, returning 401');
         return res.status(401).json({ message: "Session invalidated" });
       }
     } catch (error) {
-      console.log('🔴 SERVER: Error checking logged out sessions:', error);
+      // Error checking logged out sessions
     }
     
     // Check for logout flag in session
     if ((req.session as any)?.loggedOut) {
-      console.log('🔴 SERVER: Logout flag detected, returning 401');
       return res.status(401).json({ message: "Logged out" });
     }
     
     if (!req.user || !req.isAuthenticated()) {
-      console.log('🔴 SERVER: No user or not authenticated, returning 401');
       return res.status(401).json({ message: "Not authenticated" });
     }
 
     try {
       // For local auth users, get fresh data from database
       if ((req.user as any).authProvider === 'local') {
-        console.log('🔴 SERVER: Local auth user, fetching from database');
         const user = await storage.getUser((req.user as any).id);
         if (!user) {
-          console.log('🔴 SERVER: User not found in database, clearing session');
           req.logout(() => {
             req.session.destroy(() => {
               res.status(401).json({ message: "User not found" });
@@ -113,17 +254,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           return;
         }
-        console.log('🔴 SERVER: Returning local user data');
         return res.json(user);
       }
 
       // For Replit auth users, return user from session
-      console.log('🔴 SERVER: Returning Replit auth user data');
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
-      console.error("🔴 SERVER: Error in /api/auth/user:", error);
+
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -137,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedUser = await storage.updateUserProfile(userId, validatedData);
       res.json(updatedUser);
     } catch (error) {
-      console.error("Error updating user profile:", error);
+
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
@@ -149,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getUserReferralStats(userId);
       res.json(stats);
     } catch (error) {
-      console.error("Error fetching referral stats:", error);
+
       res.status(500).json({ message: "Failed to fetch referral statistics" });
     }
   });
@@ -171,12 +310,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password: hashedPassword,
         });
         
-        console.log("Admin user created successfully:", adminUser.email);
+        // Admin user created successfully
       } else {
-        console.log("Admin user already exists");
+        // Admin user already exists
       }
     } catch (error) {
-      console.error("Error initializing admin user:", error);
+
     }
   }
 
@@ -230,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
     } catch (error: any) {
-      console.error("Signup error:", error);
+
       if (error.name === 'ZodError') {
         return res.status(400).json({ 
           message: "Validation error", 
@@ -244,17 +383,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local login route
   app.post('/api/auth/login', async (req, res) => {
     try {
+
+
       const validatedData = loginSchema.parse(req.body);
-      
+
       // Find user by email
+
       const user = await storage.getUserByEmail(validatedData.email);
-      if (!user || user.authProvider !== 'local' || !user.password) {
+
+      if (!user) {
+
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+
+      if (user.authProvider !== 'local' || !user.password) {
+
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       // Verify password
+
       const isValidPassword = await bcrypt.compare(validatedData.password, user.password);
+
       if (!isValidPassword) {
+
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
@@ -265,31 +418,329 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
       };
 
-      req.login(sessionUser, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Session creation failed" });
-        }
+      // Check if user is admin or team member - both should access admin dashboard
+      if (user.role === 'admin' || user.role === 'team_member') {
+        // Get team member access level if exists
+        const teamMember = await storage.getTeamMemberByUserId(user.id);
+        const accessLevel = teamMember?.accessLevel || 'full'; // Default to full for original admins
+        const isOriginalAdmin = user.createdBy !== 'admin'; // Original admin vs team member
         
-        // Return user without password
-        const { password, ...userResponse } = user;
-        res.json({ 
-          message: "Login successful",
-          user: userResponse 
+        // Set up admin session manually
+        (req.session as any).userId = user.id;
+        (req.session as any).adminUserId = user.id;
+        (req.session as any).user = user;
+        (req.session as any).isAdmin = true;
+        (req.session as any).pendingAdminLogin = true;
+        (req.session as any).accessLevel = accessLevel;
+        (req.session as any).isOriginalAdmin = isOriginalAdmin;
+        
+        // Only require TOTP for original admin users, not team members
+        if (isOriginalAdmin && !user.totpSecret) {
+          // Original admin needs to set up TOTP first
+          const { password, ...userResponse } = user;
+          return res.json({ 
+            message: "Admin login - TOTP setup required",
+            user: userResponse,
+            requiresTOTPSetup: true
+          });
+        } else if (isOriginalAdmin && user.totpSecret) {
+          // Original admin has TOTP, require verification
+          const { password, ...userResponse } = user;
+          return res.json({ 
+            message: "Admin login - TOTP verification required",
+            user: userResponse,
+            requiresTOTPVerification: true
+          });
+        } else {
+          // Team member - skip TOTP and login directly to admin
+          // Use passport login for team members as well
+          req.login(sessionUser, (err) => {
+            if (err) {
+              console.error('Team member login error:', err);
+              return res.status(500).json({ message: "Session creation failed" });
+            }
+            
+            // Set admin session data AFTER passport login
+            (req.session as any).userId = user.id;
+            (req.session as any).adminUserId = user.id;
+            (req.session as any).user = user;
+            (req.session as any).isAdmin = true;
+            (req.session as any).adminAuthenticated = true;
+            (req.session as any).totpVerified = true; // Skip TOTP for team members
+            (req.session as any).mfaVerifiedAt = new Date();
+            (req.session as any).accessLevel = accessLevel;
+            (req.session as any).isOriginalAdmin = isOriginalAdmin;
+            
+            const { password, ...userResponse } = user;
+            return res.json({ 
+              message: "Team member login successful",
+              user: { ...userResponse, accessLevel },
+              redirectTo: '/admin',
+              accessLevel
+            });
+          });
+        }
+      } else {
+        // Regular user login - use standard login flow
+        req.login(sessionUser, (err) => {
+          if (err) {
+            console.error('Session creation error:', err);
+            return res.status(500).json({ message: "Session creation failed" });
+          }
+          
+          const { password, ...userResponse } = user;
+          res.json({ 
+            message: "Login successful",
+            user: userResponse 
+          });
         });
-      });
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
+      
       if (error.name === 'ZodError') {
         return res.status(400).json({ 
           message: "Validation error", 
           errors: error.errors 
         });
       }
-      res.status(500).json({ message: "Login failed" });
+      res.status(500).json({ 
+        message: "Login failed", 
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
+    }
+  });
+
+  // Emergency admin bypass (for development/testing)
+  app.post('/api/admin/auth/emergency-login', async (req, res) => {
+    try {
+      const { email, password, emergencyCode } = req.body;
+      
+      // Emergency bypass code (change this in production!)
+      const EMERGENCY_CODE = process.env.ADMIN_EMERGENCY_CODE || 'EMERGENCY2025';
+      
+      if (emergencyCode !== EMERGENCY_CODE) {
+        return res.status(403).json({ message: 'Invalid emergency code' });
+      }
+
+      // Verify admin credentials
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.role !== 'admin') {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Complete admin authentication without TOTP
+      const session = req.session as any;
+      session.userId = user.id;
+      session.adminUserId = user.id;
+      session.user = user;
+      session.isAdmin = true;
+      session.adminAuthenticated = true;
+      session.totpVerified = true; // Bypass TOTP
+      session.mfaVerifiedAt = new Date();
+
+      await logAuditEvent(req, 'emergency_login_success', 'authentication', user.id, {
+        email: user.email,
+        method: 'emergency_bypass'
+      }, true);
+
+      const { password: _, ...userResponse } = user;
+      res.json({ 
+        success: true,
+        message: 'Emergency login successful',
+        user: userResponse
+      });
+    } catch (error) {
+      console.error('Emergency login error:', error);
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
+  // TOTP Reset endpoint - allows admin to reset and register new TOTP
+  app.post('/api/admin/auth/reset-totp', async (req, res) => {
+    try {
+      const { email, password, resetCode } = req.body;
+      
+      // Reset code for development (change in production)
+      const RESET_CODE = process.env.ADMIN_RESET_CODE || 'RESET2025';
+      
+      if (resetCode !== RESET_CODE) {
+        return res.status(403).json({ message: 'Invalid reset code' });
+      }
+
+      // Verify admin credentials
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.role !== 'admin') {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Clear existing TOTP secret to force new setup
+      await db.update(users).set({ 
+        totpSecret: null,
+        updatedAt: new Date()
+      }).where(eq(users.id, user.id));
+
+      // Set up session for new TOTP setup
+      const session = req.session as any;
+      session.userId = user.id;
+      session.adminUserId = user.id;
+      session.user = user;
+      session.isAdmin = true;
+      session.pendingAdminLogin = true;
+
+      await logAuditEvent(req, 'totp_reset_success', 'security', user.id, {
+        email: user.email,
+        method: 'reset_code'
+      }, true);
+
+      const { password: _, ...userResponse } = user;
+      res.json({ 
+        success: true,
+        message: 'TOTP reset successful - setup required',
+        user: { ...userResponse, totpSecret: null },
+        requiresTOTPSetup: true
+      });
+    } catch (error) {
+      console.error('TOTP reset error:', error);
+      res.status(500).json({ message: 'Reset failed' });
+    }
+  });
+
+  // Admin authentication routes - Google Authenticator only
+
+  app.post('/api/admin/auth/setup-totp', isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const { secret, qrCode } = await generateTOTPSecret(user.id);
+      
+      // Store secret temporarily in session until verified
+      (req.session as any).pendingTOTPSecret = secret;
+      
+      res.json({ 
+        message: "TOTP setup initiated",
+        qrCode,
+        secret // For manual entry if QR code doesn't work
+      });
+    } catch (error) {
+      console.error('TOTP setup error:', error);
+      res.status(500).json({ message: "Failed to setup TOTP" });
+    }
+  });
+
+
+  // Admin user endpoint - returns admin user data if authenticated
+  app.get('/api/admin/auth/user', async (req, res) => {
+    try {
+      const session = req.session as any;
+      
+      // Check if admin is authenticated
+      if (!session.adminAuthenticated && !session.pendingAdminLogin) {
+        return res.status(401).json({ message: 'Admin not authenticated' });
+      }
+      
+      // Get user ID from session
+      const userId = session.userId || session.adminUserId;
+      if (!userId) {
+        return res.status(401).json({ message: 'No user ID in session' });
+      }
+      
+      // Get user from database
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Check if user is admin
+      if (user.role !== 'admin' && user.role !== 'team_member') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      // Get team member access level if exists
+      const teamMember = await storage.getTeamMemberByUserId(userId);
+      const accessLevel = teamMember?.accessLevel || session.accessLevel || 'full'; // Default to full for original admins
+      const isOriginalAdmin = session.isOriginalAdmin || user.createdBy !== 'admin';
+      
+      // Return user data without password, include access level
+      const { password, ...userResponse } = user;
+      res.json({ 
+        ...userResponse, 
+        accessLevel,
+        isOriginalAdmin
+      });
+    } catch (error) {
+      console.error('Admin user fetch error:', error);
+      res.status(500).json({ message: 'Failed to get admin user' });
+    }
+  });
+
+  app.get('/api/admin/auth/status', async (req, res) => {
+    try {
+      const session = req.session as any;
+      
+      // For session-based admin auth (post-TOTP)
+      if (session.adminAuthenticated || session.pendingAdminLogin) {
+        const userId = session.userId || session.adminUserId;
+        if (userId) {
+          const user = await storage.getUser(userId);
+          if (user && (user.role === 'admin' || user.role === 'team_member')) {
+            return res.json({
+              isAdmin: true,
+              mfaVerified: session.mfaVerified || false,
+              smsVerified: session.smsVerified || false,
+              totpVerified: session.totpVerified || false,
+              adminAuthenticated: session.adminAuthenticated || false,
+              hasTOTPSetup: !!user.totpSecret,
+              pendingAdminLogin: session.pendingAdminLogin || false
+            });
+          }
+        }
+      }
+      
+      // For passport-based auth (fallback)
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        const user = await storage.getUser(req.user.claims.sub);
+        
+        if (!user || (user.role !== 'admin' && user.role !== 'team_member')) {
+          return res.status(403).json({ message: "Admin access required" });
+        }
+        
+        const session = req.session as any;
+        
+        res.json({
+          isAdmin: user.role === 'admin' || user.role === 'team_member',
+          mfaVerified: session.mfaVerified || false,
+          smsVerified: session.smsVerified || false,
+          totpVerified: session.totpVerified || false,
+          adminAuthenticated: session.adminAuthenticated || false,
+          hasTOTPSetup: !!user.totpSecret,
+          pendingAdminLogin: session.pendingAdminLogin || false
+        });
+      } else {
+        res.status(401).json({ message: 'Not authenticated' });
+      }
+    } catch (error) {
+      console.error('Admin status error:', error);
+      res.status(500).json({ message: "Failed to get admin status" });
     }
   });
 
   // Block dates endpoint for admin
-  app.post('/api/admin/block-dates', isAuthenticated, async (req, res) => {
+  app.post('/api/admin/block-dates', isAuthenticated, requireMFAVerification, async (req, res) => {
     try {
       const { startDate, endDate, reason } = req.body;
       
@@ -326,13 +777,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "Dates blocked successfully" });
     } catch (error: any) {
-      console.error("Block dates error:", error);
+
       res.status(500).json({ message: "Failed to block dates" });
     }
   });
 
   // Manual booking endpoint for admin
-  app.post('/api/admin/manual-booking', isAuthenticated, async (req, res) => {
+  app.post('/api/admin/manual-booking', isAuthenticated, requireMFAVerification, async (req, res) => {
     try {
       const {
         guestFirstName,
@@ -388,23 +839,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasPet: false
       });
 
+      // Broadcast updates via WebSocket
+      broadcastAnalyticsUpdate();
+      broadcastToAdmins({
+        type: 'new_booking',
+        data: { confirmationNumber: booking.confirmationCode }
+      });
+
       res.json({ 
         message: "Manual booking created successfully",
         booking,
         totalPrice: finalTotalPrice
       });
     } catch (error: any) {
-      console.error("Manual booking error:", error);
+
       res.status(500).json({ message: "Failed to create manual booking" });
     }
   });
 
   // Local logout route - complete session reset with database cleanup
   app.post('/api/auth/logout', async (req, res) => {
-    console.log('🔴 SERVER: Local logout endpoint hit');
-    console.log('🔴 SERVER: Session ID:', req.sessionID);
-    console.log('🔴 SERVER: Current user:', req.user);
-    
+
+
+
     const sessionId = req.sessionID;
     
     // Clear the user immediately
@@ -413,27 +870,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Logout using passport first
     req.logout((err) => {
       if (err) {
-        console.error("🔴 SERVER: Passport logout error:", err);
+
       }
-      console.log('🔴 SERVER: Passport logout completed');
-      
+
       // Destroy the session completely
       req.session.destroy(async (sessionErr) => {
         if (sessionErr) {
-          console.error("🔴 SERVER: Session destroy error:", sessionErr);
+
         }
-        console.log('🔴 SERVER: Session destroyed');
-        
+
         // Delete session from database directly as backup
         try {
           if (sessionId) {
             const { db } = await import('./db');
             const { sql } = await import('drizzle-orm');
             await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
-            console.log('🔴 SERVER: Session deleted from database');
+
           }
         } catch (dbError) {
-          console.log('🔴 SERVER: Database cleanup failed (non-critical):', dbError);
+
         }
         
         // Clear all possible cookie variations
@@ -441,16 +896,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
         res.clearCookie('connect.sid', { path: '/', httpOnly: true });
         res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: true });
-        console.log('🔴 SERVER: Cookies cleared');
-        
+
         // Set headers to prevent caching
         res.set({
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
         });
-        
-        console.log('🔴 SERVER: Logout completed successfully');
+
         res.json({ message: "Logout successful", cleared: true, sessionCleared: true });
       });
     });
@@ -458,56 +911,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Logout redirect endpoint - complete session termination with logout tracking
   app.get('/api/auth/logout-redirect', async (req, res) => {
-    console.log('🔴 SERVER: Logout redirect endpoint hit');
-    console.log('🔴 SERVER: Current user before logout:', req.user);
-    console.log('🔴 SERVER: Session ID before logout:', req.sessionID);
-    console.log('🔴 SERVER: Is authenticated:', req.isAuthenticated());
-    
+
+
+
+
     const sessionId = req.sessionID;
     
     // Record this session as logged out
     try {
+      // Get user ID from session with proper fallback
+      let userId = 'unknown';
+      if (req.user) {
+        const user = req.user as any;
+        userId = user.id || user.claims?.sub || 'unknown';
+      }
+      
       await db.insert(loggedOutSessions).values({
         sessionId: sessionId,
-        userId: req.user ? (req.user as any).id : 'unknown',
+        userId: userId,
       });
-      console.log('🔴 SERVER: Session recorded in logout tracking table');
+
     } catch (error) {
-      console.log('🔴 SERVER: Error recording logout:', error);
+
     }
     
     // Set logout flag in session before destroying
     (req.session as any).loggedOut = true;
-    console.log('🔴 SERVER: Logout flag set in session');
-    
+
     // Clear the user immediately
     req.user = undefined;
-    console.log('🔴 SERVER: User cleared from request');
-    
+
     try {
       // Delete session from database directly
       if (sessionId) {
         await db.execute(sql`DELETE FROM sessions WHERE sid = ${sessionId}`);
-        console.log('🔴 SERVER: Session deleted from database');
+
       }
     } catch (dbError) {
-      console.log('🔴 SERVER: Database cleanup error (continuing):', dbError);
+
     }
     
     // Logout using passport
     req.logout((err) => {
       if (err) {
-        console.error("🔴 SERVER: Passport logout error:", err);
+
       }
-      console.log('🔴 SERVER: Passport logout completed');
-      
+
       // Destroy the session completely
       req.session.destroy((sessionErr) => {
         if (sessionErr) {
-          console.error("🔴 SERVER: Session destroy error:", sessionErr);
+
         }
-        console.log('🔴 SERVER: Session destroyed successfully');
-        
+
         // Clear all cookies with all possible variations
         const cookieOptions = [
           { path: '/' },
@@ -522,8 +977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cookieOptions.forEach(options => {
           res.clearCookie('connect.sid', options);
         });
-        console.log('🔴 SERVER: All cookies cleared');
-        
+
         // Set aggressive no-cache headers
         res.set({
           'Cache-Control': 'no-cache, no-store, must-revalidate, private, max-age=0',
@@ -532,10 +986,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Last-Modified': new Date(0).toUTCString(),
           'ETag': ''
         });
-        console.log('🔴 SERVER: No-cache headers set');
-        
+
         // Redirect to homepage with cache busting
-        console.log('🔴 SERVER: Redirecting to homepage with cache busting');
+
         res.redirect('/?logout=success&t=' + Date.now());
       });
     });
@@ -544,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calculate booking pricing endpoint
   app.post('/api/bookings/calculate-pricing', async (req, res) => {
     try {
-      const { checkInDate, checkOutDate, guests, hasPet, referralCode } = req.body;
+      const { checkInDate, checkOutDate, guests, hasPet, referralCode, promoCode, voucherCode } = req.body;
       
       if (!checkInDate || !checkOutDate || !guests) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -555,12 +1008,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         checkOutDate,
         parseInt(guests),
         Boolean(hasPet),
-        referralCode || undefined
+        referralCode || undefined,
+        promoCode || undefined,
+        voucherCode || undefined
       );
 
       res.json(pricing);
     } catch (error) {
-      console.error('Error calculating pricing:', error);
+
       res.status(500).json({ message: "Failed to calculate pricing" });
     }
   });
@@ -568,12 +1023,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Separate endpoint for blocking dates (administrative blocks)
   app.post("/api/block-dates", isAuthenticated, async (req, res) => {
     try {
-      console.log("🟡 SERVER: Block dates request received:", req.body);
-      
+
       const { checkInDate, checkOutDate, blockReason } = req.body;
       
       if (!checkInDate || !checkOutDate || !blockReason) {
-        console.log("🔴 SERVER: Missing required block data");
+
         return res.status(400).json({ message: "Missing required block information" });
       }
       
@@ -595,14 +1049,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         blockReason,
         totalPrice: 0,
       };
-      
-      console.log("🟡 SERVER: Creating block with data:", blockData);
+
       const block = await storage.createBooking(blockData);
-      console.log("🟢 SERVER: Block created successfully:", block.id);
-      
+
       res.json({ success: true, blockId: block.id });
     } catch (error: any) {
-      console.error("🔴 SERVER: Failed to create block:", error);
+
       res.status(400).json({ message: error.message || "Failed to block dates" });
     }
   });
@@ -610,8 +1062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create comprehensive booking endpoint
   app.post('/api/bookings', async (req, res) => {
     try {
-      console.log("🟡 SERVER: Booking creation request received:", req.body);
-      
+
       const {
         guestFirstName,
         guestLastName,
@@ -624,6 +1075,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethod = 'online',
         hasPet = false,
         referralCode,
+        promoCode,
+        voucherCode,
         creditsUsed = 0,
         createdBy = 'guest',
         bookedForSelf = true
@@ -631,7 +1084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate required fields
       if (!guestFirstName || !guestLastName || !guestEmail || !guestCountry || !guestPhone || !checkInDate || !checkOutDate || !guests) {
-        console.log("🔴 SERVER: Missing required booking information");
+
         return res.status(400).json({ message: "Missing required booking information" });
       }
 
@@ -671,6 +1124,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethod: paymentMethod as "online" | "property",
         hasPet,
         referralCode,
+        promoCode,
+        voucherCode,
         creditsUsed: creditsUsed ? parseFloat(creditsUsed) : 0,
         createdBy: createdBy as "admin" | "guest",
         bookedForSelf,
@@ -685,7 +1140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(booking);
     } catch (error) {
-      console.error('Error creating booking:', error);
+
       res.status(500).json({ message: "Failed to create booking" });
     }
   });
@@ -702,8 +1157,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(booking);
     } catch (error) {
-      console.error('Error fetching booking:', error);
+
       res.status(500).json({ message: "Failed to fetch booking" });
+    }
+  });
+
+  // Temporary debug endpoint to check bookings
+  app.get('/api/debug/bookings', async (req, res) => {
+    try {
+      const allBookings = await storage.getBookings();
+      const summary = allBookings.map(b => ({
+        id: b.id,
+        confirmationCode: b.confirmationCode,
+        status: b.status,
+        guestEmail: b.guestEmail,
+        guestFirstName: b.guestFirstName,
+        guestLastName: b.guestLastName
+      }));
+      res.json({ total: allBookings.length, bookings: summary });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
 
@@ -735,7 +1209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(uniqueBlockedDates);
     } catch (error) {
-      console.error("Error fetching booking dates:", error);
+
       res.status(500).json({ message: "Failed to fetch booking dates" });
     }
   });
@@ -747,7 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookings = await storage.getBookings({ userId });
       res.json(bookings);
     } catch (error) {
-      console.error("Error fetching user bookings:", error);
+
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
@@ -769,7 +1243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(booking);
     } catch (error) {
-      console.error("Error looking up booking:", error);
+
       res.status(500).json({ message: "Failed to lookup booking" });
     }
   });
@@ -800,7 +1274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ message: "Booking added to your account successfully" });
     } catch (error) {
-      console.error("Error associating booking:", error);
+
       res.status(500).json({ message: "Failed to add booking to account" });
     }
   });
@@ -817,11 +1291,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.query.status) {
         filters.status = req.query.status as string;
       }
-
       const bookings = await storage.getBookings(filters);
       res.json(bookings);
     } catch (error) {
-      console.error("Error fetching bookings:", error);
+      console.error('Error in /api/bookings:', error);
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
@@ -832,21 +1305,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { year, month } = req.params;
       const startDate = `${year}-${month.padStart(2, '0')}-01`;
       const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
-      
-      console.log("🟡 SERVER: Fetching calendar data for date range:", startDate, "to", endDate);
-      
+
       // Get ALL bookings for calendar display (including blocks)
       const allBookings = await storage.getBookingsByDateRange(startDate, endDate, true); // true = include blocks
-      
-      console.log("🟢 SERVER: Found", allBookings.length, "calendar items (bookings + blocks)");
+
       res.json(allBookings);
     } catch (error) {
-      console.error("Error fetching calendar bookings:", error);
+
       res.status(500).json({ message: "Failed to fetch calendar data" });
     }
   });
 
-  app.patch('/api/bookings/:id/status', isAuthenticated, async (req: any, res) => {
+  // Get booking by ID for review verification (must come after specific routes like /dates, /calendar, etc.)
+  app.get('/api/bookings/:id', async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+
+      if (isNaN(bookingId)) {
+
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+
+      const booking = await storage.getBooking(bookingId);
+
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      res.json(booking);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch booking" });
+    }
+  });
+
+
+  // Get voucher usage data for a specific booking
+  app.get('/api/bookings/:id/voucher-usage', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -855,14 +1351,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const { id } = req.params;
-      const { status } = req.body;
-      
-      await storage.updateBookingStatus(parseInt(id), status);
-      res.json({ success: true });
+      const bookingId = parseInt(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+
+      const voucherUsage = await storage.getVoucherUsageByBookingId(bookingId);
+      res.json(voucherUsage);
     } catch (error) {
-      console.error("Error updating booking status:", error);
-      res.status(500).json({ message: "Failed to update booking status" });
+
+      res.status(500).json({ message: "Failed to fetch voucher usage" });
     }
   });
 
@@ -872,7 +1370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const images = await storage.getPropertyImages();
       res.json(images);
     } catch (error) {
-      console.error("Error fetching property images:", error);
+
       res.status(500).json({ message: "Failed to fetch property images" });
     }
   });
@@ -890,7 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const image = await storage.addPropertyImage(imageData);
       res.json(image);
     } catch (error: any) {
-      console.error("Error adding property image:", error);
+
       res.status(400).json({ message: error.message });
     }
   });
@@ -908,7 +1406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deletePropertyImage(parseInt(id));
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting property image:", error);
+
       res.status(500).json({ message: "Failed to delete property image" });
     }
   });
@@ -919,7 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const amenities = await storage.getAmenities();
       res.json(amenities);
     } catch (error) {
-      console.error("Error fetching amenities:", error);
+
       res.status(500).json({ message: "Failed to fetch amenities" });
     }
   });
@@ -937,7 +1435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const amenity = await storage.addAmenity(amenityData);
       res.json(amenity);
     } catch (error: any) {
-      console.error("Error adding amenity:", error);
+
       res.status(400).json({ message: error.message });
     }
   });
@@ -955,7 +1453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteAmenity(parseInt(id));
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting amenity:", error);
+
       res.status(500).json({ message: "Failed to delete amenity" });
     }
   });
@@ -966,7 +1464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reviews = await storage.getReviews();
       res.json(reviews);
     } catch (error) {
-      console.error("Error fetching reviews:", error);
+
       res.status(500).json({ message: "Failed to fetch reviews" });
     }
   });
@@ -976,8 +1474,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getReviewStats();
       res.json(stats);
     } catch (error) {
-      console.error("Error fetching review stats:", error);
+
       res.status(500).json({ message: "Failed to fetch review stats" });
+    }
+  });
+
+  // Get all reviews for admin (including pending and rejected)
+  app.get('/api/reviews/all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const reviews = await storage.getAllReviews();
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch all reviews" });
     }
   });
 
@@ -990,8 +1505,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(review);
     } catch (error: any) {
-      console.error("Error adding review:", error);
+
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Guest review submission endpoint (no authentication required)
+  app.post('/api/reviews/guest', async (req, res) => {
+    try {
+      const reviewData = guestReviewSchema.parse(req.body);
+      
+      // Verify the booking exists and is checked out
+      const booking = await storage.getBookingById(reviewData.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Verify the guest email matches the booking
+      if (booking.guestEmail !== reviewData.guestEmail) {
+        return res.status(403).json({ message: "Email does not match booking" });
+      }
+      
+      // Verify the booking is checked out
+      if (booking.status !== 'checked_out') {
+        return res.status(400).json({ message: "Only checked-out guests can leave reviews" });
+      }
+      
+      // Check if guest has already reviewed this booking
+      const existingReview = await storage.getReviewByBookingAndEmail(reviewData.bookingId, reviewData.guestEmail);
+      if (existingReview) {
+        return res.status(400).json({ message: "You have already reviewed this booking" });
+      }
+      
+      // Create the review (pending admin approval)
+      const review = await storage.addGuestReview({
+        ...reviewData,
+        isVisible: false,
+        isApproved: false,
+      });
+      
+      res.json({ 
+        message: "Review submitted successfully and is pending approval",
+        reviewId: review.id 
+      });
+    } catch (error: any) {
+
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Admin approve review endpoint
+  app.patch('/api/reviews/:id/approve', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const reviewId = parseInt(req.params.id);
+      const review = await storage.approveReview(reviewId);
+      
+      // Broadcast review update via WebSocket
+      broadcastReviewUpdate();
+      
+      res.json(review);
+    } catch (error: any) {
+
+      res.status(500).json({ message: "Failed to approve review" });
+    }
+  });
+
+  // Admin reject review endpoint
+  app.patch('/api/reviews/:id/reject', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const reviewId = parseInt(req.params.id);
+      const { reason } = req.body;
+      const review = await storage.rejectReview(reviewId, reason);
+      
+      // Broadcast review update via WebSocket
+      broadcastReviewUpdate();
+      
+      res.json(review);
+    } catch (error: any) {
+
+      res.status(500).json({ message: "Failed to reject review" });
+    }
+  });
+
+  // Get pending reviews for admin
+  app.get('/api/reviews/pending', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const pendingReviews = await storage.getPendingReviews();
+      res.json(pendingReviews);
+    } catch (error: any) {
+
+      res.status(500).json({ message: "Failed to fetch pending reviews" });
+    }
+  });
+
+  // Check if booking has a review
+  app.get('/api/reviews/check/:bookingId', async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.bookingId);
+      
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+
+      const existingReview = await storage.getReviewByBookingId(bookingId);
+      res.json({ hasReview: !!existingReview });
+    } catch (error: any) {
+
+      res.status(500).json({ message: "Failed to check review status" });
+    }
+  });
+
+  // Delete review endpoint
+  app.delete('/api/reviews/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const reviewId = parseInt(req.params.id);
+      await storage.deleteReview(reviewId);
+      res.json({ message: "Review deleted successfully" });
+    } catch (error: any) {
+
+      res.status(500).json({ message: "Failed to delete review" });
     }
   });
 
@@ -1008,7 +1668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getMessages();
       res.json(messages);
     } catch (error) {
-      console.error("Error fetching messages:", error);
+
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
@@ -1029,7 +1689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(message);
     } catch (error: any) {
-      console.error("Error adding message:", error);
+
       res.status(400).json({ message: error.message });
     }
   });
@@ -1040,7 +1700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.markMessageAsRead(parseInt(id));
       res.json({ success: true });
     } catch (error) {
-      console.error("Error marking message as read:", error);
+
       res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
@@ -1058,7 +1718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.markMessageAsRead(messageId);
       res.json({ message: "Message marked as read" });
     } catch (error) {
-      console.error("Error marking message as read:", error);
+
       res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
@@ -1093,10 +1753,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Status changes for check-in and no-show can only be made for current or past bookings, not future bookings." 
         });
       }
-
-      console.log(`🔵 SERVER: Updating booking ${bookingId} status to ${status}`);
       await storage.updateBookingStatus(bookingId, status);
       
+      // Award referral credits when admin confirms checkout of a referral booking
+      if (status === 'checked_out' && booking.referredByUserId) {
+        try {
+          // Verify the referrer exists in the database
+          const existingReferrer = await storage.getUser(booking.referredByUserId);
+          if (existingReferrer) {
+            // Award 5€ credit per night to the referrer
+            const creditAmount = booking.totalNights * 5; // 5€ per night
+            await storage.addUserCredits(booking.referredByUserId, creditAmount);
+            
+            console.log(`Awarded ${creditAmount}€ referral credits to user ${booking.referredByUserId} for booking ${bookingId}`);
+            
+            // Update credit expiry - reset 120 days from now
+            await storage.updateUserCreditExpiry(booking.referredByUserId);
+            
+            // Broadcast credit award notification
+            broadcastToAdmins({
+              type: 'referral_credit_awarded',
+              data: { 
+                bookingId, 
+                referredByUserId: booking.referredByUserId, 
+                creditAmount,
+                totalNights: booking.totalNights,
+                referrerEmail: existingReferrer.email,
+                referrerName: `${existingReferrer.firstName} ${existingReferrer.lastName}`
+              }
+            });
+            
+            // Broadcast celebration notification to the referrer
+            broadcastCreditEarned(booking.referredByUserId, creditAmount, existingReferrer, booking);
+          }
+        } catch (error) {
+          console.error('Failed to award referral credits:', error);
+          // Don't fail the status update if credit awarding fails
+        }
+      }
+
       // Broadcast status update via WebSocket
       broadcastToAdmins({
         type: 'booking_status_updated',
@@ -1105,8 +1800,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "Booking status updated successfully", bookingId, status });
     } catch (error) {
-      console.error("Error updating booking status:", error);
+
       res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
+  // Update payment collection information
+  app.patch('/api/bookings/:id/payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { paymentReceived, paymentReceivedBy } = req.body;
+      
+      if (typeof paymentReceived !== 'boolean') {
+        return res.status(400).json({ message: "paymentReceived must be a boolean" });
+      }
+
+      // Get booking to verify it exists
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update payment collection information
+      await storage.updateBookingPaymentInfo(bookingId, {
+        paymentReceived,
+        paymentReceivedBy: paymentReceived ? paymentReceivedBy : null,
+        paymentReceivedAt: paymentReceived ? new Date().toISOString() : null
+      });
+      
+      // Broadcast payment update via WebSocket
+      broadcastToAdmins({
+        type: 'booking_payment_updated',
+        data: { bookingId, paymentReceived, paymentReceivedBy }
+      });
+
+      res.json({ 
+        message: "Payment information updated successfully", 
+        bookingId, 
+        paymentReceived,
+        paymentReceivedBy 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update payment information" });
+    }
+  });
+
+  // Update city tax collection information
+  app.patch('/api/bookings/:id/city-tax', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const bookingId = parseInt(req.params.id);
+      const { cityTaxCollected, cityTaxCollectedBy } = req.body;
+      
+      if (typeof cityTaxCollected !== 'boolean') {
+        return res.status(400).json({ message: "cityTaxCollected must be a boolean" });
+      }
+
+      // Get booking to verify it exists
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update city tax collection information
+      await storage.updateBookingCityTaxInfo(bookingId, {
+        cityTaxCollected,
+        cityTaxCollectedBy: cityTaxCollected ? cityTaxCollectedBy : null,
+        cityTaxCollectedAt: cityTaxCollected ? new Date().toISOString() : null
+      });
+      
+      // Broadcast city tax update via WebSocket
+      broadcastToAdmins({
+        type: 'booking_city_tax_updated',
+        data: { bookingId, cityTaxCollected, cityTaxCollectedBy }
+      });
+
+      res.json({ 
+        message: "City tax information updated successfully", 
+        bookingId, 
+        cityTaxCollected,
+        cityTaxCollectedBy 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update city tax information" });
     }
   });
 
@@ -1127,8 +1916,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "New check-in and check-out dates are required" });
       }
 
-      console.log(`🔵 SERVER: Postponing booking ${bookingId} to ${newCheckInDate} - ${newCheckOutDate}`);
-      
       // Get the original booking to calculate new city tax
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
@@ -1147,8 +1934,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate new city tax (€4 per person per night, max 5 nights)
       const maxTaxNights = Math.min(newNights, 5);
       const newCityTax = booking.guests * 4 * maxTaxNights;
-
-      console.log(`🔵 SERVER: City tax recalculated from original ${originalNights} nights to ${newNights} nights, new tax: €${newCityTax}`);
 
       // Update booking with new dates and recalculated city tax
       await storage.postponeBooking(bookingId, {
@@ -1175,22 +1960,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newNights
       });
     } catch (error) {
-      console.error("Error postponing booking:", error);
+
       res.status(500).json({ message: "Failed to postpone booking" });
     }
   });
 
-  // Pricing settings routes
-  app.get('/api/pricing-settings', isAuthenticated, async (req: any, res) => {
+  // Public pricing endpoint for frontend display
+  app.get('/api/pricing', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (user?.role !== 'admin') {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-
-      // Get pricing settings from database
       const settings = await storage.getPricingSettings();
       
       if (settings) {
@@ -1204,10 +1981,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         res.json(pricingData);
       } else {
-        res.status(404).json({ message: "Pricing settings not found" });
+        // Provide default values if no settings exist
+        res.json({
+          basePrice: 110.50,
+          cleaningFee: 25.00,
+          petFee: 25.00,
+          discountWeekly: 5,
+          discountMonthly: 10
+        });
       }
     } catch (error) {
-      console.error("Error fetching pricing settings:", error);
+
+      res.status(500).json({ message: "Failed to fetch pricing" });
+    }
+  });
+
+  // Pricing Intelligence API - Real analysis based on booking data
+  app.get('/api/pricing-intelligence', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Get current pricing settings
+      const pricingSettings = await storage.getPricingSettings();
+      const currentBasePrice = parseFloat(pricingSettings?.basePrice || "110");
+      
+      // Get all bookings for analysis
+      const allBookings = await storage.getBookings();
+      
+      // Get last 30 days of bookings
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const recentBookings = allBookings.filter(booking => 
+        booking.createdAt && new Date(booking.createdAt) >= thirtyDaysAgo && 
+        booking.status !== 'cancelled'
+      );
+      
+      // Calculate metrics
+      const totalBookings = recentBookings.length;
+      const totalRevenue = recentBookings.reduce((sum, booking) => sum + Number(booking.totalPrice), 0);
+      const avgRevenuePerBooking = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+      
+      // Calculate occupancy rate (rough estimate)
+      const confirmedBookings = recentBookings.filter(b => 
+        b.status && ['confirmed', 'checked_in', 'checked_out'].includes(b.status)
+      );
+      const occupancyRate = totalBookings > 0 ? (confirmedBookings.length / totalBookings) * 100 : 0;
+      
+      // Calculate average price per night from recent bookings
+      const avgPriceFromBookings = recentBookings.length > 0 
+        ? recentBookings.reduce((sum, booking) => {
+            const nights = Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
+            return sum + (Number(booking.basePrice) / Math.max(nights, 1));
+          }, 0) / recentBookings.length
+        : currentBasePrice;
+      
+      // Pricing analysis logic
+      let pricingStatus = 'optimal';
+      let recommendation = '';
+      let confidenceLevel = 'high';
+      
+      if (occupancyRate > 85) {
+        pricingStatus = 'underpriced';
+        recommendation = 'High demand detected. Consider increasing prices by 10-15%.';
+        confidenceLevel = 'high';
+      } else if (occupancyRate < 30) {
+        pricingStatus = 'overpriced';
+        recommendation = 'Low booking rate suggests pricing may be too high. Consider a 5-10% reduction.';
+        confidenceLevel = 'medium';
+      } else if (occupancyRate >= 60 && occupancyRate <= 85) {
+        pricingStatus = 'optimal';
+        recommendation = 'Current pricing appears well-balanced for market demand.';
+        confidenceLevel = 'high';
+      } else {
+        pricingStatus = 'moderate';
+        recommendation = 'Monitor booking trends and consider minor adjustments.';
+        confidenceLevel = 'medium';
+      }
+      
+      // Seasonal analysis
+      const currentMonth = new Date().getMonth();
+      const peakMonths = [5, 6, 7, 11]; // June, July, August, December
+      const isPeakSeason = peakMonths.includes(currentMonth);
+      
+      // Revenue optimization suggestions
+      let revenueOptimization = '';
+      if (isPeakSeason && pricingStatus !== 'overpriced') {
+        revenueOptimization = 'Peak season detected. Consider implementing weekend premiums.';
+      } else if (!isPeakSeason && pricingStatus === 'optimal') {
+        revenueOptimization = 'Off-peak period. Consider promotional pricing to boost bookings.';
+      } else {
+        revenueOptimization = 'Monitor competitor pricing and adjust accordingly.';
+      }
+      
+      // Quick action recommendations
+      const quickActions = [];
+      if (pricingStatus === 'underpriced') {
+        quickActions.push({ label: '+15% Increase', percentage: 15, reasoning: 'High demand' });
+        quickActions.push({ label: '+10% Increase', percentage: 10, reasoning: 'Conservative boost' });
+      } else if (pricingStatus === 'overpriced') {
+        quickActions.push({ label: '-10% Decrease', percentage: -10, reasoning: 'Boost bookings' });
+        quickActions.push({ label: '-5% Decrease', percentage: -5, reasoning: 'Minor adjustment' });
+      } else {
+        quickActions.push({ label: '+5% Test', percentage: 5, reasoning: 'Market test' });
+        quickActions.push({ label: '-3% Promo', percentage: -3, reasoning: 'Promotional rate' });
+      }
+      
+      const intelligence = {
+        currentBasePrice,
+        pricingStatus,
+        recommendation,
+        confidenceLevel,
+        revenueOptimization,
+        metrics: {
+          totalBookings,
+          totalRevenue,
+          avgRevenuePerBooking,
+          occupancyRate: Math.round(occupancyRate),
+          avgPriceFromBookings: Math.round(avgPriceFromBookings * 100) / 100
+        },
+        quickActions,
+        isPeakSeason,
+        analysisDate: new Date().toISOString()
+      };
+      
+      res.json(intelligence);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to generate pricing intelligence" });
+    }
+  });
+
+  // Pricing settings routes - public for basic pricing, admin for full access
+  app.get('/api/pricing-settings', async (req: any, res) => {
+    try {
+      // Get pricing settings from database
+      const settings = await storage.getPricingSettings();
+      
+      if (settings) {
+        // Check if user is authenticated and admin for full access
+        const isAdmin = req.user && req.isAuthenticated() && req.user.claims?.sub;
+        let user = null;
+        
+        if (isAdmin) {
+          try {
+            user = await storage.getUser(req.user.claims.sub);
+          } catch (error) {
+            // If user fetch fails, treat as non-admin
+          }
+        }
+        
+        // Convert decimal strings to numbers for frontend
+        const pricingData = {
+          basePrice: parseFloat(settings.basePrice),
+          cleaningFee: parseFloat(settings.cleaningFee),
+          petFee: parseFloat(settings.petFee),
+          discountWeekly: settings.discountWeekly,
+          discountMonthly: settings.discountMonthly
+        };
+        
+        // For admin users, return full data
+        if (user?.role === 'admin' || user?.role === 'team_member') {
+          res.json(pricingData);
+        } else {
+          // For public access, return basic pricing info
+          res.json({
+            basePrice: pricingData.basePrice,
+            cleaningFee: pricingData.cleaningFee,
+            petFee: pricingData.petFee,
+            discountWeekly: pricingData.discountWeekly,
+            discountMonthly: pricingData.discountMonthly
+          });
+        }
+      } else {
+        // Provide default values if no settings exist
+        res.json({
+          basePrice: 110,
+          cleaningFee: 25,
+          petFee: 25,
+          discountWeekly: 5,
+          discountMonthly: 10
+        });
+      }
+    } catch (error) {
+
       res.status(500).json({ message: "Failed to fetch pricing settings" });
     }
   });
@@ -1217,24 +2179,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Admin access required" });
       }
 
       const { basePrice, cleaningFee, petFee, discountWeekly, discountMonthly } = req.body;
       
+      // Validate input data
+      if (basePrice === undefined || basePrice === null || 
+          cleaningFee === undefined || cleaningFee === null || 
+          petFee === undefined || petFee === null ||
+          typeof discountWeekly !== 'number' || typeof discountMonthly !== 'number') {
+        return res.status(400).json({ message: "Invalid pricing data provided" });
+      }
+      
+      // Validate price ranges (allow 0 but not negative)
+      if (basePrice < 0 || cleaningFee < 0 || petFee < 0 || 
+          discountWeekly < 0 || discountMonthly < 0 ||
+          discountWeekly > 100 || discountMonthly > 100) {
+        return res.status(400).json({ message: "Invalid price or discount values" });
+      }
+      
+      // Warn about unusual pricing
+      if (basePrice === 0) {
+
+      }
+
       // Convert numbers to decimal strings for database storage
       const settingsData = {
-        basePrice: basePrice.toString(),
-        cleaningFee: cleaningFee.toString(),
-        petFee: petFee.toString(),
-        discountWeekly: discountWeekly,
-        discountMonthly: discountMonthly
+        basePrice: Number(basePrice).toFixed(2),
+        cleaningFee: Number(cleaningFee).toFixed(2),
+        petFee: Number(petFee).toFixed(2),
+        discountWeekly: Number(discountWeekly),
+        discountMonthly: Number(discountMonthly)
       };
-      
+
       // Update pricing settings in database
       const updatedSettings = await storage.updatePricingSettings(settingsData);
-      
+
       // Convert back to numbers for response
       res.json({ 
         message: "Pricing settings updated successfully",
@@ -1245,8 +2227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         discountMonthly: updatedSettings.discountMonthly
       });
     } catch (error) {
-      console.error("Error updating pricing settings:", error);
-      res.status(500).json({ message: "Failed to update pricing settings" });
+
+
+      res.status(500).json({
+        message: "Internal server error",
+        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+      });
     }
   });
 
@@ -1255,7 +2241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const count = await storage.getUnreadMessagesCount();
       res.json({ count });
     } catch (error) {
-      console.error("Error fetching unread messages count:", error);
+
       res.status(500).json({ message: "Failed to fetch unread messages count" });
     }
   });
@@ -1273,7 +2259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const promotions = await storage.getPromotions();
       res.json(promotions);
     } catch (error) {
-      console.error("Error fetching promotions:", error);
+
       res.status(500).json({ message: "Failed to fetch promotions" });
     }
   });
@@ -1283,8 +2269,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activePromotions = await storage.getActivePromotions();
       res.json(activePromotions);
     } catch (error) {
-      console.error("Error fetching active promotions:", error);
+
       res.status(500).json({ message: "Failed to fetch active promotions" });
+    }
+  });
+
+  // Get current promotion pricing effect
+  app.get('/api/promotions/current-effect', async (req, res) => {
+    try {
+      const activePromotions = await storage.getActivePromotions();
+      
+      if (activePromotions.length === 0) {
+        return res.json({ 
+          hasActivePromotion: false,
+          promotionName: null,
+          discountPercentage: 0 
+        });
+      }
+
+      // Get the best (highest discount) promotion
+      const bestPromotion = activePromotions.reduce((best, current) => 
+        current.discountPercentage > best.discountPercentage ? current : best
+      );
+
+      res.json({
+        hasActivePromotion: true,
+        promotionName: bestPromotion.name,
+        discountPercentage: bestPromotion.discountPercentage,
+        tag: bestPromotion.tag,
+        description: bestPromotion.description
+      });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch promotion effect" });
     }
   });
 
@@ -1299,7 +2316,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate required fields
       const { name, tag, discountPercentage, startDate, endDate, description } = req.body;
-      
+
+
       if (!name || !tag || !discountPercentage || !startDate || !endDate) {
         return res.status(400).json({ message: "All fields are required" });
       }
@@ -1323,14 +2341,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate: start,
         endDate: end,
         description: description || "",
-        isActive: req.body.isActive !== false,
+        isActive: req.body.isActive === true || req.body.isActive === 'true',
       };
 
       const promotion = await storage.addPromotion(promotionData);
       res.json(promotion);
     } catch (error) {
-      console.error("Error creating promotion:", error);
-      res.status(500).json({ message: "Failed to create promotion" });
+
+      // Check if it's our custom error about active promotions
+      if (error instanceof Error && error.message.includes("Cannot add new promotion while another promotion is active")) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to create promotion" });
+      }
     }
   });
 
@@ -1349,8 +2372,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updatePromotionStatus(id, isActive);
       res.json({ message: "Promotion status updated successfully" });
     } catch (error) {
-      console.error("Error updating promotion status:", error);
-      res.status(500).json({ message: "Failed to update promotion status" });
+
+      // Check if it's our custom error about active promotions
+      if (error instanceof Error && error.message.includes("Cannot activate promotion")) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to update promotion status" });
+      }
     }
   });
 
@@ -1367,8 +2395,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deletePromotion(id);
       res.json({ message: "Promotion deleted successfully" });
     } catch (error) {
-      console.error("Error deleting promotion:", error);
+
       res.status(500).json({ message: "Failed to delete promotion" });
+    }
+  });
+
+  // Promo codes routes
+  app.get('/api/promo-codes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const promoCodes = await storage.getPromoCodes();
+      res.json(promoCodes);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch promo codes" });
+    }
+  });
+
+  app.post('/api/promo-codes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Validate required fields
+      const { code, discountType, discountValue, startDate, endDate, description, usageLimit, minOrderAmount, maxDiscountAmount } = req.body;
+      
+      if (!code || !discountType || !discountValue || !startDate || !endDate) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Validate dates
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start >= end) {
+        return res.status(400).json({ message: "End date must be after start date" });
+      }
+
+      const promoCodeData = {
+        code: code.toUpperCase(),
+        discountType,
+        discountValue: discountValue.toString(),
+        startDate: start,
+        endDate: end,
+        description: description || "",
+        usageLimit,
+        minOrderAmount,
+        maxDiscountAmount,
+        isActive: req.body.isActive !== false,
+        usageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const promoCode = await storage.createPromoCode(promoCodeData);
+      res.json(promoCode);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to create promo code" });
+    }
+  });
+
+  app.delete('/api/promo-codes/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deletePromoCode(id);
+      res.json({ message: "Promo code deleted successfully" });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to delete promo code" });
+    }
+  });
+
+  // Validate promo code endpoint
+  app.post('/api/promo-codes/validate', async (req, res) => {
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: "Promo code is required" 
+        });
+      }
+
+      const promoCode = await storage.validatePromoCode(code.toUpperCase());
+      
+      if (!promoCode) {
+        return res.json({ 
+          valid: false, 
+          message: "Invalid promo code" 
+        });
+      }
+
+      res.json({
+        valid: true,
+        promoCode: {
+          id: promoCode.id,
+          code: promoCode.code,
+          discountType: promoCode.discountType,
+          discountValue: Number(promoCode.discountValue),
+          description: promoCode.description,
+          minOrderAmount: promoCode.minOrderAmount,
+          maxDiscountAmount: promoCode.maxDiscountAmount
+        },
+        message: `${promoCode.discountType === 'percentage' ? promoCode.discountValue + '%' : '€' + promoCode.discountValue} discount applied`
+      });
+    } catch (error) {
+
+      res.status(500).json({ 
+        valid: false, 
+        message: "Failed to validate promo code" 
+      });
+    }
+  });
+
+  // Get promo code usage details endpoint
+  app.get('/api/promo-codes/:id/usage', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const id = parseInt(req.params.id);
+      const result = await storage.getPromoCodeWithUsage(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      res.json(result);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch promo code usage" });
     }
   });
 
@@ -1385,7 +2563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const images = await storage.getHeroImages();
       res.json(images);
     } catch (error) {
-      console.error("Error fetching hero images:", error);
+
       res.status(500).json({ message: "Failed to fetch hero images" });
     }
   });
@@ -1395,7 +2573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeImages = await storage.getActiveHeroImages();
       res.json(activeImages);
     } catch (error) {
-      console.error("Error fetching active hero images:", error);
+
       res.status(500).json({ message: "Failed to fetch active hero images" });
     }
   });
@@ -1435,14 +2613,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const image = await storage.addHeroImage(imageData);
       res.json(image);
     } catch (error) {
-      console.error("Error uploading hero image:", error);
-      
+
       // Clean up uploaded file if database save failed
       if (req.file) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (cleanupError) {
-          console.error("Error cleaning up file:", cleanupError);
+
         }
       }
       
@@ -1477,7 +2654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const image = await storage.addHeroImage(imageData);
       res.json(image);
     } catch (error) {
-      console.error("Error creating hero image:", error);
+
       res.status(500).json({ message: "Failed to create hero image" });
     }
   });
@@ -1493,8 +2670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { updates } = req.body;
-      console.log("Received reorder updates:", updates);
-      
+
       if (!Array.isArray(updates)) {
         return res.status(400).json({ message: "Updates must be an array" });
       }
@@ -1502,18 +2678,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update each image's display order
       for (const update of updates) {
         const { id, displayOrder } = update;
-        console.log(`Updating image ${id} to displayOrder ${displayOrder}`);
-        
+
         if (typeof id === 'number' && typeof displayOrder === 'number' && !isNaN(id) && !isNaN(displayOrder)) {
           await storage.updateHeroImageOrder(id, displayOrder);
         } else {
-          console.error(`Invalid update data: id=${id} (${typeof id}), displayOrder=${displayOrder} (${typeof displayOrder})`);
+
         }
       }
 
       res.json({ message: "Image order updated successfully" });
     } catch (error: any) {
-      console.error("Error reordering hero images:", error);
+
       res.status(500).json({ message: "Failed to reorder images" });
     }
   });
@@ -1531,7 +2706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateHeroImage(id, req.body);
       res.json({ message: "Hero image updated successfully" });
     } catch (error) {
-      console.error("Error updating hero image:", error);
+
       res.status(500).json({ message: "Failed to update hero image" });
     }
   });
@@ -1549,7 +2724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteHeroImage(id);
       res.json({ message: "Hero image deleted successfully" });
     } catch (error) {
-      console.error("Error deleting hero image:", error);
+
       res.status(500).json({ message: "Failed to delete hero image" });
     }
   });
@@ -1560,7 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const content = await storage.getAboutContent();
       res.json(content);
     } catch (error) {
-      console.error("Error fetching about content:", error);
+
       res.status(500).json({ message: "Failed to fetch about content" });
     }
   });
@@ -1578,7 +2753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analytics = await storage.getAnalytics();
       res.json(analytics);
     } catch (error) {
-      console.error("Error fetching analytics:", error);
+
       res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
@@ -1596,7 +2771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const timeline = await storage.getActivityTimeline();
       res.json(timeline);
     } catch (error) {
-      console.error("Error fetching activity timeline:", error);
+
       res.status(500).json({ message: "Failed to fetch activity timeline" });
     }
   });
@@ -1614,7 +2789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const timeline = await storage.addActivityTimeline(timelineData);
       res.json(timeline);
     } catch (error: any) {
-      console.error("Error adding activity timeline:", error);
+
       res.status(400).json({ message: error.message });
     }
   });
@@ -1632,7 +2807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const usersWithDetails = await storage.getAllUsersWithDetails();
       res.json(usersWithDetails);
     } catch (error) {
-      console.error("Error fetching users:", error);
+
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
@@ -1682,7 +2857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, booking: blockedBooking });
     } catch (error) {
-      console.error("Error blocking dates:", error);
+
       res.status(500).json({ message: "Failed to block dates" });
     }
   });
@@ -1691,6 +2866,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount, bookingId, type = 'full_payment' } = req.body;
+      
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
@@ -1709,7 +2888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntentId: paymentIntent.id
       });
     } catch (error: any) {
-      console.error('Payment intent creation failed:', error);
+
       res.status(500).json({ 
         message: 'Failed to create payment intent: ' + error.message 
       });
@@ -1720,6 +2899,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/authorize-card', async (req, res) => {
     try {
       const { bookingId, amount = 100 } = req.body;
+      
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // €100 authorization in cents
@@ -1740,7 +2923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount
       });
     } catch (error: any) {
-      console.error('Card authorization failed:', error);
+
       res.status(500).json({ 
         message: 'Failed to authorize card: ' + error.message 
       });
@@ -1750,6 +2933,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-card-authorization", async (req, res) => {
     try {
       const { amount } = req.body;
+      
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+      
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100),
         currency: "eur",
@@ -1770,9 +2958,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let event;
 
     try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+      
       event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
+
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -1785,9 +2977,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Confirm the booking when payment succeeds
           await storage.confirmBooking(parseInt(bookingId));
-          console.log(`Booking ${bookingId} confirmed after successful payment`);
+
         } catch (error) {
-          console.error(`Failed to confirm booking ${bookingId}:`, error);
+
         }
       }
     }
@@ -1800,6 +2992,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paymentIntentId, bookingId } = req.body;
       
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+      
       // Verify payment intent with Stripe
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
@@ -1810,7 +3006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ success: false, message: 'Payment not completed' });
       }
     } catch (error: any) {
-      console.error('Payment confirmation failed:', error);
+
       res.status(500).json({ success: false, message: 'Failed to confirm payment' });
     }
   });
@@ -1821,73 +3017,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setInterval(async () => {
     try {
       await storage.cleanupAbandonedBookings();
-      console.log('Cleaned up abandoned pending bookings');
+
     } catch (error) {
-      console.error('Failed to cleanup abandoned bookings:', error);
+
     }
   }, 10 * 60 * 1000); // 10 minutes
 
+  // WebSocket health check endpoint
+  app.get('/api/ws/health', (req, res) => {
+    res.json({ 
+      status: 'healthy',
+      connections: adminConnections?.size || 0,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // WebSocket setup for real-time updates
+
+
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const adminConnections = new Set<WebSocket>();
 
   wss.on('connection', (ws, req) => {
-    console.log('WebSocket connection established');
-    
+    console.log('✅ New WebSocket connection established from:', req.socket.remoteAddress);
+
     // Add to admin connections (in a real app, verify admin role)
     adminConnections.add(ws);
     
-    ws.on('close', () => {
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'connection_established',
+      message: 'WebSocket connected successfully',
+      timestamp: new Date().toISOString()
+    }));
+    
+    ws.on('close', (code, reason) => {
+
+
+
+
       adminConnections.delete(ws);
     });
     
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+
+
       adminConnections.delete(ws);
     });
+    
+    ws.on('message', (message) => {
+
+
+    });
+  });
+  
+  wss.on('error', (error) => {
+
+
   });
 
-  // Undo no-show status (revert to confirmed)
-  app.post('/api/bookings/:id/undo-no-show', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      if (user?.role !== 'admin') {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-
-      const bookingId = parseInt(req.params.id);
-      const booking = await storage.getBooking(bookingId);
-      
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      if (booking.status !== 'no_show') {
-        return res.status(400).json({ message: "Booking is not marked as no-show" });
-      }
-
-      await storage.updateBookingStatus(bookingId, 'confirmed');
-      
-      // Add activity timeline entry
-      await storage.addActivityTimeline({
-        guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
-        description: `No-show status reverted to confirmed for booking #${bookingId}`,
-        actionType: 'booking_status_reverted',
-        checkInDate: booking.checkInDate,
-        checkOutDate: booking.checkOutDate,
-        guestEmail: booking.guestEmail,
-        bookingId: bookingId,
-        totalPrice: booking.totalPrice.toString()
-      });
-
-      res.json({ message: "No-show status reverted successfully" });
-    } catch (error) {
-      console.error("Error undoing no-show:", error);
-      res.status(500).json({ message: "Failed to undo no-show status" });
-    }
-  });
 
   // Edit booking dates
   app.put('/api/bookings/:id/edit-dates', isAuthenticated, async (req: any, res) => {
@@ -1937,7 +3125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "Booking dates updated successfully" });
     } catch (error) {
-      console.error("Error editing booking dates:", error);
+
       res.status(500).json({ message: "Failed to edit booking dates" });
     }
   });
@@ -1976,23 +3164,768 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "Booking cancelled successfully - dates are now available" });
     } catch (error) {
-      console.error("Error cancelling booking:", error);
+
       res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
+
+  // ====================== VOUCHER ENDPOINTS ======================
+  
+  // Test endpoint to create sample vouchers (temporary)
+  app.post('/api/vouchers/create-test', async (req, res) => {
+    try {
+
+      // Create WELCOME20 voucher
+      const testVoucher1 = {
+        code: 'WELCOME20',
+        discountType: 'percentage' as const,
+        discountValue: '20',
+        description: 'Welcome discount for new customers',
+        usageLimit: 2,
+        usageCount: 0,
+        minBookingAmount: '0.00',
+        maxDiscountAmount: null,
+        isActive: true,
+        validFrom: new Date('2024-01-01'),
+        validUntil: new Date('2024-12-31'),
+        createdBy: 'admin',
+      };
+      
+      // Create HASSAN30 voucher
+      const testVoucher2 = {
+        code: 'HASSAN30',
+        discountType: 'fixed' as const,
+        discountValue: '40',
+        description: 'Special discount for Hassan',
+        usageLimit: 1,
+        usageCount: 1,
+        minBookingAmount: '0.00',
+        maxDiscountAmount: null,
+        isActive: false,
+        validFrom: new Date('2024-01-01'),
+        validUntil: new Date('2024-06-30'),
+        createdBy: 'admin',
+      };
+      
+      // Insert vouchers (ignore if they already exist)
+      const existingVouchers = await db.select().from(vouchers);
+      
+      if (existingVouchers.length === 0) {
+        await db.insert(vouchers).values(testVoucher1);
+        await db.insert(vouchers).values(testVoucher2);
+
+      } else {
+
+      }
+      
+      const allVouchers = await db.select().from(vouchers);
+      res.json({ message: 'Test vouchers ready', vouchers: allVouchers });
+    } catch (error: any) {
+
+      res.status(500).json({ message: 'Failed to create test vouchers', error: error.message });
+    }
+  });
+  
+  // Validate voucher for booking (public endpoint) - MOVED TO TOP
+  app.post('/api/vouchers/validate', async (req, res) => {
+    try {
+
+
+
+      // Try to parse with error handling - handle empty fields
+      let validatedData;
+      try {
+        const processedBody = {
+          ...req.body,
+          guestEmail: req.body.guestEmail || 'guest@example.com',
+          guestName: (req.body.guestName || '').trim() || 'Guest User',
+        };
+        
+        validatedData = voucherValidationSchema.parse(processedBody);
+
+      } catch (schemaError: any) {
+
+
+        return res.status(400).json({ message: "Invalid request format", error: schemaError.message });
+      }
+
+
+      // Find voucher by code (case-insensitive)
+
+      // First check if the vouchers table has any data
+      const allVouchers = await db.select().from(vouchers);
+
+      // If no vouchers exist, create a test voucher for WELCOME20
+      if (allVouchers.length === 0 && validatedData.code.toUpperCase() === 'WELCOME20') {
+
+        const testVoucher = {
+          code: 'WELCOME20',
+          discountType: 'percentage' as const,
+          discountValue: '20',
+          description: 'Welcome discount for new customers',
+          usageLimit: 2,
+          usageCount: 0,
+          minBookingAmount: '0.00',
+          maxDiscountAmount: null,
+          isActive: true,
+          validFrom: new Date('2024-01-01'),
+          validUntil: new Date('2024-12-31'),
+          createdBy: 'admin',
+        };
+        
+        await db.insert(vouchers).values(testVoucher);
+
+      }
+      
+      const voucher = await db.select().from(vouchers).where(eq(vouchers.code, validatedData.code.toUpperCase())).limit(1);
+
+      if (voucher.length === 0) {
+        return res.status(404).json({ message: "Voucher not found" });
+      }
+
+      const voucherData = voucher[0];
+      
+      // Check if voucher is active
+      if (!voucherData.isActive) {
+        return res.status(400).json({ message: "Voucher is not active" });
+      }
+
+      // Check if voucher is within valid date range
+      const now = new Date();
+      const validFrom = new Date(voucherData.validFrom);
+      const validUntil = new Date(voucherData.validUntil);
+      
+      if (now < validFrom || now > validUntil) {
+        return res.status(400).json({ message: "Voucher is not valid for current date" });
+      }
+
+      // Check if voucher has reached usage limit
+      if (voucherData.usageCount >= voucherData.usageLimit) {
+        return res.status(400).json({ message: "Voucher usage limit reached" });
+      }
+
+      // Check minimum booking amount
+      if (voucherData.minBookingAmount && validatedData.bookingAmount < Number(voucherData.minBookingAmount)) {
+        return res.status(400).json({ message: `Minimum booking amount of €${voucherData.minBookingAmount} required` });
+      }
+
+      // Calculate discount amount
+      let discountAmount = 0;
+      if (voucherData.discountType === 'percentage') {
+        discountAmount = validatedData.bookingAmount * (Number(voucherData.discountValue) / 100);
+        // Apply max discount limit if set
+        if (voucherData.maxDiscountAmount && Number(voucherData.maxDiscountAmount) > 0) {
+          discountAmount = Math.min(discountAmount, Number(voucherData.maxDiscountAmount));
+        }
+      } else {
+        discountAmount = Number(voucherData.discountValue);
+      }
+
+      res.json({
+        valid: true,
+        voucher: voucherData,
+        discountAmount: discountAmount,
+        finalAmount: validatedData.bookingAmount - discountAmount,
+      });
+    } catch (error: any) {
+
+
+      res.status(500).json({ message: "Failed to validate voucher", error: error.message });
+    }
+  });
+
+  // Get all vouchers (admin only)
+  app.get('/api/vouchers', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const voucherList = await db.select({
+        id: vouchers.id,
+        code: vouchers.code,
+        discountType: vouchers.discountType,
+        discountValue: vouchers.discountValue,
+        description: vouchers.description,
+        usageLimit: vouchers.usageLimit,
+        usageCount: vouchers.usageCount,
+        minBookingAmount: vouchers.minBookingAmount,
+        maxDiscountAmount: vouchers.maxDiscountAmount,
+        isActive: vouchers.isActive,
+        validFrom: vouchers.validFrom,
+        validUntil: vouchers.validUntil,
+        createdBy: vouchers.createdBy,
+        createdAt: vouchers.createdAt,
+        updatedAt: vouchers.updatedAt,
+      }).from(vouchers);
+
+      res.json(voucherList);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch vouchers" });
+    }
+  });
+
+  // Get voucher usage history (admin only)
+  app.get('/api/vouchers/:id/usage', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const voucherId = parseInt(req.params.id);
+
+      const usageHistory = await db.select().from(voucherUsage).where(eq(voucherUsage.voucherId, voucherId));
+
+
+      res.json(usageHistory);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch voucher usage" });
+    }
+  });
+
+  // Create new voucher (admin only)
+  app.post('/api/vouchers', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const validatedData = insertVoucherSchema.parse(req.body);
+      
+      // Check if voucher code already exists (case-insensitive)
+      const upperCaseCode = validatedData.code.toUpperCase();
+      const existingVoucher = await db.select().from(vouchers).where(eq(vouchers.code, upperCaseCode)).limit(1);
+      if (existingVoucher.length > 0) {
+        return res.status(400).json({ message: "Voucher code already exists" });
+      }
+
+      const voucherData: any = {
+        code: upperCaseCode,
+        discountType: validatedData.discountType,
+        discountValue: validatedData.discountValue.toString(),
+        usageLimit: validatedData.usageLimit,
+        minBookingAmount: validatedData.minBookingAmount.toString(),
+        isActive: validatedData.isActive ?? true,
+        validFrom: new Date(validatedData.validFrom),
+        validUntil: new Date(validatedData.validUntil),
+        createdBy: user.id,
+      };
+
+      // Only add optional fields if they have values
+      if (validatedData.description) {
+        voucherData.description = validatedData.description;
+      }
+      
+      if (validatedData.maxDiscountAmount !== undefined && validatedData.maxDiscountAmount >= 0) {
+        voucherData.maxDiscountAmount = validatedData.maxDiscountAmount.toString();
+      }
+
+      const newVoucher = await db.insert(vouchers).values(voucherData).returning();
+
+      res.status(201).json(newVoucher[0]);
+    } catch (error) {
+
+      // Check if it's a validation error
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          details: error.message 
+        });
+      }
+      
+      // Check if it's a database constraint error
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        return res.status(400).json({ message: "Voucher code already exists" });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to create voucher",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Update voucher (admin only)
+  app.put('/api/vouchers/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const voucherId = parseInt(req.params.id);
+      const { isActive } = req.body;
+
+      const updatedVoucher = await db.update(vouchers)
+        .set({ isActive, updatedAt: new Date() })
+        .where(eq(vouchers.id, voucherId))
+        .returning();
+
+      if (updatedVoucher.length === 0) {
+        return res.status(404).json({ message: "Voucher not found" });
+      }
+
+      res.json(updatedVoucher[0]);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to update voucher" });
+    }
+  });
+
+  // Delete voucher (admin only)
+  app.delete('/api/vouchers/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const voucherId = parseInt(req.params.id);
+      
+      // Check if voucher has been used
+      const usageCount = await db.select().from(voucherUsage).where(eq(voucherUsage.voucherId, voucherId));
+      if (usageCount.length > 0) {
+        return res.status(400).json({ message: "Cannot delete voucher that has been used" });
+      }
+
+      const deletedVoucher = await db.delete(vouchers).where(eq(vouchers.id, voucherId)).returning();
+
+      if (deletedVoucher.length === 0) {
+        return res.status(404).json({ message: "Voucher not found" });
+      }
+
+      res.json({ message: "Voucher deleted successfully" });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to delete voucher" });
+    }
+  });
+
+
+  // Use voucher (called when booking is confirmed)
+  app.post('/api/vouchers/:id/use', async (req, res) => {
+    try {
+      const voucherId = parseInt(req.params.id);
+      const usageData = insertVoucherUsageSchema.parse(req.body);
+      
+      // Verify voucher exists and is still valid
+      const voucher = await db.select().from(vouchers).where(eq(vouchers.id, voucherId)).limit(1);
+      
+      if (voucher.length === 0) {
+        return res.status(404).json({ message: "Voucher not found" });
+      }
+
+      const voucherData = voucher[0];
+      
+      // Check if voucher has reached usage limit
+      if (voucherData.usageCount >= voucherData.usageLimit) {
+        return res.status(400).json({ message: "Voucher usage limit reached" });
+      }
+
+      // Record voucher usage
+      await db.insert(voucherUsage).values({
+        voucherId,
+        bookingId: usageData.bookingId,
+        userId: usageData.userId,
+        guestEmail: usageData.guestEmail,
+        guestName: usageData.guestName,
+        discountAmount: usageData.discountAmount,
+        bookingAmount: usageData.bookingAmount,
+        checkInDate: usageData.checkInDate,
+        checkOutDate: usageData.checkOutDate,
+      });
+
+      // Update voucher usage count
+      await db.update(vouchers)
+        .set({ 
+          usageCount: voucherData.usageCount + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(vouchers.id, voucherId));
+
+      res.json({ message: "Voucher used successfully" });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to use voucher" });
+    }
+  });
+
+  // Add test voucher usage data (admin only - for testing)
+  app.post('/api/vouchers/:id/add-test-usage', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const voucherId = parseInt(req.params.id);
+
+      // Find the most recent booking to use as test data
+      const [recentBooking] = await db.select({
+        id: bookings.id,
+        guestFirstName: bookings.guestFirstName,
+        guestLastName: bookings.guestLastName,
+        guestEmail: bookings.guestEmail,
+        checkInDate: bookings.checkInDate,
+        checkOutDate: bookings.checkOutDate,
+        totalPrice: bookings.totalPrice
+      }).from(bookings).orderBy(desc(bookings.id)).limit(1);
+      
+      if (!recentBooking) {
+        return res.status(404).json({ message: "No bookings found to create test voucher usage" });
+      }
+      
+      // Create test voucher usage data using real booking
+      const testUsageData = {
+        voucherId,
+        bookingId: recentBooking.id,
+        userId: null,
+        guestEmail: recentBooking.guestEmail,
+        guestName: `${recentBooking.guestFirstName} ${recentBooking.guestLastName}`,
+        discountAmount: "40.00",
+        bookingAmount: recentBooking.totalPrice,
+        checkInDate: recentBooking.checkInDate,
+        checkOutDate: recentBooking.checkOutDate
+      };
+
+      await db.insert(voucherUsage).values(testUsageData);
+
+      res.json({ message: "Test voucher usage data added successfully", data: testUsageData });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to add test voucher usage", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Debug endpoint to check voucher usage without authentication (remove in production)
+  app.get('/api/debug/vouchers/:id/usage', async (req, res) => {
+    try {
+      const voucherId = parseInt(req.params.id);
+
+      // Join with bookings table to get confirmation code
+      const usageHistory = await db.select({
+        id: voucherUsage.id,
+        voucherId: voucherUsage.voucherId,
+        bookingId: voucherUsage.bookingId,
+        userId: voucherUsage.userId,
+        guestEmail: voucherUsage.guestEmail,
+        guestName: voucherUsage.guestName,
+        discountAmount: voucherUsage.discountAmount,
+        bookingAmount: voucherUsage.bookingAmount,
+        usedAt: voucherUsage.usedAt,
+        checkInDate: voucherUsage.checkInDate,
+        checkOutDate: voucherUsage.checkOutDate,
+        confirmationCode: bookings.confirmationCode
+      })
+      .from(voucherUsage)
+      .leftJoin(bookings, eq(voucherUsage.bookingId, bookings.id))
+      .where(eq(voucherUsage.voucherId, voucherId));
+
+
+      res.json(usageHistory);
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to fetch voucher usage" });
+    }
+  });
+
+  // Debug endpoint to create test voucher usage with booking ID 23
+  app.post('/api/debug/vouchers/:id/create-test-usage', async (req, res) => {
+    try {
+      const voucherId = parseInt(req.params.id);
+
+      // Create test voucher usage data with booking ID 23
+      const testUsageData = {
+        voucherId,
+        bookingId: 23,
+        userId: null,
+        guestEmail: "test@test.com",
+        guestName: "cheema cheema",
+        discountAmount: "40.00",
+        bookingAmount: "123.00",
+        checkInDate: "2025-07-28",
+        checkOutDate: "2025-07-29"
+      };
+
+      await db.insert(voucherUsage).values(testUsageData);
+
+      // Update voucher usage count
+      const updatedVoucher = await db.update(vouchers)
+        .set({ 
+          usageCount: sql`${vouchers.usageCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(vouchers.id, voucherId))
+        .returning();
+
+      res.json({ message: "Test voucher usage created successfully", data: testUsageData });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to create test voucher usage", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+  
+  // Debug endpoint to clear voucher usage and reset usage count (remove in production)
+  app.delete('/api/debug/vouchers/:id/clear-usage', async (req, res) => {
+    try {
+      const voucherId = parseInt(req.params.id);
+
+      // Delete all usage records for this voucher
+      const deletedUsage = await db.delete(voucherUsage).where(eq(voucherUsage.voucherId, voucherId)).returning();
+
+      // Reset usage count to 0
+      const updatedVoucher = await db.update(vouchers)
+        .set({ usageCount: 0, updatedAt: new Date() })
+        .where(eq(vouchers.id, voucherId))
+        .returning();
+
+      res.json({ 
+        message: "Voucher usage cleared successfully", 
+        deletedRecords: deletedUsage.length,
+        voucher: updatedVoucher[0]
+      });
+    } catch (error) {
+
+      res.status(500).json({ message: "Failed to clear voucher usage" });
     }
   });
 
   // Broadcast function for admin notifications
   function broadcastToAdmins(message: any) {
     const messageStr = JSON.stringify(message);
+
+    let successCount = 0;
+    let errorCount = 0;
+    
     adminConnections.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(messageStr);
+        try {
+          ws.send(messageStr);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+        }
+      } else {
+        errorCount++;
       }
     });
   }
 
-  // Real-time calendar updates (every 100ms as requested)
+  // Helper functions for different update types
+  function broadcastAnalyticsUpdate() {
+    broadcastToAdmins({ type: 'analytics_update' });
+  }
+
+  function broadcastPricingUpdate() {
+    broadcastToAdmins({ type: 'pricing_update' });
+  }
+
+  function broadcastPromotionUpdate() {
+    broadcastToAdmins({ type: 'promotion_update' });
+  }
+
+  function broadcastReviewUpdate() {
+    broadcastToAdmins({ type: 'review_update' });
+  }
+
+  function broadcastHeroImagesUpdate() {
+    broadcastToAdmins({ type: 'hero_images_update' });
+  }
+
+  function broadcastUsersUpdate() {
+    broadcastToAdmins({ type: 'users_update' });
+  }
+
+  function broadcastPMSIntegrationUpdate() {
+    broadcastToAdmins({ type: 'pms_integration_update' });
+  }
+
+  function broadcastDatabaseStatusUpdate() {
+    broadcastToAdmins({ type: 'database_status_update' });
+  }
+
+  function broadcastPMSSyncProgress(integrationId: string, progress: number, status: string, processedItems: number, totalItems: number) {
+    broadcastToAdmins({
+      type: 'pms_sync_progress',
+      data: {
+        integrationId,
+        progress,
+        status,
+        processedItems,
+        totalItems
+      }
+    });
+  }
+
+  // Enhanced celebration system with multiple notification channels
+  async function broadcastCreditEarned(userId: string, creditAmount: number, referrerDetails: any, bookingDetails: any) {
+    const celebrationData = {
+      userId,
+      creditAmount,
+      referrerEmail: referrerDetails.email,
+      referrerName: `${referrerDetails.firstName} ${referrerDetails.lastName}`,
+      bookingId: bookingDetails.id,
+      totalNights: bookingDetails.totalNights,
+      timestamp: new Date().toISOString(),
+      celebrationId: crypto.randomUUID(),
+      messages: {
+        primary: `🎉 Congratulations! You've earned ${creditAmount}€ in referral credits!`,
+        secondary: `Your friend just completed their stay. Keep referring to earn more!`,
+        action: `You now have credits to use on your next booking!`
+      },
+      animations: {
+        confetti: true,
+        fireworks: true,
+        duration: 5000
+      },
+      achievements: {
+        isFirstReferral: await checkIfFirstReferral(userId),
+        totalReferrals: await getTotalReferralCount(userId),
+        totalCreditsEarned: await getTotalCreditsEarned(userId)
+      }
+    };
+
+    // 1. Broadcast celebration to all admin connections
+    broadcastToAdmins({
+      type: 'referral_credit_celebration',
+      data: celebrationData
+    });
+
+    // 2. Store celebration notification in database for the user
+    try {
+      await storage.createUserNotification({
+        userId,
+        type: 'referral_credit_earned',
+        title: '🎉 Referral Credits Earned!',
+        message: `You've earned ${creditAmount}€ in referral credits! Your friend just completed their stay.`,
+        data: JSON.stringify(celebrationData),
+        isRead: false
+      });
+    } catch (error) {
+      console.error('Failed to store user notification:', error);
+    }
+
+    // 3. Send real-time notification to user if they're connected
+    broadcastToUser(userId, {
+      type: 'celebration_notification',
+      data: celebrationData
+    });
+
+    // 4. Send email notification with celebration content
+    try {
+      await sendCelebrationEmail(referrerDetails, celebrationData);
+    } catch (error) {
+      console.error('Failed to send celebration email:', error);
+    }
+
+    // 5. Log celebration for analytics
+    console.log(`🎊 CELEBRATION: User ${userId} earned ${creditAmount}€ referral credits! Total referrals: ${celebrationData.achievements.totalReferrals}`);
+  }
+
+  // Helper functions for celebration system
+  async function checkIfFirstReferral(userId: string): Promise<boolean> {
+    try {
+      const referralStats = await storage.getUserReferralStats(userId);
+      return referralStats.totalReferrals <= 1;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function getTotalReferralCount(userId: string): Promise<number> {
+    try {
+      const referralStats = await storage.getUserReferralStats(userId);
+      return referralStats.totalReferrals || 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  async function getTotalCreditsEarned(userId: string): Promise<number> {
+    try {
+      const user = await storage.getUser(userId);
+      return user?.credits || 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  // Send notification to specific user (if they have an active connection)
+  function broadcastToUser(userId: string, message: any) {
+    const messageStr = JSON.stringify(message);
+    
+    // In a real implementation, you'd maintain user-specific WebSocket connections
+    // For now, we'll broadcast to all connections with user identification
+    adminConnections.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({
+            ...message,
+            targetUserId: userId
+          }));
+        } catch (error) {
+          console.error('Failed to send user notification:', error);
+        }
+      }
+    });
+  }
+
+  // Send celebration email
+  async function sendCelebrationEmail(referrerDetails: any, celebrationData: any) {
+    // Email template for celebration
+    const emailContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          .celebration { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; color: white; }
+          .amount { font-size: 32px; font-weight: bold; color: #FFD700; }
+          .message { font-size: 18px; margin: 15px 0; }
+          .cta { background: #FFD700; color: #333; padding: 12px 24px; text-decoration: none; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <div class="celebration">
+          <h1>🎉 Congratulations ${referrerDetails.firstName}!</h1>
+          <div class="amount">${celebrationData.creditAmount}€ Earned!</div>
+          <p class="message">${celebrationData.messages.primary}</p>
+          <p class="message">${celebrationData.messages.secondary}</p>
+          <br>
+          <a href="${process.env.FRONTEND_URL}/profile" class="cta">View My Credits</a>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // In a real implementation, send email using your email service
+    console.log(`📧 CELEBRATION EMAIL: Sent to ${referrerDetails.email}`);
+    console.log(`Email content preview: ${celebrationData.messages.primary}`);
+  }
+
+  // Real-time calendar updates (only when clients are connected)
   setInterval(async () => {
+    // Only broadcast if there are connected clients
+    if (adminConnections.size === 0) {
+      return;
+    }
+
     try {
       const currentDate = new Date();
       const year = currentDate.getFullYear();
@@ -2007,9 +3940,355 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: { bookings, year, month }
       });
     } catch (error) {
-      console.error('Error in calendar update broadcast:', error);
+
     }
-  }, 100);
+  }, 5000); // Changed to 5 seconds instead of 100ms for better performance
+
+
+  // Advanced admin authentication routes
+  app.post('/api/admin/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        await logAuditEvent(req, 'login_failed', 'authentication', null, {
+          reason: 'Missing credentials',
+          email
+        }, false);
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        await logAuditEvent(req, 'login_failed', 'authentication', null, {
+          reason: 'User not found',
+          email
+        }, false);
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Verify password
+      const passwordValid = await bcrypt.compare(password, user.password || '');
+      if (!passwordValid) {
+        await logAuditEvent(req, 'login_failed', 'authentication', user.id, {
+          reason: 'Invalid password',
+          email
+        }, false);
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Check if user is admin
+      if (user.role !== 'admin' && user.role !== 'team_member') {
+        await logAuditEvent(req, 'login_failed', 'authorization', user.id, {
+          reason: 'Insufficient privileges',
+          role: user.role
+        }, false);
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      // Update session
+      const session = req.session as any;
+      session.userId = user.id;
+      session.adminUserId = user.id; // Add this for TOTP verification
+      session.user = user;
+      session.isAdmin = true;
+      session.pendingAdminLogin = true; // Add this for TOTP verification
+      session.loginAt = new Date();
+
+      // Check if TOTP is set up
+      if (!user.totpSecret) {
+        await logAuditEvent(req, 'login_totp_setup_required', 'authentication', user.id, {
+          email
+        }, true);
+        return res.json({ 
+          success: true, 
+          requiresTOTPSetup: true,
+          message: 'TOTP setup required' 
+        });
+      }
+
+      // Require TOTP verification
+      await logAuditEvent(req, 'login_totp_required', 'authentication', user.id, {
+        email
+      }, true);
+      
+      res.json({ 
+        success: true, 
+        requiresTOTP: true,
+        message: 'TOTP verification required' 
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      await logAuditEvent(req, 'login_error', 'system', null, {
+        error: error.message
+      }, false);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/admin/auth/generate-totp', requireAdminAuth, async (req, res) => {
+    try {
+      const session = req.session as any;
+      const userId = session.userId;
+
+      const { secret, qrCode } = await generateTOTPSecret(userId);
+      
+      // Generate backup codes
+      const backupCodes = Array.from({ length: 8 }, () => 
+        Math.random().toString(36).substring(2, 8).toUpperCase()
+      );
+
+      // Store TOTP secret temporarily (will be saved permanently on verification)
+      session.pendingTOTPSecret = secret;
+      session.backupCodes = backupCodes;
+
+      await logAuditEvent(req, 'totp_secret_generated', 'security', userId, {
+        userId
+      }, true);
+
+      res.json({ secret, qrCode, backupCodes });
+    } catch (error) {
+      console.error('TOTP generation error:', error);
+      res.status(500).json({ message: 'Failed to generate TOTP secret' });
+    }
+  });
+
+  app.post('/api/admin/auth/verify-totp-setup', requireAdminAuth, async (req, res) => {
+    try {
+      const { code, secret } = req.body;
+      const session = req.session as any;
+      const userId = session.userId;
+
+      if (!code || !secret) {
+        return res.status(400).json({ message: 'Code and secret are required' });
+      }
+
+      const isValid = verifyTOTP(secret, code);
+      
+      if (isValid) {
+        // Save TOTP secret to user database
+        await db.update(users).set({ 
+          totpSecret: secret,
+          isActive: true,
+          lastLoginAt: new Date(),
+          updatedAt: new Date()
+        }).where(eq(users.id, userId));
+
+        // Complete admin authentication
+        session.totpVerified = true;
+        session.mfaVerifiedAt = new Date();
+        session.adminAuthenticated = true;
+        session.isAdmin = true; // Preserve admin flag
+        delete session.pendingTOTPSecret;
+        delete session.pendingAdminLogin; // Clean up if exists
+
+        await logAuditEvent(req, 'totp_setup_completed', 'security', userId, {
+          userId
+        }, true);
+
+        res.json({ success: true, message: 'TOTP setup completed' });
+      } else {
+        await logAuditEvent(req, 'totp_setup_failed', 'security', userId, {
+          reason: 'Invalid code',
+          userId
+        }, false);
+        res.status(400).json({ message: 'Invalid verification code' });
+      }
+    } catch (error) {
+      console.error('TOTP setup verification error:', error);
+      res.status(500).json({ message: 'Verification failed' });
+    }
+  });
+
+  app.post('/api/admin/auth/verify-totp', async (req, res) => {
+    try {
+      const { code } = req.body;
+      const session = req.session as any;
+      
+      // Check if there's a pending admin login
+      if (!session.pendingAdminLogin || !session.adminUserId) {
+        return res.status(403).json({ message: "No pending admin login found" });
+      }
+
+      if (!code) {
+        return res.status(400).json({ message: 'Verification code is required' });
+      }
+
+      // Get user's TOTP secret 
+      const user = await storage.getUser(session.adminUserId);
+      
+      if (!user || !user.totpSecret) {
+        return res.status(400).json({ message: 'TOTP not set up' });
+      }
+
+      const isValid = verifyTOTP(user.totpSecret, code);
+      
+      if (isValid) {
+        // Complete admin authentication
+        session.totpVerified = true;
+        session.mfaVerifiedAt = new Date();
+        session.adminAuthenticated = true;
+        session.isAdmin = true; // Preserve admin flag
+        session.userId = session.adminUserId; // Ensure userId is set
+        delete session.pendingAdminLogin;
+
+        await logAuditEvent(req, 'login_success', 'authentication', user.id, {
+          email: user.email,
+          mfaType: 'totp'
+        }, true);
+
+        res.json({ success: true, message: 'Authentication successful' });
+      } else {
+        await logAuditEvent(req, 'totp_verification_failed', 'security', user.id, {
+          reason: 'Invalid code'
+        }, false);
+        res.status(400).json({ message: 'Invalid verification code' });
+      }
+    } catch (error) {
+      console.error('TOTP verification error:', error);
+      res.status(500).json({ message: 'Verification failed' });
+    }
+  });
+
+  // Admin dashboard endpoint - checks if admin requires additional verification
+  app.get('/api/admin/dashboard', async (req, res) => {
+    try {
+      const session = req.session as any;
+      
+      // Check if admin is authenticated
+      if (!session.adminAuthenticated && !session.pendingAdminLogin) {
+        return res.status(401).json({ message: 'Admin not authenticated' });
+      }
+      
+      // Get user ID from session
+      const userId = session.userId || session.adminUserId;
+      if (!userId) {
+        return res.status(401).json({ message: 'No user ID in session' });
+      }
+      
+      // Get user from database
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Check if user is admin
+      if (user.role !== 'admin' && user.role !== 'team_member') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      // Check if SMS verification is required (placeholder logic)
+      // In a real implementation, this would check admin settings/requirements
+      const requiresSMSVerification = false; // Set to true to test SMS verification flow
+      
+      if (requiresSMSVerification && !session.smsVerified) {
+        return res.status(403).json({ 
+          message: 'SMS verification required',
+          requiresVerification: true,
+          verificationType: 'sms'
+        });
+      }
+      
+      // Return successful dashboard access
+      res.json({ 
+        message: 'Dashboard access granted',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        },
+        mfaStatus: {
+          totpVerified: session.totpVerified || false,
+          smsVerified: session.smsVerified || false,
+          adminAuthenticated: session.adminAuthenticated || false
+        }
+      });
+    } catch (error) {
+      console.error('Admin dashboard error:', error);
+      res.status(500).json({ message: 'Failed to load dashboard' });
+    }
+  });
+
+  // Development route to create admin user
+  app.post('/api/dev/create-admin', async (req, res) => {
+    try {
+      if (process.env.NODE_ENV !== 'development') {
+        return res.status(403).json({ message: 'Only available in development' });
+      }
+
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      
+      const adminUser = await storage.createAdminUser({
+        email: 'admin@allarco.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        password: hashedPassword
+      });
+
+      res.json({ 
+        message: 'Admin user created successfully', 
+        user: { ...adminUser, password: undefined }
+      });
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      res.status(500).json({ message: 'Failed to create admin user' });
+    }
+  });
+
+  // Test celebration endpoint for development
+  app.post('/api/test-celebration', async (req, res) => {
+    try {
+      const { userEmail, creditAmount, referrerName, bookingDetails } = req.body;
+      
+      if (!userEmail || !creditAmount) {
+        return res.status(400).json({ message: 'userEmail and creditAmount are required' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(userEmail);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Create mock referrer details
+      const referrerDetails = {
+        email: user.email,
+        firstName: user.firstName || 'Test',
+        lastName: user.lastName || 'User'
+      };
+
+      // Create mock booking details
+      const mockBookingDetails = {
+        id: bookingDetails?.id || 'test-booking-' + Date.now(),
+        totalNights: bookingDetails?.totalNights || 3
+      };
+
+      console.log(`🧪 Triggering test celebration for ${userEmail} with ${creditAmount}€ credits`);
+      
+      // Trigger the celebration
+      await broadcastCreditEarned(user.id, creditAmount, referrerDetails, mockBookingDetails);
+      
+      res.json({ 
+        success: true,
+        message: `Test celebration triggered for ${userEmail}`,
+        details: {
+          userId: user.id,
+          creditAmount,
+          userEmail
+        }
+      });
+    } catch (error) {
+      console.error('Error triggering test celebration:', error);
+      res.status(500).json({ message: 'Failed to trigger test celebration: ' + error.message });
+    }
+  });
+
+  // PMS routes - temporarily disabled
+  // app.use('/api/pms', pmsRoutes);
 
   return httpServer;
 }

@@ -1,0 +1,344 @@
+/* Enhanced Calendar Styles */
+
+/* Smooth transitions for all calendar elements */
+.calendar-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Advanced hover effects */
+.calendar-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+}
+
+/* Smooth booking span animations */
+.booking-span {
+  animation: fadeInScale 0.3s ease-out;
+  transition: all 0.2s ease-in-out;
+}
+
+.booking-span:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+}
+
+/* Enhanced blocked dates pattern */
+.blocked-stripe {
+  background: repeating-linear-gradient(
+    45deg,
+    #e2e8f0,
+    #e2e8f0 3px,
+    #f8fafc 3px,
+    #f8fafc 8px
+  );
+  animation: stripeMove 2s linear infinite;
+}
+
+@keyframes stripeMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 16px 0; }
+}
+
+/* Responsive calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Mobile-optimized calendar cells */
+@media (max-width: 640px) {
+  .calendar-cell {
+    min-height: 60px;
+    padding: 4px;
+  }
+  
+  .calendar-date-number {
+    font-size: 12px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .booking-span {
+    font-size: 10px;
+    padding: 2px 4px;
+    height: 16px;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .calendar-cell {
+    min-height: 80px;
+    padding: 8px;
+  }
+  
+  .calendar-date-number {
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .booking-span {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: 20px;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+  .calendar-cell {
+    min-height: 100px;
+    padding: 12px;
+  }
+  
+  .calendar-date-number {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .booking-span {
+    font-size: 14px;
+    padding: 6px 12px;
+    height: 24px;
+  }
+}
+
+/* Smooth loading animations */
+.calendar-loading {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Enhanced form animations */
+.form-slide-in {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Status indicators */
+.status-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.status-indicator:hover::after {
+  left: 100%;
+}
+
+/* Touch feedback for mobile */
+@media (hover: none) {
+  .calendar-cell:active {
+    transform: scale(0.95);
+    background-color: #f0f9ff;
+  }
+}
+
+/* Enhanced focus states for accessibility */
+.calendar-cell:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  z-index: 10;
+}
+
+/* Smooth color transitions */
+.color-transition {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Glass morphism effect */
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Pulse animation for live updates */
+.pulse-live {
+  animation: pulseLive 2s infinite;
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Gradient backgrounds */
+.gradient-bg-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-success {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+}
+
+.gradient-bg-warning {
+  background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+}
+
+.gradient-bg-error {
+  background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+}
+
+/* Smooth scroll behavior */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced shadows */
+.shadow-soft {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-strong {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive text sizing */
+.text-responsive {
+  font-size: clamp(12px, 2vw, 16px);
+}
+
+/* Modern scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Calendar specific animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Enhanced modal animations */
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Dark mode support - only apply when explicitly enabled with class */
+.dark .calendar-cell {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+.dark .calendar-cell:hover {
+  background: #374151;
+  border-color: #60a5fa;
+}
+
+.dark .blocked-stripe {
+  background: repeating-linear-gradient(
+    45deg,
+    #374151,
+    #374151 3px,
+    #1f2937 3px,
+    #1f2937 8px
+  );
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .calendar-cell {
+    border-width: 2px;
+  }
+  
+  .booking-span {
+    font-weight: bold;
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

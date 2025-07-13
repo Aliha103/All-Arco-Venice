@@ -22,11 +22,67 @@
     
     <!-- Theme color for mobile browsers -->
     <meta name="theme-color" content="#1e3a8a" />
+    
+    <!-- Cache control headers -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    
+    <!-- AGGRESSIVE CACHE BUST AND WEBSOCKET BLOCKING -->
+    <script>
+      // Block ANY old WebSocket connections immediately
+      const originalWebSocket = window.WebSocket;
+      
+      window.WebSocket = function(url, protocols) {
+        console.log('WebSocket connection attempt:', url);
+        
+        // Block old invalid connections
+        if (url.includes('?token=') || url.includes('undefined') || url.endsWith('/?token=')) {
+          console.warn('🚫 BLOCKED old WebSocket connection:', url);
+          // Return a fake WebSocket that immediately closes
+          return {
+            readyState: WebSocket.CLOSED,
+            close: function() {},
+            send: function() {},
+            addEventListener: function() {},
+            removeEventListener: function() {}
+          };
+        }
+        
+        // Allow new proper connections
+        return new originalWebSocket(url, protocols);
+      };
+      
+      // Copy constants
+      window.WebSocket.CONNECTING = originalWebSocket.CONNECTING;
+      window.WebSocket.OPEN = originalWebSocket.OPEN;
+      window.WebSocket.CLOSING = originalWebSocket.CLOSING;
+      window.WebSocket.CLOSED = originalWebSocket.CLOSED;
+      
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            caches.delete(name);
+          });
+        });
+      }
+      
+      // Clear localStorage of any old WebSocket tokens
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('websocket') || key.includes('token')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch(e) {}
+      
+      console.log('🔄 Cache cleared, WebSocket blocking active');
+    </script>
+    
+    <script type="module" src="/src/main.tsx?v=2024-cache-bust"></script>
   </body>
 </html>

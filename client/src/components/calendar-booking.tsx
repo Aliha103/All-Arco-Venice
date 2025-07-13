@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeConnection } from "@/hooks/useRealtimeConnection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,8 +33,8 @@ export default function CalendarBooking() {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
-  // Temporarily disable WebSocket to stop excessive API calls
-  // useWebSocket();
+  // Initialize realtime connection for real-time updates
+  useRealtimeConnection();
 
   // Temporarily using static empty array to prevent excessive API calls
   const calendarBookings: any[] = [];

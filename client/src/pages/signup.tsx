@@ -268,8 +268,13 @@ export default function Signup() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={!isValid || signupMutation.isPending}
+                disabled={signupMutation.isPending}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5"
+                onClick={() => {
+
+
+
+                }}
               >
                 {signupMutation.isPending ? (
                   <div className="flex items-center space-x-2">

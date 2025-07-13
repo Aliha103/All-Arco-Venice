@@ -24,6 +24,11 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+
+
+
+
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -31,6 +36,20 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  
+  // Add event listeners to debug session store
+  sessionStore.on('connect', () => {
+
+  });
+  
+  sessionStore.on('disconnect', () => {
+
+  });
+  
+  sessionStore.on('error', (err) => {
+
+  });
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -124,7 +143,7 @@ export async function setupAuth(app: Express) {
       req.logout(() => {
         req.session.destroy((err) => {
           if (err) {
-            console.error("Session destruction error:", err);
+
           }
           res.clearCookie('connect.sid');
           res.redirect('/');
@@ -147,7 +166,29 @@ export async function setupAuth(app: Express) {
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
-
+  const session = req.session as any;
+  
+  // Check for admin session authentication first
+  if (session.adminAuthenticated && session.userId) {
+    // Admin is authenticated via session
+    const { storage } = await import('./storage');
+    try {
+      const adminUser = await storage.getUser(session.userId);
+      if (adminUser && (adminUser.role === 'admin' || adminUser.role === 'team_member')) {
+        // Create a user object compatible with existing code
+        req.user = {
+          claims: { sub: adminUser.id },
+          access_token: 'admin_session',
+          expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+        };
+        return next();
+      }
+    } catch (error) {
+      console.error('Error verifying admin user:', error);
+    }
+  }
+  
+  // Check for regular passport authentication
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -167,6 +208,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   const now = Math.floor(Date.now() / 1000);
+
   if (now <= user.expires_at) {
     return next();
   }
@@ -181,6 +223,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
+
     return next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });

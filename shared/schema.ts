@@ -51,8 +51,13 @@ export const users = pgTable("users", {
   referrerName: varchar("referrer_name"), // full name of who referred this user
   totalReferrals: integer("total_referrals").default(0), // count of users this person has referred
   accountCredits: decimal("account_credits", { precision: 10, scale: 2 }).default("0.00"), // user account credits
-  authProvider: varchar("auth_provider", { enum: ["replit", "local"] }).default("local"),
-  role: varchar("role", { enum: ["guest", "admin"] }).default("guest"),
+  authProvider: varchar("auth_provider", { enum: ["replit", "local", "google"] }).default("local"),
+  providerId: varchar("provider_id"), // Google ID, Replit ID, etc.
+  role: varchar("role", { enum: ["guest", "admin", "team_member"] }).default("guest"),
+  totpSecret: varchar("totp_secret"), // For 2FA Google Authenticator
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  createdBy: varchar("created_by"), // Admin who created this team member
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -91,6 +96,17 @@ export const bookings = pgTable("bookings", {
   lengthOfStayDiscount: decimal("length_of_stay_discount", { precision: 10, scale: 2 }).default("0.00"), // 5% (7+ days) or 10% (14+ days)
   lengthOfStayDiscountPercent: integer("length_of_stay_discount_percent").default(0), // 5 or 10
   referralCredit: decimal("referral_credit", { precision: 10, scale: 2 }).default("0.00"), // 5€ per night for referrals
+  
+  // Promotion and voucher discounts
+  promotionDiscount: decimal("promotion_discount", { precision: 10, scale: 2 }).default("0.00"), // Active promotion discount
+  promotionDiscountPercent: integer("promotion_discount_percent").default(0), // Promotion discount percentage
+  activePromotion: varchar("active_promotion", { length: 255 }), // Name of active promotion
+  promoCodeDiscount: decimal("promo_code_discount", { precision: 10, scale: 2 }).default("0.00"), // Promo code discount
+  promoCodeDiscountPercent: integer("promo_code_discount_percent").default(0), // Promo code discount percentage
+  appliedPromoCode: varchar("applied_promo_code", { length: 50 }), // Applied promo code
+  voucherDiscount: decimal("voucher_discount", { precision: 10, scale: 2 }).default("0.00"), // Voucher discount
+  appliedVoucher: varchar("applied_voucher", { length: 50 }), // Applied voucher code
+  
   otherDiscounts: decimal("other_discounts", { precision: 10, scale: 2 }).default("0.00"), // Manual admin discounts
   totalDiscountAmount: decimal("total_discount_amount", { precision: 10, scale: 2 }).default("0.00"), // Sum of all discounts
   
@@ -134,6 +150,17 @@ export const bookings = pgTable("bookings", {
   // Payment integration
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   
+  // Collection tracking
+  paymentReceived: boolean("payment_received").default(false),
+  paymentReceivedBy: varchar("payment_received_by", { length: 100 }),
+  paymentReceivedAt: timestamp("payment_received_at"),
+  cityTaxCollected: boolean("city_tax_collected").default(false),
+  cityTaxCollectedBy: varchar("city_tax_collected_by", { length: 100 }),
+  cityTaxCollectedAt: timestamp("city_tax_collected_at"),
+  
+  // Pet accommodation
+  hasPet: boolean("has_pet").default(false),
+  
   // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -166,14 +193,17 @@ export const reviews = pgTable("reviews", {
   bookingId: integer("booking_id").references(() => bookings.id),
   userId: varchar("user_id").references(() => users.id),
   guestName: varchar("guest_name", { length: 100 }).notNull(),
+  guestEmail: varchar("guest_email", { length: 255 }).notNull(),
   rating: integer("rating").notNull(),
   content: text("content").notNull(),
   cleanlinessRating: integer("cleanliness_rating"),
+  accuracyRating: integer("accuracy_rating"),
   locationRating: integer("location_rating"),
   checkinRating: integer("checkin_rating"),
   valueRating: integer("value_rating"),
   communicationRating: integer("communication_rating"),
-  isVisible: boolean("is_visible").default(true),
+  isVisible: boolean("is_visible").default(false), // Default to false for admin approval
+  isApproved: boolean("is_approved").default(false), // Admin approval required
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -223,15 +253,61 @@ export const promoCodes = pgTable("promo_codes", {
   discountType: varchar("discount_type", { enum: ["percentage", "fixed"] }).notNull(),
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
   description: text("description"),
-  usageLimit: integer("usage_limit").default(null), // null = unlimited
+  usageLimit: integer("usage_limit"), // null = unlimited
   usageCount: integer("usage_count").default(0),
   minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }).default("0.00"),
-  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }).default(null),
+  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
   isActive: boolean("is_active").default(true),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Promo code usage tracking
+export const promoCodeUsage = pgTable("promo_code_usage", {
+  id: serial("id").primaryKey(),
+  promoCodeId: integer("promo_code_id").notNull(),
+  bookingId: integer("booking_id").notNull(),
+  userId: varchar("user_id"), // null for guest users
+  guestEmail: varchar("guest_email").notNull(), // to identify guest users
+  guestName: varchar("guest_name").notNull(), // guest first + last name
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
+// Vouchers table (distinct from promo codes for admin-created vouchers)
+export const vouchers = pgTable("vouchers", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  discountType: varchar("discount_type", { enum: ["percentage", "fixed"] }).notNull(),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  usageLimit: integer("usage_limit").notNull().default(1),
+  usageCount: integer("usage_count").notNull().default(0),
+  minBookingAmount: decimal("min_booking_amount", { precision: 10, scale: 2 }).default("0.00"),
+  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }), // for percentage discounts
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+  createdBy: varchar("created_by").notNull().default("admin"), // admin who created it
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Voucher usage tracking
+export const voucherUsage = pgTable("voucher_usage", {
+  id: serial("id").primaryKey(),
+  voucherId: integer("voucher_id").notNull().references(() => vouchers.id),
+  bookingId: integer("booking_id").notNull().references(() => bookings.id),
+  userId: varchar("user_id").references(() => users.id), // null for guest users
+  guestEmail: varchar("guest_email").notNull(), // to identify guest users
+  guestName: varchar("guest_name").notNull(), // guest first + last name
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).notNull(),
+  bookingAmount: decimal("booking_amount", { precision: 10, scale: 2 }).notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+  checkInDate: date("check_in_date").notNull(),
+  checkOutDate: date("check_out_date").notNull(),
 });
 
 // Hero images
@@ -253,6 +329,12 @@ export const pricingSettings = pgTable("pricing_settings", {
   basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull().default("150.00"),
   cleaningFee: decimal("cleaning_fee", { precision: 10, scale: 2 }).notNull().default("25.00"),
   petFee: decimal("pet_fee", { precision: 10, scale: 2 }).notNull().default("35.00"),
+  // Dynamic cleaning fees based on stay duration
+  cleaningFeeShortStay: decimal("cleaning_fee_short_stay", { precision: 10, scale: 2 }).notNull().default("25.00"), // 1-2 nights
+  cleaningFeeLongStay: decimal("cleaning_fee_long_stay", { precision: 10, scale: 2 }).notNull().default("35.00"), // 3+ nights
+  // Dynamic pet cleaning fees based on stay duration
+  petFeeShortStay: decimal("pet_fee_short_stay", { precision: 10, scale: 2 }).notNull().default("15.00"), // 1-2 nights
+  petFeeLongStay: decimal("pet_fee_long_stay", { precision: 10, scale: 2 }).notNull().default("25.00"), // 3+ nights
   discountWeekly: integer("discount_weekly").notNull().default(10),
   discountMonthly: integer("discount_monthly").notNull().default(20),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -313,6 +395,44 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+export const promoCodesRelations = relations(promoCodes, ({ many }) => ({
+  usage: many(promoCodeUsage),
+}));
+
+export const promoCodeUsageRelations = relations(promoCodeUsage, ({ one }) => ({
+  promoCode: one(promoCodes, {
+    fields: [promoCodeUsage.promoCodeId],
+    references: [promoCodes.id],
+  }),
+  booking: one(bookings, {
+    fields: [promoCodeUsage.bookingId],
+    references: [bookings.id],
+  }),
+  user: one(users, {
+    fields: [promoCodeUsage.userId],
+    references: [users.id],
+  }),
+}));
+
+export const vouchersRelations = relations(vouchers, ({ many }) => ({
+  usage: many(voucherUsage),
+}));
+
+export const voucherUsageRelations = relations(voucherUsage, ({ one }) => ({
+  voucher: one(vouchers, {
+    fields: [voucherUsage.voucherId],
+    references: [vouchers.id],
+  }),
+  booking: one(bookings, {
+    fields: [voucherUsage.bookingId],
+    references: [bookings.id],
+  }),
+  user: one(users, {
+    fields: [voucherUsage.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
@@ -359,6 +479,21 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   createdAt: true,
 });
 
+// Guest review schema for public review submission
+export const guestReviewSchema = z.object({
+  bookingId: z.number().positive("Valid booking ID required"),
+  guestName: z.string().min(1, "Guest name is required").max(100, "Name too long"),
+  guestEmail: z.string().email("Valid email address required"),
+  rating: z.number().min(1, "Rating must be 1-5").max(5, "Rating must be 1-5"),
+  content: z.string().min(10, "Review must be at least 10 characters").max(1000, "Review too long"),
+  cleanlinessRating: z.number().min(1).max(5).optional(),
+  accuracyRating: z.number().min(1).max(5).optional(),
+  locationRating: z.number().min(1).max(5).optional(),
+  checkinRating: z.number().min(1).max(5).optional(),
+  valueRating: z.number().min(1).max(5).optional(),
+  communicationRating: z.number().min(1).max(5).optional(),
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
@@ -390,6 +525,11 @@ export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
   maxDiscountAmount: z.number().positive().optional().nullable(),
 });
 
+export const insertPromoCodeUsageSchema = createInsertSchema(promoCodeUsage).omit({
+  id: true,
+  usedAt: true,
+});
+
 export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
   id: true,
   createdAt: true,
@@ -404,6 +544,36 @@ export const insertPricingSettingsSchema = createInsertSchema(pricingSettings).o
 export const insertActivityTimelineSchema = createInsertSchema(activityTimeline).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertVoucherSchema = createInsertSchema(vouchers).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(3, "Code must be at least 3 characters").max(50, "Code too long").regex(/^[A-Z0-9]+$/, "Code must contain only uppercase letters and numbers"),
+  discountValue: z.number().positive("Discount value must be positive"),
+  usageLimit: z.number().positive("Usage limit must be positive"),
+  minBookingAmount: z.number().min(0, "Minimum booking amount must be 0 or greater"),
+  maxDiscountAmount: z.number().min(0, "Maximum discount amount must be 0 or greater").optional(),
+  validFrom: z.string().min(1, "Valid from date is required"),
+  validUntil: z.string().min(1, "Valid until date is required"),
+  description: z.string().optional(),
+});
+
+export const insertVoucherUsageSchema = createInsertSchema(voucherUsage).omit({
+  id: true,
+  usedAt: true,
+});
+
+export const voucherValidationSchema = z.object({
+  code: z.string().min(1, "Voucher code is required"),
+  bookingAmount: z.number().positive("Booking amount must be positive"),
+  guestEmail: z.string().email("Valid email is required"),
+  guestName: z.string().min(1, "Guest name is required"),
+  checkInDate: z.string().min(1, "Check-in date is required"),
+  checkOutDate: z.string().min(1, "Check-out date is required"),
 });
 
 export const upsertUserSchema = createInsertSchema(users);
@@ -451,6 +621,7 @@ export type PropertyImage = typeof propertyImages.$inferSelect;
 export type InsertAmenity = z.infer<typeof insertAmenitySchema>;
 export type Amenity = typeof amenities.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type GuestReview = z.infer<typeof guestReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
@@ -460,9 +631,16 @@ export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 export type Promotion = typeof promotions.$inferSelect;
 export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
 export type PromoCode = typeof promoCodes.$inferSelect;
+export type InsertPromoCodeUsage = z.infer<typeof insertPromoCodeUsageSchema>;
+export type PromoCodeUsage = typeof promoCodeUsage.$inferSelect;
 export type InsertPricingSettings = z.infer<typeof insertPricingSettingsSchema>;
 export type PricingSettings = typeof pricingSettings.$inferSelect;
 export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
 export type HeroImage = typeof heroImages.$inferSelect;
 export type InsertActivityTimeline = z.infer<typeof insertActivityTimelineSchema>;
 export type ActivityTimeline = typeof activityTimeline.$inferSelect;
+export type InsertVoucher = z.infer<typeof insertVoucherSchema>;
+export type Voucher = typeof vouchers.$inferSelect;
+export type InsertVoucherUsage = z.infer<typeof insertVoucherUsageSchema>;
+export type VoucherUsage = typeof voucherUsage.$inferSelect;
+export type VoucherValidation = z.infer<typeof voucherValidationSchema>;

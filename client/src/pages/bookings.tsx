@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Users, PawPrint, Search, Eye, ArrowLeft, Star, Clock, CreditCard, Shield, Sparkles, CheckCircle, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Users, PawPrint, Search, Eye, ArrowLeft, Star, Clock, CreditCard, Shield, Sparkles, CheckCircle, TrendingUp, X, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +34,19 @@ interface Booking {
   serviceFee: number;
   petFee: number;
   cityTax: number;
+  // Discount fields
+  lengthOfStayDiscount?: number;
+  lengthOfStayDiscountPercent?: number;
+  referralCredit?: number;
+  // Promotion and voucher fields
+  promotionDiscount?: number;
+  promotionDiscountPercent?: number;
+  activePromotion?: string;
+  promoCodeDiscount?: number;
+  promoCodeDiscountPercent?: number;
+  appliedPromoCode?: string;
+  voucherDiscount?: number;
+  appliedVoucher?: string;
   createdAt: string;
   bookedForSelf: boolean;
 }
@@ -40,6 +54,7 @@ interface Booking {
 export default function BookingsPage() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [location, navigate] = useLocation();
   const [lookupCode, setLookupCode] = useState('');
   const [lookupEmail, setLookupEmail] = useState('');
   const [lookupResult, setLookupResult] = useState<Booking | null>(null);
@@ -47,16 +62,63 @@ export default function BookingsPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
-
-  useEffect(() => {
-    setPageLoaded(true);
-  }, []);
+  const [reviewNotifications, setReviewNotifications] = useState<Booking[]>([]);
+  const [showReviewPopup, setShowReviewPopup] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState<{[key: number]: boolean}>({});
 
   const { data: userBookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/user/bookings'],
     enabled: isAuthenticated,
     staleTime: 30000,
   });
+
+  useEffect(() => {
+    setPageLoaded(true);
+  }, []);
+
+  // Check for bookings needing reviews and update review status
+  useEffect(() => {
+    const checkReviewStatus = async () => {
+      if (!isAuthenticated || !userBookings.length) return;
+
+      const checkedOutBookings = userBookings.filter(booking => 
+        booking.status === 'checked_out'
+      );
+
+      if (checkedOutBookings.length > 0) {
+        const bookingsNeedingReviews = [];
+        const newReviewStatus: {[key: number]: boolean} = {};
+        
+        for (const booking of checkedOutBookings) {
+          try {
+            const response = await fetch(`/api/reviews/check/${booking.id}`, {
+              credentials: 'include',
+            });
+            const { hasReview } = await response.json();
+            
+            newReviewStatus[booking.id] = hasReview;
+            
+            if (!hasReview) {
+              bookingsNeedingReviews.push(booking);
+            }
+          } catch (error) {
+            // If error checking, assume no review exists
+            newReviewStatus[booking.id] = false;
+            bookingsNeedingReviews.push(booking);
+          }
+        }
+
+        setReviewStatus(newReviewStatus);
+
+        if (bookingsNeedingReviews.length > 0) {
+          setReviewNotifications(bookingsNeedingReviews);
+          setShowReviewPopup(true);
+        }
+      }
+    };
+
+    checkReviewStatus();
+  }, [isAuthenticated, userBookings]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -158,67 +220,99 @@ export default function BookingsPage() {
     return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
   };
 
-  const BookingCard = ({ booking }: { booking: Booking }) => (
-    <Card className="group bg-white/90 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg shadow-blue-100/30 hover:shadow-xl hover:shadow-blue-200/40 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-violet-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      
-      <CardContent className="relative p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
-              {getInitials(booking.guestFirstName, booking.guestLastName)}
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg text-gray-900">
-                {booking.guestFirstName} {booking.guestLastName}
-              </h3>
-              <p className="text-sm text-gray-600 font-mono">{booking.confirmationCode}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            {getStatusBadge(booking.status, booking.paymentStatus)}
-            <p className="text-lg font-bold text-gray-900 mt-1">€{Number(booking.totalPrice).toFixed(2)}</p>
-          </div>
-        </div>
+  const BookingCard = ({ booking }: { booking: Booking }) => {
+    const handleReviewClick = () => {
+      const reviewUrl = `/review?booking=${booking.id}&email=${encodeURIComponent(booking.guestEmail)}`;
+      navigate(reviewUrl);
+    };
 
-        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-          <div className="flex items-center text-gray-600">
-            <Calendar className="w-4 h-4 mr-2 text-blue-600" />
-            <span>{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</span>
+    return (
+      <Card className="group bg-white/90 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg shadow-blue-100/30 hover:shadow-xl hover:shadow-blue-200/40 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-violet-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        
+        <CardContent className="relative p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                {getInitials(booking.guestFirstName, booking.guestLastName)}
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-gray-900">
+                  {booking.guestFirstName} {booking.guestLastName}
+                </h3>
+                <p className="text-sm text-gray-600 font-mono">{booking.confirmationCode}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              {getStatusBadge(booking.status, booking.paymentStatus)}
+              <p className="text-lg font-bold text-gray-900 mt-1">€{Number(booking.totalPrice).toFixed(2)}</p>
+            </div>
           </div>
-          <div className="flex items-center text-gray-600">
-            <Users className="w-4 h-4 mr-2 text-green-600" />
-            <span>{booking.guests} guest{booking.guests !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <MapPin className="w-4 h-4 mr-2 text-purple-600" />
-            <span>{booking.guestCountry}</span>
-          </div>
-          {booking.hasPet && (
+
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
             <div className="flex items-center text-gray-600">
-              <PawPrint className="w-4 h-4 mr-2 text-orange-600" />
-              <span>Pet friendly</span>
+              <Calendar className="w-4 h-4 mr-2 text-blue-600" />
+              <span>{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</span>
             </div>
-          )}
-        </div>
+            <div className="flex items-center text-gray-600">
+              <Users className="w-4 h-4 mr-2 text-green-600" />
+              <span>{booking.guests} guest{booking.guests !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <MapPin className="w-4 h-4 mr-2 text-purple-600" />
+              <span>{booking.guestCountry}</span>
+            </div>
+            {booking.hasPet && (
+              <div className="flex items-center text-gray-600">
+                <PawPrint className="w-4 h-4 mr-2 text-orange-600" />
+                <span>Pet friendly</span>
+              </div>
+            )}
+          </div>
 
-        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500">
-            Payment: {booking.paymentMethod === 'online' ? 'Online' : 'At Property'}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedBooking(booking)}
-            className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors duration-200"
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            View Details
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+          <div className="flex justify-between items-center pt-4 border-t border-gray-200 space-x-2">
+            <p className="text-xs text-gray-500">
+              Payment: {booking.paymentMethod === 'online' ? 'Online' : 'At Property'}
+            </p>
+            <div className="flex space-x-2">
+              {booking.status === 'checked_out' && (
+                reviewStatus[booking.id] ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="bg-green-50 border-green-300 text-green-600 cursor-default"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Reviewed
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReviewClick}
+                    className="hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-600 transition-colors duration-200"
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Review
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedBooking(booking)}
+                className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors duration-200"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 transition-all duration-1000 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`}>
@@ -716,24 +810,118 @@ export default function BookingsPage() {
                   </div>
                   
                   <div className="space-y-4">
-                    {[
-                      { label: 'Base Price', amount: Number(selectedBooking.basePrice), color: 'blue' },
-                      { label: 'Cleaning Fee', amount: Number(selectedBooking.cleaningFee), color: 'emerald' },
-                      { label: 'Service Fee', amount: Number(selectedBooking.serviceFee), color: 'purple' },
-                      ...(Number(selectedBooking.petFee) > 0 ? [{ label: 'Pet Fee', amount: Number(selectedBooking.petFee), color: 'orange' }] : []),
-                      { label: 'City Tax', amount: Number(selectedBooking.cityTax), color: 'indigo' }
-                    ].map((item, index) => (
-                      <div key={item.label} className={`group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-${item.color}-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-${item.color}-100/30`}
-                           style={{ animationDelay: `${index * 50}ms` }}>
+                    <div className="group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-blue-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-100/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full group-hover/price:scale-150 transition-transform duration-300"></div>
+                        <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">Base Price</span>
+                      </div>
+                      <span className="font-bold text-blue-700 group-hover/price:scale-110 transition-transform duration-300">
+                        €{Number(selectedBooking.basePrice).toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-emerald-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-100/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full group-hover/price:scale-150 transition-transform duration-300"></div>
+                        <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">Cleaning Fee</span>
+                      </div>
+                      <span className="font-bold text-emerald-700 group-hover/price:scale-110 transition-transform duration-300">
+                        €{Number(selectedBooking.cleaningFee).toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-purple-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-purple-100/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full group-hover/price:scale-150 transition-transform duration-300"></div>
+                        <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">Service Fee</span>
+                      </div>
+                      <span className="font-bold text-purple-700 group-hover/price:scale-110 transition-transform duration-300">
+                        €{Number(selectedBooking.serviceFee).toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    {Number(selectedBooking.petFee) > 0 && (
+                      <div className="group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-orange-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-orange-100/30">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 bg-gradient-to-r from-${item.color}-400 to-${item.color}-600 rounded-full group-hover/price:scale-150 transition-transform duration-300`}></div>
-                          <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">{item.label}</span>
+                          <div className="w-2 h-2 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full group-hover/price:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">Pet Fee</span>
                         </div>
-                        <span className={`font-bold text-${item.color}-700 group-hover/price:scale-110 transition-transform duration-300`}>
-                          €{item.amount.toFixed(2)}
+                        <span className="font-bold text-orange-700 group-hover/price:scale-110 transition-transform duration-300">
+                          €{Number(selectedBooking.petFee).toFixed(2)}
                         </span>
                       </div>
-                    ))}
+                    )}
+                    
+                    <div className="group/price flex items-center justify-between p-4 bg-gradient-to-r from-white/60 to-gray-50/40 backdrop-blur-sm rounded-lg border border-white/40 hover:border-indigo-200/60 hover:bg-white/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-indigo-100/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full group-hover/price:scale-150 transition-transform duration-300"></div>
+                        <span className="text-gray-700 font-medium group-hover/price:text-gray-900 transition-colors duration-300">City Tax</span>
+                      </div>
+                      <span className="font-bold text-indigo-700 group-hover/price:scale-110 transition-transform duration-300">
+                        €{Number(selectedBooking.cityTax).toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    {/* Discount Information */}
+                    {Number(selectedBooking.promotionDiscount || 0) > 0 && (
+                      <div className="group/discount flex items-center justify-between p-4 bg-gradient-to-r from-green-50/60 to-emerald-50/40 backdrop-blur-sm rounded-lg border border-green-200/40 hover:border-green-300/60 hover:bg-green-50/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-green-100/30">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full group-hover/discount:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/discount:text-gray-900 transition-colors duration-300">Promotion: {selectedBooking.activePromotion} ({selectedBooking.promotionDiscountPercent}% off)</span>
+                        </div>
+                        <span className="font-bold text-green-700 group-hover/discount:scale-110 transition-transform duration-300">
+                          -€{Number(selectedBooking.promotionDiscount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {Number(selectedBooking.promoCodeDiscount || 0) > 0 && (
+                      <div className="group/discount flex items-center justify-between p-4 bg-gradient-to-r from-green-50/60 to-emerald-50/40 backdrop-blur-sm rounded-lg border border-green-200/40 hover:border-green-300/60 hover:bg-green-50/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-green-100/30">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full group-hover/discount:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/discount:text-gray-900 transition-colors duration-300">Promo code: {selectedBooking.appliedPromoCode} ({selectedBooking.promoCodeDiscountPercent}% off)</span>
+                        </div>
+                        <span className="font-bold text-green-700 group-hover/discount:scale-110 transition-transform duration-300">
+                          -€{Number(selectedBooking.promoCodeDiscount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {Number(selectedBooking.voucherDiscount || 0) > 0 && (
+                      <div className="group/discount flex items-center justify-between p-4 bg-gradient-to-r from-green-50/60 to-emerald-50/40 backdrop-blur-sm rounded-lg border border-green-200/40 hover:border-green-300/60 hover:bg-green-50/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-green-100/30">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full group-hover/discount:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/discount:text-gray-900 transition-colors duration-300">Voucher: {selectedBooking.appliedVoucher}</span>
+                        </div>
+                        <span className="font-bold text-green-700 group-hover/discount:scale-110 transition-transform duration-300">
+                          -€{Number(selectedBooking.voucherDiscount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {Number(selectedBooking.referralCredit || 0) > 0 && (
+                      <div className="group/discount flex items-center justify-between p-4 bg-gradient-to-r from-green-50/60 to-emerald-50/40 backdrop-blur-sm rounded-lg border border-green-200/40 hover:border-green-300/60 hover:bg-green-50/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-green-100/30">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full group-hover/discount:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/discount:text-gray-900 transition-colors duration-300">Referral credit</span>
+                        </div>
+                        <span className="font-bold text-green-700 group-hover/discount:scale-110 transition-transform duration-300">
+                          -€{Number(selectedBooking.referralCredit).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {Number(selectedBooking.lengthOfStayDiscount || 0) > 0 && (
+                      <div className="group/discount flex items-center justify-between p-4 bg-gradient-to-r from-green-50/60 to-emerald-50/40 backdrop-blur-sm rounded-lg border border-green-200/40 hover:border-green-300/60 hover:bg-green-50/80 transition-all duration-400 hover:scale-[1.02] hover:shadow-md hover:shadow-green-100/30">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full group-hover/discount:scale-150 transition-transform duration-300"></div>
+                          <span className="text-gray-700 font-medium group-hover/discount:text-gray-900 transition-colors duration-300">Length of stay discount ({selectedBooking.lengthOfStayDiscountPercent || 0}%)</span>
+                        </div>
+                        <span className="font-bold text-green-700 group-hover/discount:scale-110 transition-transform duration-300">
+                          -€{Number(selectedBooking.lengthOfStayDiscount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     
                     {/* Enhanced Total Section */}
                     <div className="relative mt-6 pt-4 border-t border-gradient-to-r from-transparent via-gray-300/60 to-transparent">
@@ -812,6 +1000,21 @@ export default function BookingsPage() {
 
               {/* Ultra-Enhanced Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-bounceIn stagger-6">
+                {selectedBooking.status === 'checked_out' && (
+                  <Button 
+                    onClick={() => {
+                      const reviewUrl = `/review?booking=${selectedBooking.id}&email=${encodeURIComponent(selectedBooking.guestEmail)}`;
+                      navigate(reviewUrl);
+                    }}
+                    className="flex-1 h-14 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 shadow-lg shadow-yellow-500/25 hover:shadow-xl hover:shadow-yellow-500/30 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium hover-lift animate-gradientShift"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span className="relative flex items-center justify-center space-x-2">
+                      <Star className="w-5 h-5 group-hover:animate-iconSpin transition-transform duration-300" />
+                      <span>Leave Review</span>
+                    </span>
+                  </Button>
+                )}
                 <Button 
                   onClick={() => setSelectedBooking(null)}
                   className="flex-1 h-14 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg shadow-gray-500/25 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden text-lg font-medium hover-lift animate-gradientShift"
@@ -831,6 +1034,89 @@ export default function BookingsPage() {
                     <CreditCard className="w-5 h-5 group-hover:animate-iconSpin transition-transform duration-300" />
                     <span>Print Details</span>
                   </span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Popup Notification */}
+      {showReviewPopup && reviewNotifications.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-3xl shadow-black/20 max-w-md w-full border-0 ring-1 ring-gray-200/30 transform transition-all duration-500 animate-modalSlideIn hover-lift">
+            <div className="relative bg-gradient-to-r from-yellow-50/80 via-amber-50/60 to-orange-50/80 backdrop-blur-sm border-b border-gray-200/30 rounded-t-2xl p-6">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/30">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-yellow-800 to-orange-700 bg-clip-text text-transparent">
+                      Share Your Experience
+                    </h3>
+                    <p className="text-gray-600 text-sm">Help future guests with your review</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowReviewPopup(false)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 w-8 h-8 rounded-lg transition-all duration-200 hover:scale-110"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700 mb-4">
+                You have {reviewNotifications.length} completed stay{reviewNotifications.length > 1 ? 's' : ''} that could benefit from your review:
+              </p>
+              
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {reviewNotifications.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200/50 hover:bg-gray-100/80 transition-colors duration-200">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 text-sm">{booking.confirmationCode}</p>
+                      <p className="text-xs text-gray-600">
+                        {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const reviewUrl = `/review?booking=${booking.id}&email=${encodeURIComponent(booking.guestEmail)}`;
+                        navigate(reviewUrl);
+                        setShowReviewPopup(false);
+                      }}
+                      className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
+                    >
+                      <Star className="w-3 h-3 mr-1" />
+                      Review
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReviewPopup(false)}
+                  className="flex-1"
+                >
+                  Maybe Later
+                </Button>
+                <Button
+                  onClick={() => {
+                    const firstBooking = reviewNotifications[0];
+                    const reviewUrl = `/review?booking=${firstBooking.id}&email=${encodeURIComponent(firstBooking.guestEmail)}`;
+                    navigate(reviewUrl);
+                    setShowReviewPopup(false);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Write Review
                 </Button>
               </div>
             </div>

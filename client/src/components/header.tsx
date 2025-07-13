@@ -34,12 +34,10 @@ export default function Header() {
   const { data: unreadCount } = useQuery<number>({
     queryKey: ["/api/messages/unread-count"],
     enabled: !!user && (user as any)?.role === 'admin',
-    refetchInterval: 1000,
+    // Removed refetchInterval - WebSocket handles real-time updates
   });
 
   const handleLogout = () => {
-    console.log('🔴 LOGOUT CLICKED - Starting logout process');
-    
     // Immediate cache invalidation
     queryClient.removeQueries();
     queryClient.clear();

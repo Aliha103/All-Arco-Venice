@@ -186,7 +186,7 @@ export default function Settings() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Credit Balance</p>
-                <p className="font-semibold text-green-600">0€</p>
+                <p className="font-semibold text-green-600">{user.accountCredits ? Number(user.accountCredits).toFixed(2) : '0.00'}€</p>
               </div>
             </CardContent>
           </Card>

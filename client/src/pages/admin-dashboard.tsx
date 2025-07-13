@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { useRealtimeConnection } from "@/hooks/useRealtimeConnection";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { sessionManager } from "@/lib/sessionManager";
+import { hasPermission, canAccessTab, getAvailableTabs, getUserDisplayRole } from "@/utils/permissions";
+import { AccessLevelBadge } from "@/components/PermissionWrapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,15 +18,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import AdminProtected from "@/components/AdminProtected";
+import AdminVerification from "@/components/AdminVerification";
 
-import { 
-  BarChart3, 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Star, 
-  TrendingUp, 
-  MessageSquare, 
+import {
+  BarChart3,
+  Users,
+  Calendar,
+  DollarSign,
+  Star,
+  TrendingUp,
   Image as ImageIcon,
   Plus,
   Trash2,
@@ -42,11 +47,39 @@ import {
   PawPrint,
   Phone,
   Mail,
-  User,
-  Home
+  User as UserIcon,
+  Home,
+  Sparkles,
+  Heart,
+  Link,
+  Settings,
+  Tag,
+  RefreshCw,
+  Play,
+  Pause,
+  Shield,
+  Search,
+  Bell,
+  Activity,
+  AlertCircle,
+  UserPlus,
+  LogIn,
+  LogOut,
+  CalendarX,
+  Gift,
+  Cake,
+  Filter,
+  Upload
 } from "lucide-react";
 
 import SmoobuCalendar from "@/components/SmoobuCalendar";
+import PricingTab from "@/components/PricingTab";
+import PMSSettings from "@/components/PMSSettings";
+import Overview from "@/components/Overview";
+import Bookings from "@/components/Bookings";
+import BookingInfo from "@/components/BookingInfo";
+import ReviewsSection from "@/components/reviews-section";
+import AdvancedTeamManagement from "@/components/AdvancedTeamManagement";
 
 
 interface Analytics {
@@ -76,18 +109,6 @@ interface Booking {
   blockReason?: string;
 }
 
-interface Review {
-  id: number;
-  rating: number;
-  content: string;
-  createdAt: string;
-  guestName: string;
-  cleanlinessRating: number;
-  locationRating: number;
-  checkinRating: number;
-  valueRating: number;
-  communicationRating: number;
-}
 
 interface PricingSettings {
   basePrice: number;
@@ -120,28 +141,32 @@ interface HeroImage {
   updatedAt: string;
 }
 
-interface Message {
-  id: number;
-  name: string;
-  email: string;
-  content: string;
-  isRead: boolean;
-  isFromAdmin: boolean;
-  createdAt: string;
-}
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
 
-export default function AdminDashboard() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+function AdminDashboardContent() {
+  const { user, isAuthenticated, isAdmin, isLoading } = useAdminAuth();
   const { toast } = useToast();
+
+  // All state hooks must be called unconditionally
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Auto-refresh functionality
+  const {
+    isAutoRefreshActive,
+    isUsingWebSocket,
+    refreshData,
+    lastRefreshTime,
+    refreshCount,
+    toggleAutoRefresh
+  } = useAutoRefresh({
+    enabled: isAuthenticated && ((user as any)?.role === 'admin' || (user as any)?.role === 'team_member')
+  });
+
+  // Initialize realtime connection for real-time updates
+  useRealtimeConnection();
+  
+  // Debug: Log available tabs
+
   const [pricingForm, setPricingForm] = useState({
     basePrice: 0,
     cleaningFee: 0,
@@ -178,149 +203,107 @@ export default function AdminDashboard() {
   // Booking details modal state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+  
+  // User details modal state
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  
+  // User search and filter state
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userFilter, setUserFilter] = useState('all'); // 'all', 'registered', 'unregistered'
+  
+  // Global search state
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Notifications state
+  const [showNotifications, setShowNotifications] = useState(false);
+  
+  // User menu dropdown state
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Tab configuration - filtered by user permissions
+  const allTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3, color: 'text-blue-500' },
+    { id: 'bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
+    { id: 'timeline', label: 'Calendar', icon: Calendar, color: 'text-purple-500' },
+    { id: 'pricing', label: 'Pricing', icon: DollarSign, color: 'text-yellow-500' },
+    { id: 'reviews', label: 'Reviews', icon: Star, color: 'text-orange-500' },
+    { id: 'hero-images', label: 'Hero Images', icon: ImageIcon, color: 'text-pink-500' },
+    { id: 'users', label: 'Users', icon: UserIcon, color: 'text-indigo-500' },
+    { id: 'team', label: 'Team Management', icon: Users, color: 'text-cyan-500' },
+    { id: 'pms', label: 'PMS', icon: Settings, color: 'text-gray-500' }
+  ];
+  
+  // Filter tabs based on user access level
+  const tabs = allTabs.filter(tab => canAccessTab(user, tab.id));
+  
+  // Ensure active tab is accessible, default to first available tab
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.find(tab => tab.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab]);
+  
 
   // All data queries (must be called unconditionally)
   const { data: analytics, isLoading: analyticsLoading } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
-  const { data: bookings, isLoading: bookingsLoading } = useQuery<Booking[]>({
+  const { data: bookings, isLoading: bookingsLoading, error: bookingsError } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
-  const { data: reviews, isLoading: reviewsLoading } = useQuery<Review[]>({
-    queryKey: ["/api/reviews"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
-    retry: false,
-  });
+  // Authentication state is handled by AdminProtected wrapper
+
+
 
   const { data: pricingSettings, isLoading: pricingLoading } = useQuery<PricingSettings>({
     queryKey: ["/api/pricing-settings"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
   const { data: promotions, isLoading: promotionsLoading } = useQuery<Promotion[]>({
     queryKey: ["/api/promotions"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
   const { data: heroImages, isLoading: heroImagesLoading } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
-  const { data: messages, isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ["/api/messages"],
-    enabled: isAuthenticated && (user as any)?.role === 'admin',
+  const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({
+    queryKey: ["/api/users"],
+    enabled: isAuthenticated && isAdmin,
     retry: false,
   });
 
-  // Handle file selection and preview
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type.startsWith('image/')) {
-        setSelectedFile(file);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setUploadPreview(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file",
-          variant: "destructive",
-        });
-      }
-    }
-  };
+  // Fetch activity timeline for notifications
+  const { data: activityTimeline = [], isLoading: timelineLoading } = useQuery({
+    queryKey: ["/api/activity-timeline"],
+    enabled: isAuthenticated && isAdmin,
+    retry: false,
+  });
 
-  // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, imageId: number) => {
-    setDraggedImageId(imageId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, imageId: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverImageId(imageId);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverImageId(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, targetImageId: number) => {
-    e.preventDefault();
-    
-    if (draggedImageId && draggedImageId !== targetImageId && heroImages) {
-      const sortedImages = [...heroImages].sort((a, b) => a.displayOrder - b.displayOrder);
-      const draggedIndex = sortedImages.findIndex(img => img.id === draggedImageId);
-      const targetIndex = sortedImages.findIndex(img => img.id === targetImageId);
-      
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        // Create new array with reordered items
-        const reorderedImages = [...sortedImages];
-        const [draggedItem] = reorderedImages.splice(draggedIndex, 1);
-        reorderedImages.splice(targetIndex, 0, draggedItem);
-        
-        // Update display orders for all affected images
-        const updates = reorderedImages.map((img, index) => ({
-          id: img.id,
-          displayOrder: index + 1
-        }));
-        
-        reorderHeroImageMutation.mutate({ updates });
-      }
-    }
-    
-    setDraggedImageId(null);
-    setDragOverImageId(null);
-  };
-
-  // Redirect if not admin
-  useEffect(() => {
-    if (!isAuthenticated || (user as any)?.role !== 'admin') {
-      toast({
-        title: "Unauthorized",
-        description: "You need admin access to view this page.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1000);
-      return;
-    }
-  }, [isAuthenticated, user, toast]);
-
-  // Update pricing form when data loads
-  useEffect(() => {
-    if (pricingSettings) {
-      setPricingForm({
-        basePrice: pricingSettings.basePrice,
-        cleaningFee: pricingSettings.cleaningFee,
-        petFee: pricingSettings.petFee,
-        discountWeekly: pricingSettings.discountWeekly,
-        discountMonthly: pricingSettings.discountMonthly,
-      });
-    }
-  }, [pricingSettings]);
-
-  
+  // Fetch recent reviews for notifications
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["/api/reviews"],
+    enabled: isAuthenticated && isAdmin,
+    retry: false,
+  });
 
   // Update booking status mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      await apiRequest("PUT", `/api/bookings/${id}/status`, { status });
+      await apiRequest("PATCH", `/api/bookings/${id}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
@@ -347,17 +330,6 @@ export default function AdminDashboard() {
         description: "Failed to update booking status",
         variant: "destructive",
       });
-    },
-  });
-
-  // Mark message as read mutation
-  const markMessageReadMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("PUT", `/api/messages/${id}/read`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
     },
   });
 
@@ -476,6 +448,19 @@ export default function AdminDashboard() {
     },
   });
 
+  // Update pricing form when data loads
+  useEffect(() => {
+    if (pricingSettings) {
+      setPricingForm({
+        basePrice: pricingSettings.basePrice,
+        cleaningFee: pricingSettings.cleaningFee,
+        petFee: pricingSettings.petFee,
+        discountWeekly: pricingSettings.discountWeekly,
+        discountMonthly: pricingSettings.discountMonthly,
+      });
+    }
+  }, [pricingSettings]);
+
   // Hero image mutations
   const createHeroImageMutation = useMutation({
     mutationFn: async (imageData: { file: File; title: string; alt: string; position: string }) => {
@@ -486,16 +471,13 @@ export default function AdminDashboard() {
       formData.append('position', imageData.position);
       formData.append('isActive', 'true');
       formData.append('displayOrder', '0');
-
       const response = await fetch('/api/hero-images/upload', {
         method: 'POST',
         body: formData,
       });
-
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);
       }
-
       return response.json();
     },
     onSuccess: () => {
@@ -578,7 +560,6 @@ export default function AdminDashboard() {
     mutationFn: async ({ updates }: {
       updates: { id: number; displayOrder: number }[];
     }) => {
-      // Send batch update to reorder all images
       await apiRequest("PUT", "/api/hero-images/reorder", { updates });
     },
     onSuccess: () => {
@@ -590,7 +571,6 @@ export default function AdminDashboard() {
       });
     },
     onError: (error: Error) => {
-      console.error("Reorder error:", error);
       toast({
         title: "Error",
         description: "Failed to reorder images",
@@ -598,6 +578,100 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  // Show loading state if user data is still being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if user is null but not loading
+  if (!isLoading && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load user data</p>
+          <Button onClick={() => window.location.href = "/login"}>
+            Return to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle file selection and preview
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setUploadPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, imageId: number) => {
+    setDraggedImageId(imageId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, imageId: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverImageId(imageId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverImageId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetImageId: number) => {
+    e.preventDefault();
+    
+    if (draggedImageId && draggedImageId !== targetImageId && heroImages) {
+      const sortedImages = [...heroImages].sort((a, b) => a.displayOrder - b.displayOrder);
+      const draggedIndex = sortedImages.findIndex(img => img.id === draggedImageId);
+      const targetIndex = sortedImages.findIndex(img => img.id === targetImageId);
+      
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        // Create new array with reordered items
+        const reorderedImages = [...sortedImages];
+        const [draggedItem] = reorderedImages.splice(draggedIndex, 1);
+        reorderedImages.splice(targetIndex, 0, draggedItem);
+        
+        // Update display orders for all affected images
+        const updates = reorderedImages.map((img, index) => ({
+          id: img.id,
+          displayOrder: index + 1
+        }));
+        
+        reorderHeroImageMutation.mutate({ updates });
+      }
+    }
+    
+    setDraggedImageId(null);
+    setDragOverImageId(null);
+  };
+
+  // Authentication is now handled by AdminProtected wrapper
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -623,367 +697,479 @@ export default function AdminDashboard() {
     });
   };
 
-  if (!isAuthenticated || (user as any)?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  // Activity feed helper functions
+  const formatTimeAgo = (date: Date) => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    return formatDate(date.toISOString());
+  };
+
+  const formatActivityTitle = (actionType: string) => {
+    const titles: Record<string, string> = {
+      'created': 'New booking created',
+      'cancelled': 'Booking cancelled',
+      'modified': 'Booking modified',
+      'blocked': 'Dates blocked',
+      'checked_in': 'Guest checked in',
+      'checked_out': 'Guest checked out',
+      'no_show': 'Guest no-show',
+      'postponed': 'Booking postponed'
+    };
+    return titles[actionType] || 'Activity recorded';
+  };
+
+  const getActivityDetails = (activity: any) => {
+    const parts: string[] = [];
+    
+    if (activity.checkInDate && activity.checkOutDate) {
+      parts.push(`${formatDate(activity.checkInDate)} - ${formatDate(activity.checkOutDate)}`);
+    }
+    
+    if (activity.totalPrice) {
+      parts.push(`€${parseFloat(activity.totalPrice).toFixed(0)}`);
+    }
+    
+    if (activity.metadata?.reason) {
+      parts.push(activity.metadata.reason);
+    }
+    
+    if (activity.bookingId && activity.actionType !== 'blocked') {
+      parts.push(`#${activity.bookingId}`);
+    }
+    
+    return parts.join(' • ') || activity.description;
+  };
+
+  // Get activity feeds for notifications
+  const getActivityFeeds = () => {
+    const feeds: any[] = [];
+    const now = new Date();
+
+    // Add activity timeline items (last 24 hours)
+    if (Array.isArray(activityTimeline) && activityTimeline.length > 0) {
+      const recentActivities = activityTimeline.filter((a: any) => {
+        const activityDate = new Date(a.createdAt);
+        const hoursSince = (now.getTime() - activityDate.getTime()) / (1000 * 60 * 60);
+        return hoursSince <= 24; // Last 24 hours
+      });
+
+      recentActivities.forEach((activity: any) => {
+        const iconMap: Record<string, any> = {
+          'created': UserPlus,
+          'cancelled': XCircle,
+          'modified': Edit,
+          'blocked': CalendarX,
+          'checked_in': LogIn,
+          'checked_out': LogOut,
+          'no_show': AlertCircle,
+          'postponed': Clock
+        };
+
+        const colorMap: Record<string, string> = {
+          'created': 'text-green-600 bg-green-50',
+          'cancelled': 'text-red-600 bg-red-50',
+          'modified': 'text-blue-600 bg-blue-50',
+          'blocked': 'text-gray-600 bg-gray-50',
+          'checked_in': 'text-purple-600 bg-purple-50',
+          'checked_out': 'text-indigo-600 bg-indigo-50',
+          'no_show': 'text-orange-600 bg-orange-50',
+          'postponed': 'text-yellow-600 bg-yellow-50'
+        };
+
+        feeds.push({
+          id: `timeline-${activity.id}`,
+          type: activity.actionType,
+          actor: activity.performedBy || 'system',
+          actorName: activity.performedBy === 'admin' ? 'Admin' : 
+                     activity.performedBy === 'system' ? 'System' : 
+                     activity.guestName || 'Guest',
+          message: activity.description || formatActivityTitle(activity.actionType),
+          details: getActivityDetails(activity),
+          timestamp: formatTimeAgo(new Date(activity.createdAt)),
+          icon: iconMap[activity.actionType] || Activity,
+          color: colorMap[activity.actionType] || 'text-gray-600 bg-gray-50',
+          time: new Date(activity.createdAt)
+        });
+      });
+    }
+
+    // Add recent reviews (last 48 hours)
+    if (Array.isArray(reviews) && reviews.length > 0) {
+      const recentReviews = reviews.filter((r: any) => {
+        const reviewDate = new Date(r.createdAt);
+        const hoursSince = (now.getTime() - reviewDate.getTime()) / (1000 * 60 * 60);
+        return hoursSince <= 48; // Last 48 hours
+      });
+
+      recentReviews.forEach((review: any) => {
+        feeds.push({
+          id: `review-${review.id}`,
+          type: 'review',
+          actor: 'guest',
+          actorName: review.guestName,
+          message: 'New review posted',
+          details: `${review.rating}/5 stars • "${review.content?.substring(0, 50)}${review.content?.length > 50 ? '...' : ''}"`,
+          timestamp: formatTimeAgo(new Date(review.createdAt)),
+          icon: Star,
+          color: 'text-yellow-600 bg-yellow-50',
+          time: new Date(review.createdAt)
+        });
+      });
+    }
+
+    // Sort by timestamp (most recent first)
+    return feeds.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10); // Show only last 10
+  };
+
+  const notificationFeeds = getActivityFeeds();
+
+  // Authentication checks are now handled by AdminProtected wrapper
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.href = '/'}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+<nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40">
+        <div className="px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <button
+                onClick={() => window.location.href = '/'}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 hover:scale-105"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+              </button>
+              
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+                  <p className="text-xs text-gray-500">All'Arco Property Management</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-6">
+
+
+              {/* Notifications */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <Bell className="w-5 h-5 text-gray-600" />
+                  {notificationFeeds.length > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
+                </button>
+                
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div className="absolute top-full right-0 mt-2 w-96 bg-white/95 backdrop-blur-lg shadow-xl rounded-xl border border-gray-200/50 z-50 transform transition-all duration-200 ease-out">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                          {notificationFeeds.length} updates
+                        </span>
+                      </div>
+                      
+                      <div className="max-h-80 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-gray-300">
+                        {notificationFeeds.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-sm text-gray-500">No recent activities</p>
+                          </div>
+                        ) : (
+                          notificationFeeds.map((feed) => {
+                            const Icon = feed.icon;
+                            return (
+                              <div key={feed.id} className="group flex items-start space-x-3 p-3 hover:bg-gray-50/80 rounded-lg transition-all duration-150 cursor-pointer">
+                                <div className={`p-2 rounded-lg ${feed.color} flex-shrink-0 shadow-sm`}>
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <p className="text-sm font-medium text-gray-900 leading-5">
+                                      {feed.message}
+                                    </p>
+                                    <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
+                                      {feed.timestamp}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1 leading-4">
+                                    by {feed.actorName}
+                                  </p>
+                                  {feed.details && (
+                                    <p className="text-xs text-gray-500 mt-1 leading-4 line-clamp-2">
+                                      {feed.details}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                      
+                      {notificationFeeds.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <button 
+                            onClick={() => {
+                              setActiveTab('overview');
+                              setShowNotifications(false);
+                              // Optional: scroll to activity section
+                              setTimeout(() => {
+                                const activitySection = document.getElementById('activity-section');
+                                if (activitySection) {
+                                  activitySection.scrollIntoView({ behavior: 'smooth' });
+                                }
+                              }, 100);
+                            }}
+                            className="group relative w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-700 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                          >
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-indigo-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <Activity className="w-4 h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                            <span className="relative z-10">View all activities</span>
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-400 rounded-full animate-pulse shadow-sm"></div>
+                            <div className="absolute inset-0 rounded-lg ring-2 ring-blue-400/30 ring-offset-2 ring-offset-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 pl-4 border-l hover:bg-gray-50 rounded-lg p-2 transition-all duration-200"
+                >
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
+                      {user?.firstName?.charAt(0) || 'A'}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+                  </div>
+                </button>
+                
+                {/* User Menu Dropdown */}
+                {showUserMenu && (
+                  <div className="absolute top-full right-0 mt-2 w-80 bg-white/95 backdrop-blur-lg shadow-2xl rounded-xl border border-gray-200/50 z-50 transform transition-all duration-300 ease-out">
+                    <div className="p-1">
+                      {/* User Profile Header */}
+                      <div className="p-4 border-b border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                              {user?.firstName?.charAt(0) || 'A'}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-base font-semibold text-gray-900">{user?.firstName || 'Admin'} {user?.lastName || 'User'}</h3>
+                            <p className="text-sm text-gray-500">{user?.email || 'admin@allarco.com'}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-1">
+                                <Shield className="w-3 h-3 text-blue-500" />
+                                <span className="text-xs text-blue-600 font-medium">{getUserDisplayRole(user)}</span>
+                              </div>
+                              <AccessLevelBadge user={user} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Menu Items */}
+                      <div className="py-2">
+                        {/* Profile */}
+                        <button 
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            // Navigate to settings page
+                            window.location.href = 'http://localhost:3000/settings';
+                          }}
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
+                        >
+                          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors">
+                            <UserIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">Profile Settings</p>
+                            <p className="text-xs text-gray-500">Manage your account</p>
+                          </div>
+                        </button>
+                        
+                        {/* Messages */}
+                        <button 
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            // Add messages functionality here
+                            toast({ title: "Messages", description: "Message center coming soon!" });
+                          }}
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
+                        >
+                          <div className="p-2 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-200 transition-colors relative">
+                            <Mail className="w-4 h-4" />
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">Messages</p>
+                            <p className="text-xs text-gray-500">3 unread messages</p>
+                          </div>
+                        </button>
+                        
+                        {/* Settings */}
+                        <button 
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setActiveTab('pms');
+                          }}
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-all duration-200"
+                        >
+                          <div className="p-2 bg-gray-100 text-gray-600 rounded-lg group-hover:bg-gray-200 transition-colors">
+                            <Settings className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="font-medium">Settings</p>
+                            <p className="text-xs text-gray-500">System preferences</p>
+                          </div>
+                        </button>
+                      </div>
+                      
+                      {/* Divider */}
+                      <div className="border-t border-gray-100 my-2"></div>
+                      
+                      {/* Logout */}
+                      <div className="px-2 pb-2">
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            // Smooth logout without annoying confirmations
+                            toast({ 
+                              title: "Signing out...", 
+                              description: "See you soon!",
+                              duration: 1500
+                            });
+                            
+                            // Use session manager for proper cleanup with minimal delay
+                            setTimeout(() => {
+                              sessionManager.logout();
+                            }, 500);
+                          }}
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-lg"
+                        >
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-red-400/20 to-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="p-2 bg-red-100 text-red-600 rounded-lg group-hover:bg-white/20 group-hover:text-white transition-all relative z-10">
+                            <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                          </div>
+                          <div className="flex-1 text-left relative z-10">
+                            <p className="font-medium">Logout</p>
+                            <p className="text-xs opacity-80">Sign out of admin panel</p>
+                          </div>
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse shadow-sm transition-opacity duration-300"></div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back, {user?.firstName}! Manage your All'Arco property.</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-fit">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="bookings" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Bookings
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Calendar
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Messages
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Reviews
-            </TabsTrigger>
-            <TabsTrigger value="hero-images" className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Hero Images
-            </TabsTrigger>
-          </TabsList>
+        {/* Tab Navigation */}
+        <div className="px-6 pb-4 pt-2">
+          <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:gap-3">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`group flex items-center gap-3 px-6 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-gray-900 to-gray-700 text-white shadow-lg scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : tab.color} transition-colors`} />
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <span className="ml-1 w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {analyticsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-8 bg-gray-200 rounded"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                        <p className="text-3xl font-bold">{analytics?.totalBookings || 0}</p>
-                      </div>
-                      <Calendar className="w-8 h-8 text-blue-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                        <p className="text-3xl font-bold">{formatCurrency(analytics?.totalRevenue || 0)}</p>
-                      </div>
-                      <DollarSign className="w-8 h-8 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Occupancy Rate</p>
-                        <p className="text-3xl font-bold">{Math.round(analytics?.occupancyRate || 0)}%</p>
-                      </div>
-                      <TrendingUp className="w-8 h-8 text-purple-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                        <p className="text-3xl font-bold">{analytics?.averageRating?.toFixed(1) || '0.0'}</p>
-                      </div>
-                      <Star className="w-8 h-8 text-yellow-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Recent Bookings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Bookings</CardTitle>
-                <CardDescription>Latest booking requests and confirmations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {bookingsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (bookings && bookings.length > 0) ? (
-                  <div className="space-y-4">
-                    {bookings.slice(0, 5).map((booking: Booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{booking.guestFirstName} {booking.guestLastName}</p>
-                          <p className="text-sm text-gray-600">
-                            {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                          <span className="font-semibold">{formatCurrency(booking.totalPrice)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No bookings yet</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* TAB CONTENT SECTIONS */}
+        <div className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+          {activeTab === 'overview' && (
+            <Overview 
+              analytics={{
+                totalBookings: analytics?.totalBookings || 0,
+                totalRevenue: analytics?.totalRevenue || 0,
+                occupancyRate: analytics?.occupancyRate || 0,
+                averageRating: analytics?.averageRating || 0,
+                monthlyGrowth: {
+                  bookings: 12,
+                  revenue: 8
+                },
+                todayStats: {
+                  checkIns: 2,
+                  checkOuts: 1,
+                  newBookings: 3,
+                  cancellations: 0
+                }
+              }}
+              isRefreshing={analyticsLoading || bookingsLoading}
+              onRefresh={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+              }}
+            />
+          )}
 
           
 
-          {/* Bookings Tab */}
-          <TabsContent value="bookings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Bookings</CardTitle>
-                <CardDescription>Manage all property bookings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {bookingsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-20 bg-gray-200 rounded"></div>
-                    ))}
-                  </div>
-                ) : (bookings && bookings.length > 0) ? (
-                  <div className="space-y-4">
-                    {bookings!.map((booking: Booking) => (
-                      <div 
-                        key={booking.id} 
-                        className="border rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() => {
-                          setSelectedBooking(booking);
-                          setShowBookingDetails(true);
-                        }}
-                      >
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                              <h3 className="font-semibold text-lg">{booking.guestFirstName} {booking.guestLastName}</h3>
-                              <Badge className={getStatusColor(booking.status)}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                            <p className="text-gray-600">{booking.guestEmail}</p>
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span>Check-in: {formatDate(booking.checkInDate)}</span>
-                              <span>Check-out: {formatDate(booking.checkOutDate)}</span>
-                              <span>{booking.guests} guests</span>
-                              {booking.hasPet && <span>🐾 Pets allowed</span>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl font-bold">{formatCurrency(booking.totalPrice)}</span>
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <Select
-                                value={booking.status}
-                                onValueChange={(status) => 
-                                  updateBookingMutation.mutate({ id: booking.id, status })
-                                }
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No bookings yet</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {activeTab === 'bookings' && (
+            <Bookings
+              bookings={bookings}
+              isLoading={bookingsLoading}
+              onStatusUpdate={(bookingId, status) => {
+                updateBookingMutation.mutate({ id: bookingId, status });
+              }}
+              onRefresh={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+              }}
+              onBookingSelect={(booking) => {
+                setSelectedBooking(booking);
+                setShowBookingDetails(true);
+              }}
+            />
+          )}
 
-          {/* Messages Tab */}
-          <TabsContent value="messages" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Guest Messages</CardTitle>
-                <CardDescription>Customer inquiries and communications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {messagesLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-24 bg-gray-200 rounded"></div>
-                    ))}
-                  </div>
-                ) : (messages && messages.length > 0) ? (
-                  <div className="space-y-4">
-                    {messages!.map((message: Message) => (
-                      <div 
-                        key={message.id} 
-                        className={`border rounded-lg p-4 ${!message.isRead ? 'bg-blue-50 border-blue-200' : ''}`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="font-medium">{message.name}</h4>
-                            <p className="text-sm text-gray-600">{message.email}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">
-                              {formatDate(message.createdAt)}
-                            </span>
-                            {!message.isRead && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => markMessageReadMutation.mutate(message.id)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-gray-700">{message.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No messages yet</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Reviews Tab */}
-          <TabsContent value="reviews" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Guest Reviews</CardTitle>
-                <CardDescription>View and manage guest reviews and ratings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {reviewsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
-                    ))}
-                  </div>
-                ) : (reviews && reviews.length > 0) ? (
-                  <div className="space-y-4">
-                    {reviews!.map((review: Review) => (
-                      <div key={review.id} className="border rounded-lg p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h4 className="font-semibold text-lg">{review.guestName}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm text-gray-600">{review.rating}/5</span>
-                            </div>
-                          </div>
-                          <span className="text-sm text-gray-500">{formatDate(review.createdAt)}</span>
-                        </div>
-                        
-                        <p className="text-gray-700 mb-4">{review.content}</p>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                          <div className="text-center">
-                            <p className="font-medium">Cleanliness</p>
-                            <p className="text-gray-600">{review.cleanlinessRating}/5</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium">Location</p>
-                            <p className="text-gray-600">{review.locationRating}/5</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium">Check-in</p>
-                            <p className="text-gray-600">{review.checkinRating}/5</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium">Value</p>
-                            <p className="text-gray-600">{review.valueRating}/5</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium">Communication</p>
-                            <p className="text-gray-600">{review.communicationRating}/5</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No reviews yet</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {activeTab === 'reviews' && (
+            <div className="space-y-6">
+              <ReviewsSection adminMode={true} />
+            </div>
+          )}
 
-          {/* Timeline Tab */}
-          <TabsContent value="timeline" className="space-y-6">
+          {activeTab === 'timeline' && (
+            <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Advanced Booking Calendar</CardTitle>
@@ -995,133 +1181,39 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+            </div>
+          )}
 
-          {/* Hero Images Tab */}
-          <TabsContent value="hero-images" className="space-y-6">
+          {activeTab === 'pricing' && (
+            <div className="space-y-6">
+            <PricingTab
+              pricingForm={pricingForm}
+              setPricingForm={setPricingForm}
+              pricingLoading={pricingLoading}
+              formatCurrency={formatCurrency}
+            />
+            </div>
+          )}
+
+          {activeTab === 'hero-images' && (
+            <div className="space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Hero Section Images</CardTitle>
-                    <CardDescription>Manage images displayed in the main hero section of your landing page</CardDescription>
+                    <CardTitle>Hero Images Management</CardTitle>
+                    <CardDescription>Upload and manage property hero images</CardDescription>
                   </div>
-                  <Button onClick={() => setShowHeroImageForm(!showHeroImageForm)}>
+                  <Button 
+                    onClick={() => setShowHeroImageForm(true)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Image
+                    Upload Image
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Hero Image Form */}
-                {showHeroImageForm && (
-                  <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                    <h4 className="font-medium mb-4">Add New Hero Image</h4>
-                    
-                    {/* File Upload Section */}
-                    <div className="mb-6 space-y-4">
-                      <div>
-                        <Label htmlFor="imageFile">Upload Image File</Label>
-                        <Input
-                          id="imageFile"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileSelect}
-                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Supported formats: JPG, PNG, GIF, WebP (Max 10MB)</p>
-                      </div>
-                      
-                      {/* Preview */}
-                      {uploadPreview && (
-                        <div className="mt-4">
-                          <Label>Preview</Label>
-                          <div className="mt-2 border rounded-lg p-2">
-                            <img 
-                              src={uploadPreview} 
-                              alt="Upload preview" 
-                              className="max-w-full h-32 object-cover rounded"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      <div>
-                        <Label htmlFor="imageTitle">Title</Label>
-                        <Input
-                          id="imageTitle"
-                          value={heroImageForm.title}
-                          onChange={(e) => setHeroImageForm({ ...heroImageForm, title: e.target.value })}
-                          placeholder="Main bedroom"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="imageAlt">Alt Text</Label>
-                        <Input
-                          id="imageAlt"
-                          value={heroImageForm.alt}
-                          onChange={(e) => setHeroImageForm({ ...heroImageForm, alt: e.target.value })}
-                          placeholder="Beautiful main bedroom with canal view"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="imageRoom">What is this image about?</Label>
-                        <Select 
-                          value={heroImageForm.position} 
-                          onValueChange={(value) => setHeroImageForm({ ...heroImageForm, position: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select room/space type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="main">Main Bedroom</SelectItem>
-                            <SelectItem value="top-right">Living Room</SelectItem>
-                            <SelectItem value="top-left">Kitchen</SelectItem>
-                            <SelectItem value="bottom-right">Bathroom</SelectItem>
-                            <SelectItem value="bottom-left">Balcony/Outdoor</SelectItem>
-                            <SelectItem value="other">Other Space</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-3 mt-4">
-                      <Button 
-                        onClick={() => {
-                          // Validate form fields
-                          if (!selectedFile || !heroImageForm.title || !heroImageForm.alt || !heroImageForm.position) {
-                            toast({
-                              title: "Validation Error",
-                              description: "Please select an image file and fill in all fields",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-
-                          createHeroImageMutation.mutate({
-                            file: selectedFile,
-                            title: heroImageForm.title,
-                            alt: heroImageForm.alt,
-                            position: heroImageForm.position
-                          });
-                        }}
-                        disabled={createHeroImageMutation.isPending}
-                      >
-                        {createHeroImageMutation.isPending ? "Adding..." : "Add Image"}
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowHeroImageForm(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Hero Images List */}
                 {heroImagesLoading ? (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
@@ -1130,84 +1222,23 @@ export default function AdminDashboard() {
                   </div>
                 ) : (heroImages && heroImages.length > 0) ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 mb-4">
-                      Drag and drop images to reorder them. The order here affects how they appear in the hero gallery.
-                    </p>
-                    {heroImages!
-                      .sort((a, b) => a.displayOrder - b.displayOrder)
-                      .map((image: HeroImage, index) => (
-                      <div 
-                        key={image.id} 
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, image.id)}
-                        onDragOver={(e) => handleDragOver(e, image.id)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, image.id)}
-                        className={`border rounded-lg overflow-hidden transition-all duration-200 cursor-move ${
-                          dragOverImageId === image.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                        } ${draggedImageId === image.id ? 'opacity-50' : ''}`}
-                      >
-                        <div className="flex items-center p-4 gap-4">
-                          {/* Drag Handle */}
-                          <div className="flex items-center gap-2 text-gray-400">
-                            <GripVertical className="w-5 h-5" />
-                            <span className="text-sm font-medium">#{index + 1}</span>
-                          </div>
-                          
-                          {/* Image Preview */}
-                          <div className="w-24 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                            <img 
-                              src={image.url} 
-                              alt={image.alt}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                target.parentElement!.innerHTML = `
-                                  <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                                    Failed
-                                  </div>
-                                `;
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Image Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-lg truncate">{image.title}</h4>
-                              <Badge 
-                                className={`${image.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
-                              >
-                                {image.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
+                    {heroImages.map((image: HeroImage) => (
+                      <div key={image.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <img src={image.url} alt={image.alt} className="w-16 h-16 object-cover rounded" />
+                            <div>
+                              <h4 className="font-medium">{image.title}</h4>
+                              <p className="text-sm text-gray-600">{image.alt}</p>
                             </div>
-                            <p className="text-gray-600 text-sm truncate mb-2">{image.alt}</p>
-                            <Badge variant="outline" className="text-xs">
-                              {image.position === 'main' ? 'Main Bedroom' : 
-                               image.position === 'top-right' ? 'Living Room' :
-                               image.position === 'top-left' ? 'Kitchen' :
-                               image.position === 'bottom-right' ? 'Bathroom' :
-                               image.position === 'bottom-left' ? 'Balcony/Outdoor' :
-                               'Other Space'}
-                            </Badge>
                           </div>
-                          
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={image.isActive ? "default" : "secondary"}>
+                              {image.isActive ? "Active" : "Inactive"}
+                            </Badge>
                             <Button
-                              size="sm"
-                              variant={image.isActive ? "destructive" : "default"}
-                              onClick={() => updateHeroImageMutation.mutate({ 
-                                id: image.id, 
-                                data: { isActive: !image.isActive }
-                              })}
-                            >
-                              {image.isActive ? "Deactivate" : "Activate"}
-                            </Button>
-                            <Button
-                              size="sm"
                               variant="outline"
+                              size="sm"
                               onClick={() => deleteHeroImageMutation.mutate(image.id)}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1219,192 +1250,480 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 text-lg mb-2">No hero images uploaded yet</p>
-                    <p className="text-gray-400 text-sm">Add images to showcase your property in the hero section</p>
+                    <p className="text-gray-400 text-sm mb-6">Add images to showcase your property in the hero section</p>
+                    <Button 
+                      onClick={() => setShowHeroImageForm(true)}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Upload Your First Image
+                    </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Booking Details Modal */}
-      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
-          </DialogHeader>
-          
-          {selectedBooking && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Guest Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Guest Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">First Name</Label>
-                      <p className="font-medium">{selectedBooking.guestFirstName}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Last Name</Label>
-                      <p className="font-medium">{selectedBooking.guestLastName}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Email</Label>
-                      <p className="font-medium">{selectedBooking.guestEmail}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Phone</Label>
-                      <p className="font-medium">{selectedBooking.guestPhone}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Home className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Country</Label>
-                      <p className="font-medium">{selectedBooking.guestCountry}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Booking Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    Booking Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Check-in</Label>
-                      <p className="font-medium">{formatDate(selectedBooking.checkInDate)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Check-out</Label>
-                      <p className="font-medium">{formatDate(selectedBooking.checkOutDate)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <div>
-                        <Label className="text-sm font-medium text-gray-600">Guests</Label>
-                        <p className="font-medium">{selectedBooking.guests}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PawPrint className="w-4 h-4 text-gray-500" />
-                      <div>
-                        <Label className="text-sm font-medium text-gray-600">Pet</Label>
-                        <p className="font-medium">{selectedBooking.hasPet ? 'Yes' : 'No'}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {selectedBooking.paymentMethod === 'online' ? (
-                      <CreditCard className="w-4 h-4 text-gray-500" />
-                    ) : (
-                      <MapPin className="w-4 h-4 text-gray-500" />
-                    )}
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Payment Method</Label>
-                      <p className="font-medium">
-                        {selectedBooking.paymentMethod === 'online' ? 'Pay Online' : 'Pay at Property'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Status</Label>
-                    <div className="mt-1">
-                      <Badge className={getStatusColor(selectedBooking.status)}>
-                        {selectedBooking.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Booking Details */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5" />
-                    Booking Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Confirmation Code</Label>
-                      <p className="font-mono text-lg font-bold text-blue-600">{selectedBooking.confirmationCode}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Total Price</Label>
-                      <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedBooking.totalPrice)}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Booking Date</Label>
-                      <p className="font-medium">{formatDate(selectedBooking.createdAt)}</p>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Status Management</h4>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={selectedBooking.status}
-                        onValueChange={(status) => {
-                          updateBookingMutation.mutate({ id: selectedBooking.id, status });
-                          setSelectedBooking(prev => prev ? { ...prev, status } : null);
-                        }}
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="checked_in">Checked In</SelectItem>
-                          <SelectItem value="checked_out">Checked Out</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <span className="text-sm text-gray-500">Update booking status</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+
+          {activeTab === 'pms' && (
+            <div className="space-y-6">
+              <PMSSettings />
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>View and manage user accounts and permissions</CardDescription>
+              </CardHeader>
+              
+              {/* Search and Filter Section */}
+              <div className="px-6 py-4 border-b bg-gray-50/50">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      value={userSearchTerm}
+                      onChange={(e) => setUserSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <Select value={userFilter} onValueChange={setUserFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter users" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="registered">Registered Only</SelectItem>
+                      <SelectItem value="unregistered">Unregistered Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* User Summary Statistics */}
+              {!usersLoading && users.length > 0 && (
+                <div className="px-6 py-4 border-b">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+                      <p className="text-blue-700 text-sm">Total Users</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-green-600">{users.filter(u => u.isRegistered).length}</p>
+                      <p className="text-green-700 text-sm">Registered</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-gray-600">{users.filter(u => !u.isRegistered).length}</p>
+                      <p className="text-gray-700 text-sm">Unregistered</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-purple-600">{users.reduce((sum, u) => sum + u.totalReferrals, 0)}</p>
+                      <p className="text-purple-700 text-sm">Total Referrals</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <CardContent>
+                {usersLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-20 bg-gray-200 rounded-lg"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  (() => {
+                    const filteredUsers = users.filter(user => {
+                      const matchesSearch = userSearchTerm === '' || 
+                        user.firstName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                        user.lastName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                        user.email.toLowerCase().includes(userSearchTerm.toLowerCase());
+                      
+                      const matchesFilter = userFilter === 'all' || 
+                        (userFilter === 'registered' && user.isRegistered) ||
+                        (userFilter === 'unregistered' && !user.isRegistered);
+                      
+                      return matchesSearch && matchesFilter;
+                    });
+                    
+                    if (filteredUsers.length === 0) {
+                      return (
+                        <div className="text-center py-12">
+                          <UserIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 text-lg mb-2">
+                            {userSearchTerm || userFilter !== 'all' ? 'No users match your criteria' : 'No users found'}
+                          </p>
+                          {(userSearchTerm || userFilter !== 'all') && (
+                            <p className="text-gray-400 text-sm">
+                              Try adjusting your search or filter settings
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="space-y-4">
+                        {filteredUsers.map(user => (
+                      <div key={user.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                           onClick={() => {
+                             setSelectedUser(user);
+                             setShowUserDetails(true);
+                           }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                              <UserIcon className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg">{user.firstName} {user.lastName}</h3>
+                              <p className="text-gray-600">{user.email}</p>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  user.isRegistered ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {user.isRegistered ? 'Registered' : 'Not Registered'}
+                                </span>
+                                <span>Provider: {user.provider}</span>
+                                {user.country && <span>Country: {user.country}</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="text-center">
+                                <p className="font-semibold text-blue-600">{user.totalBookings}</p>
+                                <p className="text-gray-500">Bookings</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-semibold text-green-600">{formatCurrency(user.totalSpent)}</p>
+                                <p className="text-gray-500">Total Spent</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-semibold text-purple-600">{user.totalReferrals}</p>
+                                <p className="text-gray-500">Referrals</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-semibold text-orange-600">{formatCurrency(user.credits)}</p>
+                                <p className="text-gray-500">Credits</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {user.referrerName && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Referred by:</span> {user.referrerName}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                    );
+                  })()
+                )}
+              </CardContent>
+            </Card>
+            </div>
+          )}
+
+          {activeTab === 'team' && (
+            <div className="space-y-6">
+              <AdvancedTeamManagement />
+            </div>
+          )}
+
+        </div>
+      </div>
+      
+      {/* User Details Modal */}
+      {showUserDetails && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">User Details</h2>
+                <button
+                  onClick={() => setShowUserDetails(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* User Basic Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <UserIcon className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedUser.firstName} {selectedUser.lastName}</h3>
+                    <p className="text-gray-600">{selectedUser.email}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedUser.isRegistered ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedUser.isRegistered ? 'Registered User' : 'Not Registered'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-700">Auth Provider</p>
+                    <p className="text-gray-600">{selectedUser.provider}</p>
+                  </div>
+                  {selectedUser.country && (
+                    <div>
+                      <p className="font-medium text-gray-700">Country</p>
+                      <p className="text-gray-600">{selectedUser.country}</p>
+                    </div>
+                  )}
+                  {selectedUser.mobileNumber && (
+                    <div>
+                      <p className="font-medium text-gray-700">Mobile</p>
+                      <p className="text-gray-600">{selectedUser.mobileNumber}</p>
+                    </div>
+                  )}
+                  {selectedUser.dateOfBirth && (
+                    <div>
+                      <p className="font-medium text-gray-700">Date of Birth</p>
+                      <p className="text-gray-600">{selectedUser.dateOfBirth}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Booking Statistics */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-3">Booking Statistics</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{selectedUser.totalBookings}</p>
+                    <p className="text-blue-700">Total Bookings</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedUser.totalSpent)}</p>
+                    <p className="text-green-700">Total Spent</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Referral Information */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h4 className="font-semibold text-purple-900 mb-3">Referral Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-medium text-purple-700">Referral Code</p>
+                    <p className="text-purple-600 font-mono">{selectedUser.referralCode}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-purple-700">People Referred</p>
+                    <p className="text-purple-600 font-semibold">{selectedUser.totalReferrals}</p>
+                  </div>
+                </div>
+                {selectedUser.referrerName && (
+                  <div className="mt-3 pt-3 border-t border-purple-200">
+                    <p className="font-medium text-purple-700">Referred By</p>
+                    <p className="text-purple-600">{selectedUser.referrerName}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Credits */}
+              {selectedUser.credits > 0 && (
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-orange-900 mb-3">Account Credits</h4>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-orange-600">{formatCurrency(selectedUser.credits)}</p>
+                    <p className="text-orange-700">Available Credits</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Details Modal */}
+      {showBookingDetails && selectedBooking && (
+        <BookingInfo
+          booking={selectedBooking}
+          onClose={() => {
+            setShowBookingDetails(false);
+            setSelectedBooking(null);
+          }}
+          onStatusUpdate={(bookingId, status) => {
+            updateBookingMutation.mutate({ id: bookingId, status });
+          }}
+        />
+      )}
+
+      {/* Hero Image Upload Dialog */}
+      {showHeroImageForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold">Upload Hero Image</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowHeroImageForm(false);
+                  setSelectedFile(null);
+                  setUploadPreview("");
+                  setHeroImageForm({
+                    url: "",
+                    alt: "",
+                    title: "",
+                    position: "main",
+                  });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* File Upload */}
+              <div>
+                <Label htmlFor="hero-image-file">Select Image</Label>
+                <Input
+                  id="hero-image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="mt-1"
+                />
+              </div>
+              
+              {/* Image Preview */}
+              {uploadPreview && (
+                <div className="mt-4">
+                  <Label>Preview</Label>
+                  <div className="mt-2 border rounded-lg overflow-hidden">
+                    <img 
+                      src={uploadPreview} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Form Fields */}
+              <div>
+                <Label htmlFor="hero-title">Title</Label>
+                <Input
+                  id="hero-title"
+                  value={heroImageForm.title}
+                  onChange={(e) => setHeroImageForm({ ...heroImageForm, title: e.target.value })}
+                  placeholder="Enter image title"
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="hero-alt">Alt Text</Label>
+                <Input
+                  id="hero-alt"
+                  value={heroImageForm.alt}
+                  onChange={(e) => setHeroImageForm({ ...heroImageForm, alt: e.target.value })}
+                  placeholder="Describe the image for accessibility"
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="hero-position">Position</Label>
+                <Select
+                  value={heroImageForm.position}
+                  onValueChange={(value) => setHeroImageForm({ ...heroImageForm, position: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="main">Main Hero</SelectItem>
+                    <SelectItem value="secondary">Secondary</SelectItem>
+                    <SelectItem value="gallery">Gallery</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 p-6 border-t bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowHeroImageForm(false);
+                  setSelectedFile(null);
+                  setUploadPreview("");
+                  setHeroImageForm({
+                    url: "",
+                    alt: "",
+                    title: "",
+                    position: "main",
+                  });
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedFile && heroImageForm.title && heroImageForm.alt) {
+                    createHeroImageMutation.mutate({
+                      file: selectedFile,
+                      title: heroImageForm.title,
+                      alt: heroImageForm.alt,
+                      position: heroImageForm.position,
+                    });
+                  }
+                }}
+                disabled={!selectedFile || !heroImageForm.title || !heroImageForm.alt || createHeroImageMutation.isPending}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                {createHeroImageMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+  );
+};
+
+// AdminProtected component is imported at the top
+
+export default function AdminDashboard() {
+  return (
+    <AdminProtected>
+      <AdminDashboardContent />
+    </AdminProtected>
   );
 }

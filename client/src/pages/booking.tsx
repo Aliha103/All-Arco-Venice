@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import StripePaymentWrapper from '@/components/stripe-payment-wrapper';
 import { QRCodeComponent } from '@/components/qr-code';
+import { useActivePromotion } from '@/hooks/useActivePromotion';
 
 interface BookingPageProps {
   bookingDetails: {
@@ -48,6 +49,7 @@ export default function BookingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  const { data: activePromotion } = useActivePromotion();
   const [step, setStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationData, setConfirmationData] = useState<any>(null);
@@ -57,6 +59,7 @@ export default function BookingPage() {
     bookingData: any;
   } | null>(null);
   const [appliedDiscount, setAppliedDiscount] = useState<'voucher' | 'referral' | null>(null);
+  const [validatedPromoCode, setValidatedPromoCode] = useState<any>(null);
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [isBookingForSelf, setIsBookingForSelf] = useState(true);
   
@@ -116,12 +119,25 @@ export default function BookingPage() {
     const base = bookingDetails.pricing;
     let totalPrice = base.totalPrice;
     let cityTaxAmount = base.cityTax;
+    let voucherDiscountAmount = 0;
+    
+    // Use already calculated promotion discount from server-side if available
+    let promotionDiscount = base.promotionDiscount || 0;
+    let effectiveBasePrice = base.basePrice; // Keep original base price for display
+    totalPrice = base.totalPrice; // Use server-calculated totalPrice including promotion discount
     
     // Apply voucher discount (only one discount at a time)
-    if (appliedDiscount === 'voucher') {
-      // Example: 10% voucher discount
-      const voucherDiscount = totalPrice * 0.1;
-      totalPrice -= voucherDiscount;
+    if (appliedDiscount === 'voucher' && validatedPromoCode) {
+      if (validatedPromoCode.discountType === 'percentage') {
+        voucherDiscountAmount = base.totalPrice * (validatedPromoCode.discountValue / 100);
+        // Apply max discount amount if specified
+        if (validatedPromoCode.maxDiscountAmount) {
+          voucherDiscountAmount = Math.min(voucherDiscountAmount, validatedPromoCode.maxDiscountAmount);
+        }
+      } else if (validatedPromoCode.discountType === 'fixed') {
+        voucherDiscountAmount = validatedPromoCode.discountValue;
+      }
+      totalPrice -= voucherDiscountAmount;
     }
     
     // Apply referral discount (only one discount at a time)
@@ -138,11 +154,15 @@ export default function BookingPage() {
     
     return {
       ...base,
+      effectiveBasePrice: effectiveBasePrice,
+      promotionDiscount: promotionDiscount,
+      promotionName: base.activePromotion || null,
+      promotionPercentage: base.promotionDiscountPercent || 0,
       finalTotal: totalPrice,
       onlinePaymentTotal: totalPrice - cityTaxAmount, // Exclude city tax for online payment
       propertyPaymentTotal: totalPrice, // Include city tax for property payment
       cityTax: cityTaxAmount,
-      appliedVoucherDiscount: appliedDiscount === 'voucher' ? totalPrice * 0.1 : 0,
+      appliedVoucherDiscount: voucherDiscountAmount,
       appliedReferralCredit: appliedDiscount === 'referral' ? base.referralCredit : 0,
       appliedUserCredits: creditsUsed
     };
@@ -153,14 +173,20 @@ export default function BookingPage() {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/bookings', data);
+      console.log('Creating booking with data:', data);
+      const response = await apiRequest('POST', '/api/bookings', data);
+      const result = await response.json();
+      console.log('API response:', result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log('Booking created successfully:', data);
       if (formData.paymentMethod === 'online') {
         // Redirect to Stripe payment
         initiateStripePayment(data);
       } else {
         // Property payment - show confirmation directly (no authorization)
+        console.log('Setting confirmation data:', data);
         setConfirmationData(data);
         setShowConfirmation(true);
         setStep(1); // Reset to first step for next booking
@@ -170,6 +196,61 @@ export default function BookingPage() {
       toast({
         title: "Booking Failed",
         description: error.message || "Failed to create booking",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Voucher validation mutation
+  const validateVoucherMutation = useMutation({
+    mutationFn: async (code: string) => {
+      if (!finalPricing) throw new Error('No pricing available');
+      
+      const response = await apiRequest('POST', '/api/vouchers/validate', { 
+        code,
+        bookingAmount: bookingDetails.pricing.totalPrice, // Use original pricing without discounts
+        guestEmail: formData.guestEmail,
+        guestName: `${formData.guestFirstName} ${formData.guestLastName}`,
+        checkInDate: bookingDetails.checkIn,
+        checkOutDate: bookingDetails.checkOut
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Voucher validation failed');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.valid) {
+        setValidatedPromoCode({
+          id: data.voucher.id,
+          discountType: data.voucher.discountType,
+          discountValue: parseFloat(data.voucher.discountValue),
+          maxDiscountAmount: data.voucher.maxDiscountAmount ? parseFloat(data.voucher.maxDiscountAmount) : null
+        });
+        setAppliedDiscount('voucher');
+        toast({
+          title: "Voucher Applied",
+          description: `€${data.discountAmount.toFixed(2)} discount applied`,
+        });
+      } else {
+        setValidatedPromoCode(null);
+        setAppliedDiscount(null);
+        toast({
+          title: "Invalid Voucher",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      setValidatedPromoCode(null);
+      setAppliedDiscount(null);
+      toast({
+        title: "Validation Failed",
+        description: error.message || "Failed to validate voucher",
         variant: "destructive",
       });
     }
@@ -253,6 +334,7 @@ export default function BookingPage() {
       hasPet: bookingDetails.hasPet,
       paymentMethod: formData.paymentMethod,
       specialRequests: formData.specialRequests,
+      promoCode: appliedDiscount === 'voucher' ? '' : '',
       voucherCode: appliedDiscount === 'voucher' ? formData.voucherCode : '',
       referralCode: appliedDiscount === 'referral' ? formData.referralCode : '',
       creditsUsed: creditsUsed,
@@ -283,89 +365,251 @@ export default function BookingPage() {
 
   if (showConfirmation && confirmationData) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <Card className="border-green-200">
-            <CardHeader className="text-center bg-green-50">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-green-600" />
-              </div>
-              <CardTitle className="text-2xl text-green-600">Booking Confirmed!</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              {/* Confirmation Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Booking Details</h3>
-                  <div className="space-y-2">
-                    <div><strong>Confirmation Number:</strong> {confirmationData.confirmationCode}</div>
-                    <div><strong>Guest Name:</strong> {formData.guestFirstName} {formData.guestLastName}</div>
-                    <div><strong>Email:</strong> {formData.guestEmail}</div>
-                    <div><strong>Phone:</strong> {formData.guestPhone}</div>
-                    <div><strong>Check-in:</strong> {formatDate(bookingDetails.checkIn)} at 15:00</div>
-                    <div><strong>Check-out:</strong> {formatDate(bookingDetails.checkOut)} at 10:00</div>
-                    <div><strong>Guests:</strong> {bookingDetails.guests}</div>
-                    {bookingDetails.hasPet && <div><strong>Pet:</strong> Yes</div>}
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-indigo-50 py-12">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* Animated Success Header */}
+          <div className="text-center mb-8">
+            <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg animate-pulse">
+              <Check className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+              🎉 Booking Confirmed!
+            </h1>
+            <p className="text-gray-600 text-lg">Your reservation is all set. Get ready for an amazing stay!</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Booking Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Booking Information Card */}
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+                  <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
+                    <Calendar className="w-6 h-6 mr-3 text-blue-600" />
+                    Booking Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-bold text-sm">#</span>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Confirmation Number</p>
+                          <p className="font-bold text-lg text-gray-900">
+                            {confirmationData.confirmationCode || 
+                             confirmationData.confirmation_code || 
+                             'ARCO-' + (confirmationData.id || 'PENDING')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Guest Name</p>
+                          <p className="font-bold text-gray-900">{formData.guestFirstName} {formData.guestLastName}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Contact</p>
+                          <p className="font-medium text-gray-900">{formData.guestEmail}</p>
+                          <p className="text-sm text-gray-700">{formData.guestPhone}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Check-in</p>
+                          <p className="font-bold text-gray-900">{formatDate(bookingDetails.checkIn)}</p>
+                          <p className="text-sm text-gray-700">15:00 (3:00 PM)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Check-out</p>
+                          <p className="font-bold text-gray-900">{formatDate(bookingDetails.checkOut)}</p>
+                          <p className="text-sm text-gray-700">10:00 (10:00 AM)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Guests</p>
+                          <p className="font-bold text-gray-900">{bookingDetails.guests} guest{bookingDetails.guests !== 1 ? 's' : ''}</p>
+                          {bookingDetails.hasPet && <p className="text-sm text-gray-700">🐾 Pet included</p>}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Payment Information</h3>
-                  <div className="space-y-2">
-                    {confirmationData.paymentStatus === 'paid' ? (
-                      <>
-                        <div><strong>Payment Status:</strong> <Badge className="bg-green-100 text-green-800">Paid Online</Badge></div>
-                        <div><strong>Amount Paid:</strong> €{confirmationData.amountPaid?.toFixed(2)}</div>
-                        <div><strong>City Tax (due at property):</strong> €{confirmationData.cityTaxDue?.toFixed(2)}</div>
-                      </>
-                    ) : (
-                      <>
-                        <div><strong>Payment Status:</strong> <Badge className="bg-blue-100 text-blue-800">Card Authorized</Badge></div>
-                        <div><strong>Authorization:</strong> €{confirmationData.authorizationAmount}</div>
-                        <div><strong>Total Due at Property:</strong> €{confirmationData.totalDue?.toFixed(2)}</div>
-                      </>
-                    )}
+                </CardContent>
+              </Card>
+
+              {/* Payment Information Card */}
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                  <CardTitle className="text-xl font-bold text-gray-800 flex items-center">
+                    <CreditCard className="w-6 h-6 mr-3 text-green-600" />
+                    Payment Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {confirmationData.paymentStatus === 'paid' ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <Check className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-green-800">Payment Complete</p>
+                            <p className="text-sm text-green-700">Paid online successfully</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-green-100 text-green-800 px-3 py-1">Paid Online</Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-gray-600">Amount Paid Online</p>
+                          <p className="text-2xl font-bold text-blue-600">€{confirmationData.amountPaid?.toFixed(2)}</p>
+                        </div>
+                        <div className="p-4 bg-orange-50 rounded-lg">
+                          <p className="text-sm text-gray-600">City Tax (at property)</p>
+                          <p className="text-2xl font-bold text-orange-600">€{confirmationData.cityTaxDue?.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                        <p className="text-sm text-gray-700">
+                          <strong>Note:</strong> Your booking is fully paid! Only the city tax of €{confirmationData.cityTaxDue?.toFixed(2)} 
+                          needs to be paid at the property upon arrival.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <CreditCard className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-blue-800">Payment at Property</p>
+                            <p className="text-sm text-blue-700">Pay when you arrive</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-blue-100 text-blue-800 px-3 py-1">Pay at Property</Badge>
+                      </div>
+                      
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-gray-600">Total Due at Property</p>
+                        <p className="text-3xl font-bold text-blue-600">€{(finalPricing?.propertyPaymentTotal || confirmationData.totalDue)?.toFixed(2)}</p>
+                        <p className="text-sm text-gray-600 mt-1">(including city tax)</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* QR Code Card */}
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
+                  <CardTitle className="text-lg font-bold text-gray-800 text-center">
+                    Digital Check-in
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 text-center">
+                  <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <QRCodeComponent 
+                      value={`AllArco-${confirmationData.confirmationCode || confirmationData.confirmation_code || confirmationData.id}`}
+                      size={150}
+                      className="mx-auto"
+                    />
                   </div>
-                </div>
-              </div>
+                  <p className="text-sm text-gray-600 mb-2">Show this QR code at check-in</p>
+                  <p className="text-xs text-gray-500 font-mono bg-gray-100 px-3 py-1 rounded">
+                    {confirmationData.confirmationCode || confirmationData.confirmation_code || 'ARCO-' + confirmationData.id}
+                  </p>
+                </CardContent>
+              </Card>
 
               {/* Important Information */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Important Information</h4>
-                <ul className="text-sm space-y-1">
-                  <li>• Check-in time: 15:00 (3:00 PM)</li>
-                  <li>• Check-out time: 10:00 (10:00 AM)</li>
-                  <li>• Address: All'Arco District, Venice, Italy</li>
-                  <li>• 2 minutes walk to Rialto Bridge</li>
-                  <li>• WiFi password will be provided upon arrival</li>
-                  <li>• City tax (€4 per adult per night, max 5 nights) is paid at property</li>
-                </ul>
-              </div>
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-lg">
+                  <CardTitle className="text-lg font-bold text-gray-800 flex items-center">
+                    <MapPin className="w-5 h-5 mr-2 text-amber-600" />
+                    Important Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      <span>Check-in: <strong>15:00 (3:00 PM)</strong></span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-orange-600" />
+                      <span>Check-out: <strong>10:00 (10:00 AM)</strong></span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-purple-600" />
+                      <span>All'Arco District, Venice, Italy</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                      <span>2 minutes walk to Rialto Bridge</span>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                      <p className="text-blue-800 font-medium">WiFi password will be provided upon arrival</p>
+                    </div>
+                    <div className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                      <p className="text-orange-800 font-medium">City tax: €4 per adult per night (max 5 nights)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-              {/* QR Code */}
-              <div className="text-center">
-                <div className="inline-block p-4 bg-white border rounded-lg">
-                  <QRCodeComponent 
-                    value={`AllArco-${confirmationData.confirmationCode}`}
-                    size={128}
-                    className="mx-auto"
-                  />
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Show this QR code at check-in</p>
-                <p className="text-xs text-gray-500 mt-1">Confirmation: {confirmationData.confirmationCode}</p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={downloadConfirmation} className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Confirmation
-                </Button>
-                <Button variant="outline" onClick={() => setLocation('/')} className="flex-1">
-                  Return to Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-8 max-w-md mx-auto">
+            <Button onClick={downloadConfirmation} className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 px-6 rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200">
+              <Download className="w-5 h-5 mr-2" />
+              Download Confirmation
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation('/')} 
+              className="flex-1 border-2 border-gray-300 hover:border-blue-400 text-gray-700 hover:text-blue-600 py-3 px-6 rounded-lg font-semibold transform hover:scale-105 transition-all duration-200"
+            >
+              Return to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -445,6 +689,13 @@ export default function BookingPage() {
                       <span>€{finalPricing.basePrice.toFixed(2)} × {finalPricing.totalNights} night{finalPricing.totalNights !== 1 ? 's' : ''}</span>
                       <span>€{finalPricing.priceBeforeDiscount.toFixed(2)}</span>
                     </div>
+                    
+                    {finalPricing.promotionDiscount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Promotion: {finalPricing.promotionName} ({finalPricing.promotionPercentage}% off)</span>
+                        <span>-€{finalPricing.promotionDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
                     
                     {finalPricing.lengthOfStayDiscount > 0 && (
                       <div className="flex justify-between text-green-600">
@@ -645,13 +896,12 @@ export default function BookingPage() {
                           variant="outline"
                           onClick={() => {
                             if (formData.voucherCode && appliedDiscount !== 'referral') {
-                              setAppliedDiscount('voucher');
-                              toast({ title: "Voucher Applied", description: "10% discount applied" });
+                              validateVoucherMutation.mutate(formData.voucherCode);
                             }
                           }}
-                          disabled={!formData.voucherCode || appliedDiscount === 'referral'}
+                          disabled={!formData.voucherCode || appliedDiscount === 'referral' || validateVoucherMutation.isPending}
                         >
-                          Apply
+                          {validateVoucherMutation.isPending ? 'Validating...' : 'Apply'}
                         </Button>
                       </div>
                       {appliedDiscount === 'voucher' && (
@@ -662,6 +912,7 @@ export default function BookingPage() {
                             size="sm"
                             onClick={() => {
                               setAppliedDiscount(null);
+                              setValidatedPromoCode(null);
                               setFormData(prev => ({ ...prev, voucherCode: '' }));
                             }}
                           >
@@ -903,7 +1154,9 @@ export default function BookingPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Confirmation Code</span>
-                      <p className="font-mono font-bold text-lg">{confirmationData.confirmationCode}</p>
+                      <p className="font-mono font-bold text-lg">
+                        {confirmationData.confirmationCode || confirmationData.confirmation_code || 'ARCO-' + confirmationData.id}
+                      </p>
                     </div>
                     <div>
                       <span className="text-gray-600">Check-in</span>

@@ -6,7 +6,10 @@ import ImageGalleryModal from "@/components/image-gallery-modal"
 import { apiRequest } from "@/lib/queryClient"
 import { Calendar } from "@/components/advanced-calendar"
 import { useAuth } from "@/hooks/useAuth"
+import { useRealtimeConnection } from "@/hooks/useRealtimeConnection"
 import { useToast } from "@/hooks/use-toast"
+import { PriceDisplay } from "@/components/PriceDisplay"
+import { useActivePromotion } from "@/hooks/useActivePromotion"
 import {
   Star,
   MapPin,
@@ -65,6 +68,9 @@ export default function Landing() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
+  // Initialize realtime connection for real-time updates
+  useRealtimeConnection();
+
   // Check if user is admin
   const isAdmin = user?.email === 'admin@allarco.com';
 
@@ -76,7 +82,7 @@ export default function Landing() {
     retry: false,
   });
 
-  // Fetch pricing settings from database
+  // Fetch pricing from database endpoint
   const { data: pricingSettings } = useQuery<{
     basePrice: number;
     cleaningFee: number;
@@ -87,6 +93,35 @@ export default function Landing() {
     queryKey: ["/api/pricing-settings"],
     retry: false,
   });
+
+  // Fetch approved reviews for display
+  const { data: reviews = [] } = useQuery<{
+    id: number;
+    guestName: string;
+    rating: number;
+    content: string;
+    createdAt: string;
+  }[]>({
+    queryKey: ["/api/reviews"],
+    retry: false,
+  });
+
+  // Fetch review statistics
+  const { data: reviewStats } = useQuery<{
+    averageRating: number;
+    totalCount: number;
+    cleanlinessAvg: number;
+    locationAvg: number;
+    checkinAvg: number;
+    valueAvg: number;
+    communicationAvg: number;
+  }>({
+    queryKey: ["/api/reviews/stats"],
+    retry: false,
+  });
+
+  // Fetch active promotion
+  const { data: activePromotion } = useActivePromotion();
 
   // Get all active images sorted by display order
   const activeImages = heroImages?.filter(img => img.isActive).sort((a, b) => a.displayOrder - b.displayOrder) || [];
@@ -215,11 +250,11 @@ export default function Landing() {
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
   const [lastAvailabilityCheck, setLastAvailabilityCheck] = useState(0)
 
-  // Real-time booking data with 100ms refresh
+  // Real-time booking data
   const { data: blockedDatesData } = useQuery<string[]>({
     queryKey: ["/api/bookings/dates"],
-    refetchInterval: 100, // 100ms refresh for real-time updates
-    staleTime: 0, // Always consider data stale for real-time updates
+    staleTime: 5 * 60 * 1000, // 5 minutes - WebSocket will update when needed
+    // Removed refetchInterval - WebSocket handles real-time updates
   });
 
   // Convert blocked date strings to Date objects for calendar
@@ -251,7 +286,8 @@ export default function Landing() {
   /* ------------------------------------------------------------------ */
   //  Pricing helpers - use database settings with fallbacks
   /* ------------------------------------------------------------------ */
-  const base = pricingSettings?.basePrice || 110.5;
+  // Use database pricing values with proper fallbacks
+  const base = pricingSettings?.basePrice || 110;
   const cleaningFee = pricingSettings?.cleaningFee || 25;
   const petFee = pricingSettings?.petFee || 25;
   const service = 15;
@@ -270,8 +306,17 @@ export default function Landing() {
     return 0;
   }
   
-  const discount = getDiscount(nights)
-  const discNight = base * (1 - discount)
+  // Apply both length-of-stay and promotion discounts
+  const lengthOfStayDiscount = getDiscount(nights);
+  const promotionDiscount = (activePromotion?.hasActivePromotion ? activePromotion.discountPercentage : 0) / 100;
+  
+  // Calculate final price with all discounts applied
+  const baseAfterLengthDiscount = base * (1 - lengthOfStayDiscount);
+  const finalNightPrice = baseAfterLengthDiscount * (1 - promotionDiscount);
+  
+  // For backward compatibility, set discount and discNight
+  const discount = Math.max(lengthOfStayDiscount, promotionDiscount); // Show the larger discount
+  const discNight = finalNightPrice;
   
   // Use dynamic pet fee from database
   const pet = hasPet ? petFee : 0
@@ -287,7 +332,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">All'Arco Apartment – Heart of Venice</h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600 mb-6">
-            <span className="flex items-center space-x-1"><Star className="w-4 h-4 text-yellow-400 fill-current" /><span>4.89</span><span>·</span><span>127 reviews</span></span>
+            <span className="flex items-center space-x-1">
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span>{Number(reviewStats?.averageRating || 0).toFixed(1)}</span>
+              <span>·</span>
+              <span>{reviewStats?.totalCount || 0} review{reviewStats?.totalCount !== 1 ? 's' : ''}</span>
+            </span>
             <span className="flex items-center space-x-1"><MapPin className="w-4 h-4" /><span>Venice, Italy</span></span>
           </div>
           {/* Property Images Gallery */}
@@ -459,7 +509,7 @@ export default function Landing() {
                       <span>Superhost</span>
                     </span>
                     <span>5+ years hosting</span>
-                    <span>100+ reviews</span>
+                    <span>{reviewStats?.totalCount || 0} review{reviewStats?.totalCount !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </div>
@@ -493,7 +543,7 @@ export default function Landing() {
               
               {/* Right: Price */}
               <div className="text-right">
-                <div className="text-xl xl:text-2xl font-semibold text-gray-900">€{base.toFixed(2)} <span className="text-base xl:text-lg font-normal">/night</span></div>
+                <PriceDisplay basePrice={base} size="lg" className="text-right" />
                 <div className="flex items-center justify-end space-x-1 mt-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-xs xl:text-sm text-green-600">Available</span>
@@ -521,7 +571,7 @@ export default function Landing() {
                         <span>Superhost</span>
                       </span>
                       <span>5+ years hosting</span>
-                      <span>100+ reviews</span>
+                      <span>{reviewStats?.totalCount || 0} review{reviewStats?.totalCount !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
                 </div>
@@ -554,7 +604,7 @@ export default function Landing() {
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-lg md:text-xl font-semibold text-gray-900">€{base.toFixed(2)} <span className="text-sm md:text-base font-normal">/night</span></div>
+                  <PriceDisplay basePrice={base} size="md" />
                   <div className="flex items-center justify-end space-x-1 mt-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-xs md:text-sm text-green-600">Available</span>
@@ -583,14 +633,14 @@ export default function Landing() {
                         <span>Superhost</span>
                       </span>
                       <span className="transition-colors duration-200 active:text-gray-800">5+ years hosting</span>
-                      <span className="transition-colors duration-200 active:text-gray-800">100+ reviews</span>
+                      <span className="transition-colors duration-200 active:text-gray-800">{reviewStats?.totalCount || 0} review{reviewStats?.totalCount !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-base sm:text-lg font-semibold text-gray-900 transition-all duration-200 active:scale-105">
-                    €{base.toFixed(2)} <span className="text-xs sm:text-sm font-normal">/night</span>
+                  <div className="transition-all duration-200 active:scale-105">
+                    <PriceDisplay basePrice={base} size="sm" />
                   </div>
                   <div className="flex items-center justify-end space-x-1 mt-1">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
@@ -771,12 +821,13 @@ export default function Landing() {
                 
                 <div className="text-right">
                   <div className="text-2xl font-bold text-gray-900 mb-2">
-                    €{discNight.toFixed(2)}
-                    {discount > 0 && <span className="text-sm text-gray-500 line-through ml-2">€{base.toFixed(2)}</span>}
+                    €{finalNightPrice.toFixed(2)}
+                    {(lengthOfStayDiscount > 0 || promotionDiscount > 0) && <span className="text-sm text-gray-500 line-through ml-2">€{base.toFixed(2)}</span>}
                   </div>
                   <div className="text-sm text-gray-600 mb-4">
                     per night
-                    {discount > 0 && <span className="text-green-600 ml-2">({(discount * 100).toFixed(0)}% off)</span>}
+                    {promotionDiscount > 0 && <span className="text-green-600 ml-2">({(promotionDiscount * 100).toFixed(0)}% off)</span>}
+                    {lengthOfStayDiscount > 0 && promotionDiscount === 0 && <span className="text-green-600 ml-2">({(lengthOfStayDiscount * 100).toFixed(0)}% off)</span>}
                   </div>
                   
                   {checkIn && checkOut && (
@@ -785,6 +836,22 @@ export default function Landing() {
                         <span>€{base.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
                         <span>€{(base * nights).toFixed(2)}</span>
                       </div>
+                      
+                      {/* Show all applicable discounts */}
+                      {lengthOfStayDiscount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Length of stay discount ({(lengthOfStayDiscount * 100).toFixed(0)}% off)</span>
+                          <span>-€{((base * lengthOfStayDiscount) * nights).toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      {promotionDiscount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Promotion: {activePromotion?.promotionName} ({(promotionDiscount * 100).toFixed(0)}% off)</span>
+                          <span>-€{((base * promotionDiscount) * nights).toFixed(2)}</span>
+                        </div>
+                      )}
+                      
                       <div className="flex justify-between">
                         <span>Cleaning fee</span>
                         <span>€{cleaningFee.toFixed(2)}</span>
@@ -801,7 +868,7 @@ export default function Landing() {
                       )}
                       <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span>€{(base * nights + cleaningFee + service + (hasPet ? petFee : 0)).toFixed(2)}</span>
+                        <span>€{total.toFixed(2)}</span>
                       </div>
                     </div>
                   )}
@@ -981,26 +1048,37 @@ export default function Landing() {
                     
                     <div className="text-right">
                       <div className="text-2xl font-bold text-gray-900 mb-2">
-                        €{discNight.toFixed(2)}
-                        {discount > 0 && <span className="text-sm text-gray-500 line-through ml-2">€{base.toFixed(2)}</span>}
+                        €{finalNightPrice.toFixed(2)}
+                        {(lengthOfStayDiscount > 0 || promotionDiscount > 0) && <span className="text-sm text-gray-500 line-through ml-2">€{base.toFixed(2)}</span>}
                       </div>
                       <div className="text-sm text-gray-600 mb-4">
                         per night
-                        {discount > 0 && <span className="text-green-600 ml-2">({(discount * 100).toFixed(0)}% off)</span>}
+                        {promotionDiscount > 0 && <span className="text-green-600 ml-2">({(promotionDiscount * 100).toFixed(0)}% off)</span>}
+                        {lengthOfStayDiscount > 0 && promotionDiscount === 0 && <span className="text-green-600 ml-2">({(lengthOfStayDiscount * 100).toFixed(0)}% off)</span>}
                       </div>
                       
                       {checkIn && checkOut && (
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between">
-                            <span>€{discNight.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                            <span>€{(discNight * nights).toFixed(2)}</span>
+                            <span>€{base.toFixed(2)} × {nights} night{nights !== 1 ? 's' : ''}</span>
+                            <span>€{(base * nights).toFixed(2)}</span>
                           </div>
-                          {discount > 0 && (
+                          
+                          {/* Show all applicable discounts */}
+                          {lengthOfStayDiscount > 0 && (
                             <div className="flex justify-between text-green-600">
-                              <span>Length of stay discount</span>
-                              <span>-€{((base - discNight) * nights).toFixed(2)}</span>
+                              <span>Length of stay discount ({(lengthOfStayDiscount * 100).toFixed(0)}% off)</span>
+                              <span>-€{((base * lengthOfStayDiscount) * nights).toFixed(2)}</span>
                             </div>
                           )}
+                          
+                          {promotionDiscount > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Promotion: {activePromotion?.promotionName} ({(promotionDiscount * 100).toFixed(0)}% off)</span>
+                              <span>-€{((base * promotionDiscount) * nights).toFixed(2)}</span>
+                            </div>
+                          )}
+                          
                           <div className="flex justify-between">
                             <span>Cleaning fee</span>
                             <span>€{clean.toFixed(2)}</span>
@@ -1280,70 +1358,167 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      {/* —— Reviews Section —— */}
-      <section className="bg-gray-50 px-4 py-12">
+      {/* —— Advanced Reviews Section —— */}
+      <section className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 px-4 py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Guest Reviews</h2>
-            <div className="flex items-center justify-center space-x-4">
-              <div className="text-5xl font-bold text-gray-900">4.89</div>
-              <div>
-                <div className="flex items-center mb-2">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-blue-100/50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Star className="w-4 h-4" />
+              Guest Experiences
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              What Our Guests Say
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Discover why travelers from around the world choose All'Arco for their Venice experience
+            </p>
+          </div>
+
+          {/* Statistics Dashboard */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-12 shadow-xl border border-white/20">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Overall Rating */}
+              <div className="text-center lg:border-r border-gray-200/50">
+                <div className="text-6xl font-bold text-gray-900 mb-2">
+                  {Number(reviewStats?.averageRating || 0).toFixed(1)}
+                </div>
+                <div className="flex items-center justify-center mb-3">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    <Star 
+                      key={i} 
+                      className={`w-6 h-6 ${i < Math.round(Number(reviewStats?.averageRating || 0)) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                    />
                   ))}
                 </div>
-                <div className="text-gray-600">Based on 127 reviews</div>
+                <p className="text-gray-600 font-medium">
+                  Based on {reviewStats?.totalCount || 0} verified review{reviewStats?.totalCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Rating Breakdown */}
+              <div className="lg:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Rating Breakdown</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Cleanliness', value: reviewStats?.cleanlinessAvg || 0 },
+                    { label: 'Location', value: reviewStats?.locationAvg || 0 },
+                    { label: 'Check-in', value: reviewStats?.checkinAvg || 0 },
+                    { label: 'Value', value: reviewStats?.valueAvg || 0 },
+                    { label: 'Communication', value: reviewStats?.communicationAvg || 0 },
+                  ].filter(category => Number(category.value || 0) > 0).map((category) => (
+                    <div key={category.label} className="flex items-center justify-between p-3 bg-gray-50/80 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-3 h-3 ${i < Math.round(Number(category.value || 0)) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 min-w-[2rem]">
+                          {Number(category.value || 0).toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah M.",
-                rating: 5,
-                comment: "Absolutely magical! The apartment exceeded all expectations. The location is perfect and the views are breathtaking.",
-                date: "November 2024"
-              },
-              {
-                name: "Marco R.",
-                rating: 5,
-                comment: "Authentic Venetian experience with modern comforts. The host was incredibly helpful and the apartment was spotless.",
-                date: "October 2024"
-              },
-              {
-                name: "Emma L.",
-                rating: 5,
-                comment: "Perfect for exploring Venice! Walking distance to all major attractions. The apartment is beautifully decorated.",
-                date: "September 2024"
-              }
-            ].map((review, index) => (
-              <Card key={index} className="transform transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-xl">
-                <CardContent className="p-6">
+          {/* Reviews Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.length > 0 ? reviews.slice(0, 6).map((review, index) => (
+              <Card 
+                key={review.id} 
+                className="group bg-white/90 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:ring-blue-200/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-indigo-50/20 to-violet-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
+                <CardContent className="relative p-6">
+                  {/* Guest Info */}
                   <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold transform transition-all duration-200 active:scale-110 active:bg-blue-700">
-                      {review.name[0]}
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                      {review.guestName[0].toUpperCase()}
                     </div>
-                    <div className="ml-3">
-                      <div className="font-semibold transition-colors duration-200 active:text-blue-600">{review.name}</div>
-                      <div className="text-sm text-gray-600 transition-colors duration-200">{review.date}</div>
+                    <div className="ml-4">
+                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                        {review.guestName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', { 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex mb-3">
-                    {[...Array(review.rating)].map((_, i) => (
+
+                  {/* Rating */}
+                  <div className="flex items-center mb-4">
+                    {[...Array(5)].map((_, i) => (
                       <Star 
                         key={i} 
-                        className="w-4 h-4 text-yellow-400 fill-current transform transition-all duration-200 hover:scale-110 active:scale-125" 
-                        style={{ animationDelay: `${i * 100}ms` }}
+                        className={`w-4 h-4 transition-all duration-200 hover:scale-125 ${
+                          i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                        }`}
+                        style={{ animationDelay: `${i * 50}ms` }}
                       />
                     ))}
+                    <span className="ml-2 text-sm font-medium text-gray-700">
+                      {review.rating}.0
+                    </span>
                   </div>
-                  <p className="text-gray-700 transition-colors duration-200 active:text-gray-900">{review.comment}</p>
+
+                  {/* Review Content */}
+                  <p className="text-gray-700 leading-relaxed group-hover:text-gray-900 transition-colors duration-300">
+                    "{review.content}"
+                  </p>
+
+                  {/* Verified Badge */}
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center text-xs text-green-600">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Verified Stay
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <div className="col-span-full">
+                <Card className="bg-white/90 backdrop-blur-sm border-0 ring-1 ring-gray-200/50 shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <MessageCircle className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      Be the First to Review
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Share your experience and help future guests discover the magic of All'Arco Venice.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
+
+          {/* View More Reviews Button */}
+          {reviews.length > 6 && (
+            <div className="text-center mt-12">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="bg-white/80 backdrop-blur-sm border-gray-200/50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 px-8 py-3 rounded-full transition-all duration-300 hover:scale-105"
+              >
+                View All {reviewStats?.totalCount} Reviews
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       </section>
       {/* —— Footer —— */}

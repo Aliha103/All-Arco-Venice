@@ -368,6 +368,40 @@ export default function Profile() {
                 >
                   Copy Referral Code
                 </Button>
+                
+                {/* Test celebration button - for development only */}
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      // Simulate a celebration notification
+                      const celebrationData = {
+                        type: 'celebration_notification',
+                        data: {
+                          userId: user.id,
+                          creditAmount: 25,
+                          messages: {
+                            primary: '🎉 Congratulations! You\'ve earned 25€ in referral credits!',
+                            secondary: 'Your friend just completed their stay. Keep referring to earn more!',
+                            action: 'You now have credits to use on your next booking!'
+                          },
+                          animations: {
+                            confetti: true,
+                            fireworks: true,
+                            duration: 5000
+                          }
+                        }
+                      };
+                      
+                      // Dispatch a custom event that the App component can listen to
+                      window.dispatchEvent(new CustomEvent('test-celebration', { detail: celebrationData }));
+                    }}
+                    className="w-full mt-2"
+                  >
+                    🎉 Test Celebration Modal
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
