@@ -231,7 +231,8 @@ function AdminDashboardContent() {
     { id: 'hero-images', label: 'Hero Images', icon: ImageIcon, color: 'text-pink-500' },
     { id: 'users', label: 'Users', icon: UserIcon, color: 'text-indigo-500' },
     { id: 'team', label: 'Team Management', icon: Users, color: 'text-cyan-500' },
-    { id: 'pms', label: 'PMS', icon: Settings, color: 'text-gray-500' }
+    { id: 'pms', label: 'PMS', icon: Settings, color: 'text-gray-500' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-red-500' }
   ];
   
   // Filter tabs based on user access level
