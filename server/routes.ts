@@ -4516,5 +4516,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PMS routes - temporarily disabled
   // app.use('/api/pms', pmsRoutes);
 
+  // Chat routes
+  app.use('/api/chat', chatRoutes);
+
+  // Booking lookup routes
+  app.use('/api/booking-lookup', bookingLookupRoutes);
+
+  // Initialize WebSocket manager
+  WebSocketManager.getInstance().initialize(httpServer);
+
   return httpServer;
 }
