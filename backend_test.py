@@ -72,7 +72,8 @@ class BackendTester:
         else:
             self.log_result("Server Health", False, f"HTTP {response.status_code}: {response.text}")
             return False
-        """Test starting conversation as guest"""
+    
+    def test_chat_start_guest(self):
         test_data = {
             "message": "Hello, I need help with booking",
             "guestName": "John Doe",
