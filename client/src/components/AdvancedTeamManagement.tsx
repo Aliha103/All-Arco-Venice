@@ -717,7 +717,8 @@ const AdvancedTeamManagement: React.FC = () => {
           type: 'success',
           title: 'Member Updated',
           message: `${editMemberData.firstName} ${editMemberData.lastName} has been updated successfully`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date(),
+          read: false
         }]);
       } else {
         throw new Error('Failed to update member');
@@ -729,7 +730,8 @@ const AdvancedTeamManagement: React.FC = () => {
         type: 'error',
         title: 'Update Failed',
         message: 'Failed to update team member. Please try again.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date(),
+        read: false
       }]);
     }
   };
