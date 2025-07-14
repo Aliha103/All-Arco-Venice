@@ -240,7 +240,26 @@ export default function Header() {
                       </div>
                     </a>
 
-                    
+                    {/* Find Reservation Option */}
+                    <button 
+                      onClick={() => setIsFindReservationOpen(true)}
+                      className="block w-full"
+                    >
+                      <div className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-orange-50 transition-all duration-200 group">
+                        <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center shadow-sm">
+                          <Search className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <h3 className="text-sm font-semibold text-gray-800 group-hover:text-orange-600 transition-colors">
+                            Find Reservation
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Quick booking lookup
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500" />
+                      </div>
+                    </button>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -248,6 +267,20 @@ export default function Header() {
           </div>
         </div>
       </div>
+      
+      {/* Find Reservation Modal */}
+      <FindReservationModal 
+        isOpen={isFindReservationOpen}
+        onClose={() => setIsFindReservationOpen(false)}
+        onCreateAccount={() => {
+          setIsFindReservationOpen(false);
+          window.location.href = '/signup';
+        }}
+        onLogin={() => {
+          setIsFindReservationOpen(false);
+          window.location.href = '/login';
+        }}
+      />
     </header>
   );
 }
