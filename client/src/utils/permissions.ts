@@ -45,9 +45,9 @@ export const ACCESS_LEVEL_PERMISSIONS = {
 
 // Define which tabs should be available for each access level
 export const ACCESS_LEVEL_TABS = {
-  full: ['overview', 'bookings', 'timeline', 'pricing', 'reviews', 'hero-images', 'users', 'team', 'pms'],
-  limited: ['overview', 'bookings', 'timeline', 'reviews', 'users'],
-  read_only: ['overview', 'bookings', 'timeline', 'reviews'],
+  full: ['overview', 'bookings', 'timeline', 'pricing', 'reviews', 'hero-images', 'users', 'team', 'pms', 'messages'],
+  limited: ['overview', 'bookings', 'timeline', 'reviews', 'users', 'messages'],
+  read_only: ['overview', 'bookings', 'timeline', 'reviews', 'messages'],
   custom: [] // Determined by customPermissions
 };
 
