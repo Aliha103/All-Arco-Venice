@@ -21,11 +21,12 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    allowedHosts: true, // Allow all hosts for development
-    hmr: {
-      host: 'localhost',
-      port: 5173,
-    },
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'code-glimpse-3.preview.emergentagent.com',
+      '.preview.emergentagent.com', // Allow all preview subdomains
+    ],
     fs: {
       strict: true,
       deny: ["**/.*"],
