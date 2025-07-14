@@ -1445,6 +1445,12 @@ function AdminDashboardContent() {
             </div>
           )}
 
+          {activeTab === 'messages' && (
+            <div className="space-y-6">
+              <AdminChatDashboard />
+            </div>
+          )}
+
         </div>
       </div>
       
