@@ -263,6 +263,50 @@ class BackendTester:
         else:
             self.log_result("Chat Admin Archive", False, f"HTTP {response.status_code}: {response.text}")
     
+    def test_booking_lookup_find_real(self, confirmation_code: str, email: str):
+        """Test finding reservation with real booking data"""
+        test_data = {
+            "confirmationCode": confirmation_code,
+            "email": email
+        }
+        
+        success, response, error = self.make_request("POST", "/booking-lookup/find", test_data)
+        
+        if not success:
+            self.log_result("Booking Lookup Find (Real)", False, error)
+            return
+            
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") and data.get("booking"):
+                self.log_result("Booking Lookup Find (Real)", True, f"Found booking for {data['booking']['guestFirstName']} {data['booking']['guestLastName']}")
+            else:
+                self.log_result("Booking Lookup Find (Real)", False, f"Invalid response structure: {data}")
+        else:
+            self.log_result("Booking Lookup Find (Real)", False, f"HTTP {response.status_code}: {response.text}")
+    
+    def test_booking_lookup_download_real(self, confirmation_code: str, email: str):
+        """Test downloading booking confirmation PDF with real data"""
+        test_data = {
+            "confirmationCode": confirmation_code,
+            "email": email
+        }
+        
+        success, response, error = self.make_request("POST", "/booking-lookup/download-confirmation", test_data)
+        
+        if not success:
+            self.log_result("Booking Download PDF (Real)", False, error)
+            return
+            
+        if response.status_code == 200:
+            content_type = response.headers.get('content-type', '')
+            if 'application/pdf' in content_type:
+                self.log_result("Booking Download PDF (Real)", True, f"PDF generated successfully ({len(response.content)} bytes)")
+            else:
+                self.log_result("Booking Download PDF (Real)", False, f"Expected PDF but got: {content_type}")
+        else:
+            self.log_result("Booking Download PDF (Real)", False, f"HTTP {response.status_code}: {response.text}")
+    
     def test_booking_lookup_find(self):
         """Test finding reservation by confirmation code and email"""
         # Try with a realistic test booking first
