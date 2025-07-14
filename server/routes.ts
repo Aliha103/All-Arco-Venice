@@ -266,6 +266,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH update team member (general)
+  app.patch('/api/admin/team/members/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      console.log(`🔄 Updating team member ID: ${id} with data:`, updateData);
+      
+      const updatedMember = await storage.updateTeamMember(id, updateData);
+      
+      if (!updatedMember) {
+        return res.status(404).json({ message: 'Team member not found' });
+      }
+      
+      console.log(`✅ Successfully updated team member: ${id}`);
+      res.json(updatedMember);
+    } catch (error) {
+      console.error('❌ Update team member route error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update team member';
+      
+      if (errorMessage.includes('not found')) {
+        res.status(404).json({ message: errorMessage });
+      } else {
+        res.status(500).json({ message: errorMessage });
+      }
+    }
+  });
+
   // PATCH update team member status
   app.patch('/api/admin/team/members/:id/status', isAuthenticated, async (req: any, res) => {
     try {

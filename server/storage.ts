@@ -328,6 +328,7 @@ export interface IStorage {
   getAllTeamMembers(): Promise<any[]>;
   createTeamMember(data: any): Promise<any>;
   getTeamMemberByUserId(userId: string): Promise<any | null>;
+  updateTeamMember(id: string, updateData: any): Promise<any>;
   updateTeamMemberStatus(id: string, isActive: boolean): Promise<void>;
   deleteTeamMember(id: string): Promise<void>;
   resetTeamMemberPassword(id: string): Promise<string>;
@@ -2365,6 +2366,86 @@ async createTeamMember(data: any): Promise<any> {
     // Find the team member by userId from database
     const [teamMember] = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
     return teamMember || null;
+  }
+
+  async updateTeamMember(id: string, updateData: any): Promise<any> {
+    try {
+      // Find the team member first
+      const existingMembers = await this.getAllTeamMembers();
+      const existingMember = existingMembers.find(m => m.id === id);
+      
+      if (!existingMember) {
+        throw new Error('Team member not found');
+      }
+
+      // Update the user record
+      const updateUser: any = {};
+      if (updateData.firstName !== undefined) updateUser.firstName = updateData.firstName;
+      if (updateData.lastName !== undefined) updateUser.lastName = updateData.lastName;
+      if (updateData.email !== undefined) updateUser.email = updateData.email;
+      if (updateData.isActive !== undefined) updateUser.isActive = updateData.isActive;
+      if (updateData.roleId !== undefined) {
+        // Map roleId to user role
+        const roleMap: { [key: string]: string } = {
+          '1': 'admin',
+          '2': 'team_member'
+        };
+        updateUser.role = roleMap[updateData.roleId] || 'team_member';
+      }
+
+      if (Object.keys(updateUser).length > 0) {
+        updateUser.updatedAt = new Date();
+        await db
+          .update(users)
+          .set(updateUser)
+          .where(eq(users.id, existingMember.userId));
+      }
+
+      // Update or create team member specific data
+      const teamMemberData: any = {};
+      if (updateData.roleId !== undefined) teamMemberData.roleId = updateData.roleId;
+      if (updateData.accessLevel !== undefined) {
+        // Validate access level
+        const validAccessLevels = ['full', 'limited', 'read_only', 'custom'];
+        const accessLevel = updateData.accessLevel === 'read-only' ? 'read_only' : updateData.accessLevel;
+        if (validAccessLevels.includes(accessLevel)) {
+          teamMemberData.accessLevel = accessLevel;
+        }
+      }
+      if (updateData.customPermissions !== undefined) teamMemberData.customPermissions = updateData.customPermissions;
+      if (updateData.expiresAt !== undefined) teamMemberData.expiresAt = updateData.expiresAt;
+
+      // Check if team member record exists
+      const [existingTeamMember] = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.userId, existingMember.userId));
+
+      if (existingTeamMember && Object.keys(teamMemberData).length > 0) {
+        // Update existing team member record
+        await db
+          .update(teamMembers)
+          .set(teamMemberData)
+          .where(eq(teamMembers.userId, existingMember.userId));
+      } else if (Object.keys(teamMemberData).length > 0) {
+        // Create new team member record
+        await db
+          .insert(teamMembers)
+          .values({
+            userId: existingMember.userId,
+            ...teamMemberData
+          });
+      }
+
+      // Return the updated member
+      const updatedMembers = await this.getAllTeamMembers();
+      const updatedMember = updatedMembers.find(m => m.id === id);
+      
+      return updatedMember;
+    } catch (error) {
+      console.error('Error updating team member:', error);
+      throw error;
+    }
   }
 
   async updateTeamMemberStatus(id: string, isActive: boolean): Promise<void> {

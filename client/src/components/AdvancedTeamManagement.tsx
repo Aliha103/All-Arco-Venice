@@ -284,6 +284,19 @@ const AdvancedTeamManagement: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   
+  // Edit member states
+  const [isEditingMember, setIsEditingMember] = useState(false);
+  const [editMemberData, setEditMemberData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    roleId: '',
+    accessLevel: '',
+    isActive: true,
+    customPermissions: [] as string[],
+    expiresAt: ''
+  });
+  
   // Step-wise member creation
   const [createMemberStep, setCreateMemberStep] = useState(1);
   const [memberCreationSteps] = useState([
@@ -659,6 +672,95 @@ const AdvancedTeamManagement: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch system health:', error);
     }
+  };
+
+  const startEditingMember = (member: TeamMember) => {
+    setEditMemberData({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      roleId: member.role.id,
+      accessLevel: member.accessLevel,
+      isActive: member.isActive,
+      customPermissions: member.customPermissions || [],
+      expiresAt: member.expiresAt || ''
+    });
+    setIsEditingMember(true);
+  };
+
+  const saveEditedMember = async () => {
+    if (!selectedMember) return;
+    
+    try {
+      const response = await fetch(`/api/admin/team/members/${selectedMember.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(editMemberData)
+      });
+
+      if (response.ok) {
+        const updatedMember = await response.json();
+        setTeamMembers(prev => 
+          prev.map(member => 
+            member.id === selectedMember.id ? updatedMember : member
+          )
+        );
+        setIsEditingMember(false);
+        setShowMemberDetails(false);
+        
+        // Show success notification
+        setNotifications(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'success',
+          title: 'Member Updated',
+          message: `${editMemberData.firstName} ${editMemberData.lastName} has been updated successfully`,
+          timestamp: new Date().toISOString()
+        }]);
+      } else {
+        throw new Error('Failed to update member');
+      }
+    } catch (error) {
+      console.error('Failed to update member:', error);
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update team member. Please try again.',
+        timestamp: new Date().toISOString()
+      }]);
+    }
+  };
+
+  const cancelEditingMember = () => {
+    setIsEditingMember(false);
+    setEditMemberData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      roleId: '',
+      accessLevel: '',
+      isActive: true,
+      customPermissions: [],
+      expiresAt: ''
+    });
+  };
+
+  const closeMemberDetailsModal = () => {
+    setShowMemberDetails(false);
+    setIsEditingMember(false);
+    setEditMemberData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      roleId: '',
+      accessLevel: '',
+      isActive: true,
+      customPermissions: [],
+      expiresAt: ''
+    });
   };
 
   const handleCreateMember = async () => {
@@ -3034,7 +3136,7 @@ const AdvancedTeamManagement: React.FC = () => {
             <div className="modal-header">
               <h2>Team Member Details</h2>
               <button 
-                onClick={() => setShowMemberDetails(false)}
+                onClick={closeMemberDetailsModal}
                 className="modal-close"
               >
                 <XCircle className="close-icon" />
@@ -3062,24 +3164,246 @@ const AdvancedTeamManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Detailed information tabs would go here */}
+              {/* Detailed information tabs */}
               <div className="member-detail-tabs">
                 <div className="tab-content">
-                  <p>Detailed member information, permissions, activity logs, etc. would be displayed here.</p>
+                  {isEditingMember ? (
+                    <div className="edit-member-form">
+                      <div className="form-section">
+                        <h3>Basic Information</h3>
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label>First Name</label>
+                            <input
+                              type="text"
+                              value={editMemberData.firstName}
+                              onChange={(e) => setEditMemberData({...editMemberData, firstName: e.target.value})}
+                              className="form-input"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Last Name</label>
+                            <input
+                              type="text"
+                              value={editMemberData.lastName}
+                              onChange={(e) => setEditMemberData({...editMemberData, lastName: e.target.value})}
+                              className="form-input"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Email</label>
+                            <input
+                              type="email"
+                              value={editMemberData.email}
+                              onChange={(e) => setEditMemberData({...editMemberData, email: e.target.value})}
+                              className="form-input"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Role</label>
+                            <select
+                              value={editMemberData.roleId}
+                              onChange={(e) => setEditMemberData({...editMemberData, roleId: e.target.value})}
+                              className="form-select"
+                            >
+                              {roles.map(role => (
+                                <option key={role.id} value={role.id}>
+                                  {role.displayName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Access Level</label>
+                            <select
+                              value={editMemberData.accessLevel}
+                              onChange={(e) => setEditMemberData({...editMemberData, accessLevel: e.target.value})}
+                              className="form-select"
+                            >
+                              <option value="full">Full Access</option>
+                              <option value="limited">Limited Access</option>
+                              <option value="read_only">Read Only</option>
+                              <option value="custom">Custom</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Status</label>
+                            <select
+                              value={editMemberData.isActive ? 'active' : 'inactive'}
+                              onChange={(e) => setEditMemberData({...editMemberData, isActive: e.target.value === 'active'})}
+                              className="form-select"
+                            >
+                              <option value="active">Active</option>
+                              <option value="inactive">Inactive</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="form-section">
+                        <h3>Custom Permissions</h3>
+                        <div className="permissions-grid">
+                          {PERMISSIONS.map(permission => (
+                            <label key={permission.key} className="permission-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={editMemberData.customPermissions.includes(permission.key)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setEditMemberData({
+                                      ...editMemberData,
+                                      customPermissions: [...editMemberData.customPermissions, permission.key]
+                                    });
+                                  } else {
+                                    setEditMemberData({
+                                      ...editMemberData,
+                                      customPermissions: editMemberData.customPermissions.filter(p => p !== permission.key)
+                                    });
+                                  }
+                                }}
+                              />
+                              <span className="permission-name">{permission.label}</span>
+                              <span className={`risk-indicator ${permission.riskLevel}`}>
+                                {permission.riskLevel}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="form-section">
+                        <h3>Advanced Settings</h3>
+                        <div className="form-group">
+                          <label>Access Expires At (optional)</label>
+                          <input
+                            type="datetime-local"
+                            value={editMemberData.expiresAt}
+                            onChange={(e) => setEditMemberData({...editMemberData, expiresAt: e.target.value})}
+                            className="form-input"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="member-info-display">
+                      <div className="info-section">
+                        <h3>Member Information</h3>
+                        <div className="info-grid">
+                          <div className="info-item">
+                            <span className="info-label">Full Name:</span>
+                            <span className="info-value">{selectedMember.firstName} {selectedMember.lastName}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Email:</span>
+                            <span className="info-value">{selectedMember.email}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Role:</span>
+                            <span className="info-value">{selectedMember.role.displayName}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Access Level:</span>
+                            <span className="info-value">{selectedMember.accessLevel}</span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Status:</span>
+                            <span className={`info-value ${selectedMember.isActive ? 'active' : 'inactive'}`}>
+                              {selectedMember.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          <div className="info-item">
+                            <span className="info-label">Last Access:</span>
+                            <span className="info-value">
+                              {selectedMember.lastAccessAt ? new Date(selectedMember.lastAccessAt).toLocaleString() : 'Never'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="info-section">
+                        <h3>Permissions</h3>
+                        <div className="permissions-display">
+                          <div className="permission-category">
+                            <h4>Role Permissions</h4>
+                            <div className="permission-tags">
+                              {selectedMember.role.permissions.map(permission => (
+                                <span key={permission} className="permission-tag">
+                                  {PERMISSIONS.find(p => p.key === permission)?.label || permission}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {selectedMember.customPermissions && selectedMember.customPermissions.length > 0 && (
+                            <div className="permission-category">
+                              <h4>Custom Permissions</h4>
+                              <div className="permission-tags">
+                                {selectedMember.customPermissions.map(permission => (
+                                  <span key={permission} className="permission-tag custom">
+                                    {PERMISSIONS.find(p => p.key === permission)?.label || permission}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="info-section">
+                        <h3>Activity & Security</h3>
+                        <div className="activity-stats">
+                          <div className="stat-card">
+                            <div className="stat-value">{selectedMember.riskScore}%</div>
+                            <div className="stat-label">Risk Score</div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-value">{selectedMember.performanceMetrics?.tasksCompleted || 0}</div>
+                            <div className="stat-label">Tasks Completed</div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-value">{selectedMember.performanceMetrics?.averageResponseTime || 0}ms</div>
+                            <div className="stat-label">Avg Response Time</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="modal-actions">
-              <button 
-                onClick={() => setShowMemberDetails(false)} 
-                className="futuristic-btn secondary"
-              >
-                Close
-              </button>
-              <button className="futuristic-btn primary">
-                Save Changes
-              </button>
+              {isEditingMember ? (
+                <>
+                  <button 
+                    onClick={cancelEditingMember} 
+                    className="futuristic-btn secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={saveEditedMember}
+                    className="futuristic-btn primary"
+                  >
+                    Save Changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={closeMemberDetailsModal} 
+                    className="futuristic-btn secondary"
+                  >
+                    Close
+                  </button>
+                  <button 
+                    onClick={() => startEditingMember(selectedMember)}
+                    className="futuristic-btn primary"
+                  >
+                    Edit Member
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
