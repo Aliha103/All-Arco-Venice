@@ -21,9 +21,12 @@ import {
   LogIn,
   UserPlus,
   ChevronRight,
-  Shield
+  Shield,
+  Search,
+  FileText
 } from "lucide-react";
 import { Link } from "wouter";
+import { FindReservationModal } from "@/components/FindReservationModal";
 
 export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
