@@ -282,7 +282,7 @@ class BackendTester:
         """Test downloading booking confirmation PDF"""
         test_data = {
             "confirmationCode": "ARCO123456",
-            "email": "test@example.com"
+            "email": "marco.rossi@email.it"
         }
         
         success, response, error = self.make_request("POST", "/booking-lookup/download-confirmation", test_data)
