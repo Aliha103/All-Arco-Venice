@@ -251,9 +251,10 @@ class BackendTester:
     
     def test_booking_lookup_find(self):
         """Test finding reservation by confirmation code and email"""
+        # Try with a realistic test booking first
         test_data = {
             "confirmationCode": "ARCO123456",
-            "email": "test@example.com"
+            "email": "marco.rossi@email.it"
         }
         
         success, response, error = self.make_request("POST", "/booking-lookup/find", test_data)
