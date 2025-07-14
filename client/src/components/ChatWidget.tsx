@@ -37,7 +37,7 @@ interface ChatWidgetProps {
 export function ChatWidget({ className }: ChatWidgetProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
