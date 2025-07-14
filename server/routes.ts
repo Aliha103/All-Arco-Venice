@@ -17,6 +17,9 @@ import crypto from 'crypto';
 import { db } from "./db";
 import { sql, eq, desc } from "drizzle-orm";
 import { loggedOutSessions } from "@shared/schema";
+import { chatRoutes } from "./chatRoutes";
+import { bookingLookupRoutes } from "./bookingLookupRoutes";
+import { WebSocketManager } from "./webSocketManager";
 // import pmsRoutes from "./pms-routes"; // Temporarily disabled
 
 // Skip Stripe initialization for local development
