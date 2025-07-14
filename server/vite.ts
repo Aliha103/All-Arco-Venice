@@ -23,6 +23,12 @@ export async function setupVite(app: Express, server: Server) {
     middlewareMode: true,
     hmr: { server },
     host: '0.0.0.0',
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'code-glimpse-3.preview.emergentagent.com',
+      '.preview.emergentagent.com', // Allow all preview subdomains
+    ],
   };
 
   const vite = await createViteServer({
