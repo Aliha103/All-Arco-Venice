@@ -386,6 +386,11 @@ const AdvancedTeamManagement: React.FC = () => {
   // Helper function to safely access arrays
   const safeArray = <T,>(arr: T[] | null | undefined): T[] => Array.isArray(arr) ? arr : [];
   
+  // Helper function to check if user is super user
+  const isSuperUser = (member: TeamMember): boolean => {
+    return member.email === 'admin@allarco.com';
+  };
+  
   // Form states
   const [newMember, setNewMember] = useState({
     email: '',
@@ -1079,6 +1084,20 @@ const AdvancedTeamManagement: React.FC = () => {
   };
 
   const handleDeleteMember = async (memberId: string) => {
+    const member = teamMembers.find(m => m.id === memberId);
+    
+    if (member && isSuperUser(member)) {
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'error',
+        title: 'Cannot Delete Super User',
+        message: 'Super user admin@allarco.com cannot be deleted.',
+        timestamp: new Date(),
+        read: false
+      }]);
+      return;
+    }
+    
     if (!window.confirm('Are you sure you want to delete this team member?')) {
       return;
     }
@@ -1143,12 +1162,33 @@ const AdvancedTeamManagement: React.FC = () => {
 
   const handleBulkAction = async (action: string) => {
     if (selectedMembers.length === 0) {
-      addNotification({
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
         type: 'warning',
         title: 'No Members Selected',
-        message: 'Please select members to perform bulk action'
-      });
+        message: 'Please select members to perform bulk action',
+        timestamp: new Date(),
+        read: false
+      }]);
       return;
+    }
+
+    // Check if any selected members are super users and action is delete
+    if (action === 'delete') {
+      const selectedMemberObjects = teamMembers.filter(member => selectedMembers.includes(member.id));
+      const hasSuperUser = selectedMemberObjects.some(member => isSuperUser(member));
+      
+      if (hasSuperUser) {
+        setNotifications(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'error',
+          title: 'Cannot Delete Super User',
+          message: 'Super user admin@allarco.com cannot be deleted. Please deselect and try again.',
+          timestamp: new Date(),
+          read: false
+        }]);
+        return;
+      }
     }
 
     try {
@@ -1649,13 +1689,20 @@ const AdvancedTeamManagement: React.FC = () => {
                             <Brain className="dropdown-icon" />
                             AI Insights
                           </button>
-                          <button 
-                            onClick={() => handleDeleteMember(member.id)}
-                            className="dropdown-item danger"
-                          >
-                            <Trash2 className="dropdown-icon" />
-                            Delete Member
-                          </button>
+                          {isSuperUser(member) ? (
+                            <div className="dropdown-item disabled" title="Super user cannot be deleted">
+                              <Trash2 className="dropdown-icon" />
+                              Delete Member (Protected)
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => handleDeleteMember(member.id)}
+                              className="dropdown-item danger"
+                            >
+                              <Trash2 className="dropdown-icon" />
+                              Delete Member
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

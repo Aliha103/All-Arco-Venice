@@ -338,6 +338,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       console.log(`🗑️ DELETE request for team member ID: ${id}`);
       
+      // Get the team member to check if it's the super user
+      const teamMemberToDelete = await storage.getUser(id);
+      
+      // Protect super user (admin@allarco.com) from deletion
+      if (teamMemberToDelete?.email === 'admin@allarco.com') {
+        return res.status(403).json({ 
+          message: 'Cannot delete super user admin@allarco.com',
+          error: 'SUPER_USER_PROTECTION' 
+        });
+      }
+      
       await storage.deleteTeamMember(id);
       console.log(`✅ Successfully deleted team member: ${id}`);
       
