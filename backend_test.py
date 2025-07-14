@@ -58,7 +58,20 @@ class BackendTester:
         except Exception as e:
             return False, None, f"Request error: {str(e)}"
     
-    def test_chat_start_guest(self):
+    def test_server_health(self):
+        """Test basic server health"""
+        success, response, error = self.make_request("GET", "/chat/unread-count")
+        
+        if not success:
+            self.log_result("Server Health", False, error)
+            return False
+            
+        if response.status_code == 200:
+            self.log_result("Server Health", True, "Server is responding")
+            return True
+        else:
+            self.log_result("Server Health", False, f"HTTP {response.status_code}: {response.text}")
+            return False
         """Test starting conversation as guest"""
         test_data = {
             "message": "Hello, I need help with booking",
