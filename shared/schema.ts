@@ -207,7 +207,67 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Messages
+// Enhanced Messages/Chat System with conversations, real-time messaging, and advanced features
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id), // null for guest users
+  guestName: varchar("guest_name", { length: 100 }), // For non-logged users
+  guestEmail: varchar("guest_email", { length: 255 }), // For non-logged users
+  subject: varchar("subject", { length: 255 }),
+  status: varchar("status", { enum: ["active", "closed", "pending"] }).default("active"),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  assignedTo: varchar("assigned_to").references(() => users.id), // Admin assigned to conversation
+  priority: varchar("priority", { enum: ["low", "medium", "high", "urgent"] }).default("medium"),
+  tags: jsonb("tags").default([]), // For categorization
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Enhanced Messages with conversation support
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id).notNull(),
+  senderId: varchar("sender_id").references(() => users.id), // null for guest users
+  senderName: varchar("sender_name", { length: 100 }).notNull(),
+  senderEmail: varchar("sender_email", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  messageType: varchar("message_type", { enum: ["text", "image", "file", "system"] }).default("text"),
+  attachments: jsonb("attachments").default([]), // For file attachments
+  isFromAdmin: boolean("is_from_admin").default(false),
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  editedAt: timestamp("edited_at"),
+  replyTo: integer("reply_to").references(() => chatMessages.id), // For threaded replies
+  metadata: jsonb("metadata").default({}), // For extra data like delivery status
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Chat participants for group conversations (future expansion)
+export const chatParticipants = pgTable("chat_participants", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id).notNull(),
+  userId: varchar("user_id").references(() => users.id),
+  guestEmail: varchar("guest_email", { length: 255 }),
+  role: varchar("role", { enum: ["admin", "guest", "moderator"] }).default("guest"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow(),
+  notifications: boolean("notifications").default(true),
+});
+
+// Real-time message delivery tracking
+export const messageDelivery = pgTable("message_delivery", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => chatMessages.id).notNull(),
+  recipientId: varchar("recipient_id").references(() => users.id),
+  recipientEmail: varchar("recipient_email", { length: 255 }),
+  deliveredAt: timestamp("delivered_at").defaultNow(),
+  readAt: timestamp("read_at"),
+  status: varchar("status", { enum: ["sent", "delivered", "read", "failed"] }).default("sent"),
+});
+
+// Messages (keeping existing for backward compatibility)
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id),
