@@ -14,8 +14,7 @@ import {
   pricingSettings,
   heroImages,
   activityTimeline,
-  teamMembers,
-  teamRoles,
+
   type User,
   type UpsertUser,
   type InsertBooking,
