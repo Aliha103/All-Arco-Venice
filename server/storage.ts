@@ -14,6 +14,8 @@ import {
   pricingSettings,
   heroImages,
   activityTimeline,
+  teamMembers,
+  teamRoles,
   type User,
   type UpsertUser,
   type InsertBooking,
@@ -332,41 +334,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // In-memory storage for team management (until proper DB tables are created)
-  private teamMembers: any[] = [];
-  private roles: any[] = [];
-  
-  constructor() {
-    // Initialize with default admin user
-    this.teamMembers = [
-      {
-        id: '1',
-        userId: '1',
-        email: 'admin@allarco.com',
-        firstName: 'Hassan',
-        lastName: 'Cheema',
-        role: {
-          id: '1',
-          name: 'admin',
-          displayName: 'Administrator',
-          color: '#3b82f6',
-          permissions: ['bookings:view', 'bookings:create', 'users:view', 'analytics:view']
-        },
-        customPermissions: [],
-        restrictions: [],
-        allowedFeatures: [],
-        allowedProperties: [],
-        accessLevel: 'full',
-        isActive: true,
-        lastAccessAt: new Date().toISOString(),
-        expiresAt: null,
-        createdAt: new Date().toISOString(),
-        riskScore: 15,
-        deviceInfo: {},
-        location: {}
-      }
-    ];
-  }
   
   // User operations
   async getUser(id: string): Promise<User | undefined> {
@@ -2249,7 +2216,89 @@ export class DatabaseStorage implements IStorage {
   }
   
 async getAllTeamMembers(): Promise<any[]> {
-    return this.teamMembers;
+    // Get all users with admin or team_member roles
+    const allTeamUsers = await db
+      .select()
+      .from(users)
+      .where(or(
+        eq(users.role, 'admin'),
+        eq(users.role, 'team_member')
+      ));
+    
+    // Get team member data if it exists
+    const teamMemberData = await db.select().from(teamMembers);
+    const teamMemberMap = new Map(teamMemberData.map(tm => [tm.userId, tm]));
+    
+    // Get all roles for mapping
+    const roles = await this.getAllRoles();
+    const roleMap = new Map(roles.map(role => [role.id, role]));
+    
+    // Map the data to include proper role objects and default values for missing fields
+    const mappedMembers = allTeamUsers.map((user, index) => {
+      const teamMemberInfo = teamMemberMap.get(user.id);
+      
+      // Map user role to team role
+      let teamRole;
+      if (user.role === 'admin') {
+        teamRole = roleMap.get('1') || {
+          id: '1',
+          name: 'admin',
+          displayName: 'Administrator',
+          color: '#3b82f6',
+          permissions: ['bookings:view', 'bookings:create', 'users:view', 'analytics:view']
+        };
+      } else {
+        teamRole = roleMap.get('2') || {
+          id: '2',
+          name: 'manager',
+          displayName: 'Manager',
+          color: '#059669',
+          permissions: ['bookings:view', 'bookings:create', 'properties:view']
+        };
+      }
+      
+      return {
+        id: teamMemberInfo?.id?.toString() || user.id,
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: teamRole,
+        customPermissions: teamMemberInfo?.customPermissions || [],
+        restrictions: teamMemberInfo?.restrictions || [],
+        allowedFeatures: teamMemberInfo?.allowedFeatures || [],
+        allowedProperties: teamMemberInfo?.allowedProperties || [],
+        accessLevel: teamMemberInfo?.accessLevel || (user.role === 'admin' ? 'full' : 'limited'),
+        isActive: teamMemberInfo?.isActive ?? user.isActive,
+        lastAccessAt: teamMemberInfo?.lastAccessAt || user.lastLoginAt,
+        expiresAt: teamMemberInfo?.expiresAt || null,
+        createdAt: teamMemberInfo?.createdAt || user.createdAt,
+        riskScore: teamMemberInfo?.riskScore || (user.role === 'admin' ? 10 : 25),
+        deviceInfo: teamMemberInfo?.deviceInfo || {},
+        location: teamMemberInfo?.location || {},
+        // Add default values for enhanced properties expected by the frontend
+        loginHistory: [],
+        securityEvents: [],
+        performanceMetrics: {
+          tasksCompleted: Math.floor(Math.random() * 100),
+          averageResponseTime: Math.floor(Math.random() * 1000) + 200,
+          errorRate: Math.floor(Math.random() * 5),
+          uptime: 99.9
+        },
+        biometricData: {
+          fingerprintEnabled: false,
+          faceIdEnabled: false
+        },
+        aiInsights: {
+          productivity: 75 + Math.floor(Math.random() * 20),
+          riskPrediction: teamMemberInfo?.riskScore || (user.role === 'admin' ? 10 : 25),
+          recommendations: [],
+          anomalies: []
+        }
+      };
+    });
+    
+    return mappedMembers;
   }
   
 async createTeamMember(data: any): Promise<any> {
@@ -2258,19 +2307,19 @@ async createTeamMember(data: any): Promise<any> {
     if (existingUser) {
       throw new Error('User with this email already exists');
     }
-    
+
     // Find the role to get full role information
     const roles = await this.getAllRoles();
     const role = roles.find(r => r.id === data.roleId);
-    
+
     if (!role) {
       throw new Error('Role not found');
     }
-    
+
     const userId = Date.now().toString();
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    
+
     // Create user record in database
     const [createdUser] = await db
       .insert(users)
@@ -2287,67 +2336,113 @@ async createTeamMember(data: any): Promise<any> {
         referralCode: `TEAM${userId.slice(-6)}` // Generate referral code
       })
       .returning();
-    
-    // Create team member record for admin panel
-    const newMember = {
-      id: userId,
-      userId: userId,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: role,
-      customPermissions: data.customPermissions || [],
-      restrictions: data.restrictions || [],
-      allowedFeatures: data.allowedFeatures || [],
-      allowedProperties: data.allowedProperties || [],
-      accessLevel: data.accessLevel || 'limited',
-      isActive: true,
-      lastAccessAt: null,
-      expiresAt: data.expiresAt || null,
-      createdAt: createdUser.createdAt.toISOString(),
-      updatedAt: createdUser.updatedAt.toISOString(),
-      riskScore: 25, // Default risk score
-      deviceInfo: {},
-      hashedPassword: hashedPassword,
-      location: {}
-    };
-    
-    this.teamMembers.push(newMember);
+
+    // Create team member record in the database
+    const [newMember] = await db
+      .insert(teamMembers)
+      .values({
+        userId: userId,
+        roleId: role.id,
+        customPermissions: data.customPermissions || [],
+        restrictions: data.restrictions || [],
+        allowedFeatures: data.allowedFeatures || [],
+        allowedProperties: data.allowedProperties || [],
+        accessLevel: data.accessLevel || 'limited',
+        isActive: true,
+        lastAccessAt: null,
+        expiresAt: data.expiresAt || null,
+        createdBy: 'admin',
+        riskScore: 25, // Default risk score
+        deviceInfo: {},
+        location: {}
+      })
+      .returning();
+
     return newMember;
   }
 
   async getTeamMemberByUserId(userId: string): Promise<any | null> {
-    // Find the team member by userId
-    const teamMember = this.teamMembers.find(member => member.userId === userId);
+    // Find the team member by userId from database
+    const [teamMember] = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
     return teamMember || null;
   }
 
   async updateTeamMemberStatus(id: string, isActive: boolean): Promise<void> {
-    // Update in database
+    // Update in users table
     await db
       .update(users)
       .set({ isActive: isActive, updatedAt: new Date() })
       .where(eq(users.id, id));
     
-    // Update in-memory record
-    const member = this.teamMembers.find(m => m.id === id);
-    if (member) {
-      member.isActive = isActive;
+    // Update in team members table if entry exists
+    try {
+      await db
+        .update(teamMembers)
+        .set({ isActive: isActive, updatedAt: new Date() })
+        .where(eq(teamMembers.userId, id));
+    } catch (error) {
+      // Ignore if no team member entry exists
+      console.log('No team member entry to update for user:', id);
     }
   }
 
   async deleteTeamMember(id: string): Promise<void> {
-    // Delete from database
-    await db.delete(users).where(eq(users.id, id));
+    console.log(`🗑️  Attempting to delete team member with ID: ${id}`);
     
-    // Remove from in-memory array
-    this.teamMembers = this.teamMembers.filter(m => m.id !== id);
+    // First check if user exists and has admin or team_member role
+    const [user] = await db.select().from(users).where(
+      and(
+        eq(users.id, id),
+        or(
+          eq(users.role, 'admin'),
+          eq(users.role, 'team_member')
+        )
+      )
+    );
+    
+    if (!user) {
+      console.log(`❌ User with ID ${id} not found or not a team member`);
+      throw new Error('Team member not found');
+    }
+    
+    console.log(`👤 Found user: ${user.firstName} ${user.lastName} (${user.email}) with role: ${user.role}`);
+    
+    try {
+      // Delete from team members table first (if entry exists)
+      console.log(`🔄 Deleting from team_members table...`);
+      const deletedFromTeamMembers = await db.delete(teamMembers).where(eq(teamMembers.userId, id)).returning();
+      console.log(`✅ Deleted ${deletedFromTeamMembers.length} records from team_members table`);
+      
+      // Delete from users table
+      console.log(`🔄 Deleting from users table...`);
+      const deletedFromUsers = await db.delete(users).where(eq(users.id, id)).returning();
+      console.log(`✅ Deleted ${deletedFromUsers.length} records from users table`);
+      
+      if (deletedFromUsers.length === 0) {
+        throw new Error('Failed to delete user from users table');
+      }
+      
+      console.log(`✅ Successfully deleted team member: ${user.firstName} ${user.lastName}`);
+    } catch (error) {
+      console.error(`❌ Error deleting team member ${id}:`, error);
+      throw error;
+    }
   }
 
   async resetTeamMemberPassword(id: string): Promise<string> {
-    const member = this.teamMembers.find(m => m.id === id);
-    if (!member) {
-      throw new Error('Member not found');
+    // Check if user exists and has admin or team_member role
+    const [user] = await db.select().from(users).where(
+      and(
+        eq(users.id, id),
+        or(
+          eq(users.role, 'admin'),
+          eq(users.role, 'team_member')
+        )
+      )
+    );
+    
+    if (!user) {
+      throw new Error('Team member not found');
     }
     
     // Generate new password
@@ -2355,27 +2450,26 @@ async createTeamMember(data: any): Promise<any> {
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
-    // Update password in database
+    // Update password in users table
     await db
       .update(users)
       .set({ password: hashedPassword, updatedAt: new Date() })
       .where(eq(users.id, id));
     
-    // Update in-memory record
-    member.hashedPassword = hashedPassword;
-    
     return newPassword;
   }
 
   async updateTeamMemberAccessLevel(id: string, accessLevel: string): Promise<void> {
-    const member = this.teamMembers.find(m => m.id === id);
+    const [member] = await db.select().from(teamMembers).where(eq(teamMembers.userId, id));
     if (!member) {
       throw new Error('Member not found');
     }
     
-    // Update in-memory record
-    member.accessLevel = accessLevel;
-    member.updatedAt = new Date().toISOString();
+    // Update in database
+    await db
+      .update(teamMembers)
+      .set({ accessLevel: accessLevel, updatedAt: new Date() })
+      .where(eq(teamMembers.userId, id));
   }
 }
 

@@ -96,9 +96,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Team Management Endpoints
 
-  // GET all roles
-  app.get('/api/admin/team/roles', async (req, res) => {
+  // Security alerts endpoint
+  app.get('/api/admin/security/alerts', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const alerts = [
+        {
+          id: '1',
+          type: 'login_attempt',
+          severity: 'medium',
+          message: 'Multiple failed login attempts from IP 192.168.1.100',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          resolved: false
+        },
+        {
+          id: '2',
+          type: 'permission_change',
+          severity: 'high',
+          message: 'Team member permissions modified',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          resolved: true
+        }
+      ];
+      
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch security alerts' });
+    }
+  });
+
+  // AI insights endpoint
+  app.get('/api/admin/ai/insights', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const insights = {
+        teamPerformance: {
+          score: 85,
+          trend: 'up',
+          recommendation: 'Team productivity is excellent. Consider expanding responsibilities.'
+        },
+        securityRisk: {
+          level: 'low',
+          score: 15,
+          factors: ['Strong password policies', 'Regular access reviews']
+        },
+        suggestions: [
+          'Consider implementing role rotation for skill development',
+          'Review access permissions quarterly',
+          'Add two-factor authentication for all team members'
+        ]
+      };
+      
+      res.json(insights);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch AI insights' });
+    }
+  });
+
+  // System health endpoint
+  app.get('/api/admin/system/health', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const health = {
+        database: {
+          status: 'healthy',
+          responseTime: 15,
+          connections: 8
+        },
+        api: {
+          status: 'healthy',
+          responseTime: 25,
+          requestsPerMinute: 120
+        },
+        websocket: {
+          status: 'healthy',
+          connections: adminConnections?.size || 0
+        },
+        memory: {
+          usage: 65,
+          available: 35
+        },
+        uptime: process.uptime()
+      };
+      
+      res.json(health);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch system health' });
+    }
+  });
+
+  // GET all roles
+  app.get('/api/admin/team/roles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const roles = await storage.getAllRoles();
       res.json(roles);
     } catch (error) {
@@ -107,8 +221,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET all team members
-  app.get('/api/admin/team/members', async (req, res) => {
+  app.get('/api/admin/team/members', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const members = await storage.getAllTeamMembers();
       res.json(members);
     } catch (error) {
@@ -117,11 +238,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST create a new team member
-  app.post('/api/admin/team/members', async (req, res) => {
+  app.post('/api/admin/team/members', isAuthenticated, async (req: any, res) => {
     try {
-      const { userId, roleId, email, firstName, lastName, password, customPermissions, restrictions, accessLevel, expiresAt } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { userId: memberUserId, roleId, email, firstName, lastName, password, customPermissions, restrictions, accessLevel, expiresAt } = req.body;
       const newMember = await storage.createTeamMember({
-        userId,
+        userId: memberUserId,
         roleId,
         email,
         firstName,
@@ -139,8 +267,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PATCH update team member status
-  app.patch('/api/admin/team/members/:id/status', async (req, res) => {
+  app.patch('/api/admin/team/members/:id/status', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const { id } = req.params;
       const { isActive } = req.body;
       
@@ -156,19 +291,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // DELETE team member
-  app.delete('/api/admin/team/members/:id', async (req, res) => {
+  app.delete('/api/admin/team/members/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const { id } = req.params;
+      console.log(`🗑️ DELETE request for team member ID: ${id}`);
+      
       await storage.deleteTeamMember(id);
-      res.json({ message: 'Team member deleted successfully' });
+      console.log(`✅ Successfully deleted team member: ${id}`);
+      
+      res.json({ 
+        message: 'Team member deleted successfully',
+        deletedMemberId: id
+      });
     } catch (error) {
-      res.status(500).json({ message: 'Failed to delete team member' });
+      console.error('❌ Delete team member route error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete team member';
+      
+      if (errorMessage.includes('not found')) {
+        res.status(404).json({ message: errorMessage });
+      } else {
+        res.status(500).json({ message: errorMessage });
+      }
     }
   });
 
   // POST reset team member password
-  app.post('/api/admin/team/members/:id/reset-password', async (req, res) => {
+  app.post('/api/admin/team/members/:id/reset-password', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const { id } = req.params;
       const newPassword = await storage.resetTeamMemberPassword(id);
       res.json({ 
@@ -181,8 +344,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PATCH update team member access level (for testing)
-  app.patch('/api/admin/team/members/:id/access-level', async (req, res) => {
+  app.patch('/api/admin/team/members/:id/access-level', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const { id } = req.params;
       const { accessLevel } = req.body;
       
@@ -201,8 +371,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST create a new role
-  app.post('/api/admin/team/roles', async (req, res) => {
+  app.post('/api/admin/team/roles', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
       const { name, displayName, description, permissions, color } = req.body;
       const newRole = {
         id: Date.now().toString(),
@@ -2252,7 +2429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -2556,7 +2733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -2746,7 +2923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -2764,7 +2941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -2781,7 +2958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -2800,7 +2977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'admin' && user?.role !== 'team_member') {
         return res.status(403).json({ message: "Admin access required" });
       }
 

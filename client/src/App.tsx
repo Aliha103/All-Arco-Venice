@@ -1,10 +1,10 @@
+import React, { Suspense, useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { StackHandler, StackProvider, StackTheme } from "@stackframe/react";
-import { Suspense, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useBrowserCloseHandler } from "@/hooks/useBrowserCloseHandler";
 import Home from "@/pages/home";
@@ -24,15 +24,15 @@ import { stackClientApp } from "./stack";
 import CelebrationModal from "@/components/CelebrationModal";
 import { WebSocketService, createWebSocketUrl } from "@/services/WebSocketService";
 
-function StackHandlerRoutes() {
+const StackHandlerRoutes: React.FC = () => {
   const [location] = useLocation();
   
   return (
     <StackHandler app={stackClientApp} location={location} fullPage />
   );
-}
+};
 
-function Router() {
+const Router: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
@@ -67,9 +67,9 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
-}
+};
 
-function App() {
+const App: React.FC = () => {
   // Handle browser close events and localStorage cleanup
   useBrowserCloseHandler();
   
@@ -136,6 +136,6 @@ function App() {
       </StackProvider>
     </Suspense>
   );
-}
+};
 
 export default App;

@@ -267,7 +267,7 @@ const KEYBOARD_SHORTCUTS = {
   'ctrl+e': 'export data'
 };
 
-export default function AdvancedTeamManagement() {
+const AdvancedTeamManagement: React.FC = () => {
   // Core state
   const [activeTab, setActiveTab] = useState<'members' | 'roles' | 'permissions' | 'analytics' | 'security'>('members');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -328,7 +328,7 @@ export default function AdvancedTeamManagement() {
       requiresMFA: false,
       sessionTimeout: 3600,
       passwordPolicy: 'standard' as const,
-      auditLevel: 'basic' as const
+      auditLevel: 'basic' as 'basic' | 'detailed' | 'comprehensive'
     },
     inheritedRoles: [] as string[],
     conditionalPermissions: [] as Array<{condition: string; permissions: string[]}>,
@@ -370,6 +370,8 @@ export default function AdvancedTeamManagement() {
     read: boolean;
   }>>([]);
   
+  // Helper function to safely access arrays
+  const safeArray = <T,>(arr: T[] | null | undefined): T[] => Array.isArray(arr) ? arr : [];
   
   // Form states
   const [newMember, setNewMember] = useState({
@@ -399,7 +401,7 @@ export default function AdvancedTeamManagement() {
   useEffect(() => {
     if (realTimeUpdates) {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/team-management`;
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
       
       wsRef.current = new WebSocket(wsUrl);
       
@@ -469,6 +471,25 @@ export default function AdvancedTeamManagement() {
     fetchAIInsights();
     fetchSystemHealth();
   }, []);
+
+
+  // Handle escape key for Create Role modal
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showCreateRole) {
+        setShowCreateRole(false);
+        resetNewRoleForm();
+      }
+    };
+
+    if (showCreateRole) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showCreateRole]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -595,9 +616,11 @@ export default function AdvancedTeamManagement() {
       const response = await fetch('/api/admin/security/alerts', {
         credentials: 'include'
       });
-      const data = await response.json();
       if (response.ok) {
+        const data = await response.json();
         setSecurityAlerts(data);
+      } else {
+        console.warn('Failed to fetch security alerts:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch security alerts:', error);
@@ -609,9 +632,13 @@ export default function AdvancedTeamManagement() {
       const response = await fetch('/api/admin/ai/insights', {
         credentials: 'include'
       });
-      const data = await response.json();
       if (response.ok) {
-        setAiInsights(data);
+        const data = await response.json();
+        // Ensure data is an array before setting it
+        setAiInsights(Array.isArray(data) ? data : []);
+      } else {
+        console.warn('Failed to fetch AI insights:', response.status, response.statusText);
+        setAiInsights([]);
       }
     } catch (error) {
       console.error('Failed to fetch AI insights:', error);
@@ -623,9 +650,11 @@ export default function AdvancedTeamManagement() {
       const response = await fetch('/api/admin/system/health', {
         credentials: 'include'
       });
-      const data = await response.json();
       if (response.ok) {
+        const data = await response.json();
         setSystemHealth(data);
+      } else {
+        console.warn('Failed to fetch system health:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch system health:', error);
@@ -1074,7 +1103,7 @@ export default function AdvancedTeamManagement() {
 
   // Memoized filtered data
   const filteredMembers = useMemo(() => {
-    return teamMembers.filter(member => {
+    return safeArray(teamMembers).filter(member => {
       const matchesSearch = 
         member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1094,11 +1123,11 @@ export default function AdvancedTeamManagement() {
   }, [teamMembers, searchQuery, filterRole, filterAccessLevel, filterRiskLevel]);
 
   const activeSecurityAlerts = useMemo(() => {
-    return securityAlerts.filter(alert => !alert.resolved);
+    return safeArray(securityAlerts).filter(alert => !alert.resolved);
   }, [securityAlerts]);
 
   const highPriorityInsights = useMemo(() => {
-    return aiInsights.filter(insight => insight.impact === 'high');
+    return safeArray(aiInsights).filter(insight => insight.impact === 'high');
   }, [aiInsights]);
 
   return (
@@ -1127,7 +1156,7 @@ export default function AdvancedTeamManagement() {
               </div>
               <div className="stat-chip">
                 <Activity className="stat-chip-icon" />
-                <span>{teamMembers.filter(m => m.isActive).length} Active</span>
+                <span>{safeArray(teamMembers).filter(m => m.isActive).length} Active</span>
               </div>
               <div className="stat-chip">
                 {connectionStatus === 'connected' ? (
@@ -1160,6 +1189,15 @@ export default function AdvancedTeamManagement() {
               <Network className="health-icon" />
               <span className={getSystemHealthColor(systemHealth.network)}>
                 {systemHealth.network}%
+              </span>
+            </div>
+            <div className="health-item">
+              <HardDrive className="health-icon" />
+              <span className={getSystemHealthColor(typeof systemHealth.disk === 'object' ? (systemHealth.disk as any)?.usage || 0 : systemHealth.disk)}>
+                {typeof systemHealth.disk === 'object' ? 
+                  `${(systemHealth.disk as any)?.usage || 0}/${(systemHealth.disk as any)?.available || 0}` : 
+                  `${systemHealth.disk}%`
+                }
               </span>
             </div>
           </div>
@@ -2473,7 +2511,15 @@ export default function AdvancedTeamManagement() {
 
       {/* Step-wise Create Role Modal */}
       {showCreateRole && (
-        <div className="modal-overlay enhanced">
+        <div 
+          className="modal-overlay enhanced"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateRole(false);
+              resetNewRoleForm();
+            }
+          }}
+        >
           <div className="modal-content large step-wizard">
             <div className="modal-header">
               <h2 className="modal-title">
@@ -2645,7 +2691,7 @@ export default function AdvancedTeamManagement() {
                               } else {
                                 setNewRole({
                                   ...newRole,
-                                  permissions: [...new Set([...newRole.permissions, ...categoryPermissions])]
+                                  permissions: Array.from(new Set([...newRole.permissions, ...categoryPermissions]))
                                 });
                               }
                             }}
@@ -3053,4 +3099,6 @@ export default function AdvancedTeamManagement() {
       </div>
     </div>
   );
-}
+};
+
+export default AdvancedTeamManagement;
