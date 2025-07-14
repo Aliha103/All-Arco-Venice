@@ -605,6 +605,58 @@ export const guestReviewSchema = z.object({
   communicationRating: z.number().min(1).max(5).optional(),
 });
 
+// Chat system schemas
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastMessageAt: true,
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChatParticipantSchema = createInsertSchema(chatParticipants).omit({
+  id: true,
+  joinedAt: true,
+  lastSeenAt: true,
+});
+
+export const insertMessageDeliverySchema = createInsertSchema(messageDelivery).omit({
+  id: true,
+  deliveredAt: true,
+});
+
+// Chat validation schemas
+export const startChatSchema = z.object({
+  guestName: z.string().min(1, "Name is required").max(100, "Name too long").optional(),
+  guestEmail: z.string().email("Valid email is required").optional(),
+  subject: z.string().min(1, "Subject is required").max(255, "Subject too long").optional(),
+  message: z.string().min(1, "Message is required").max(2000, "Message too long"),
+  userId: z.string().optional(),
+});
+
+export const sendMessageSchema = z.object({
+  conversationId: z.number().positive("Valid conversation ID required"),
+  content: z.string().min(1, "Message content is required").max(2000, "Message too long"),
+  messageType: z.enum(["text", "image", "file", "system"]).default("text"),
+  attachments: z.array(z.object({
+    url: z.string().url("Valid URL required"),
+    name: z.string().min(1, "File name required"),
+    size: z.number().positive("Valid file size required"),
+    type: z.string().min(1, "File type required"),
+  })).optional(),
+  replyTo: z.number().positive().optional(),
+});
+
+export const findReservationSchema = z.object({
+  confirmationCode: z.string().min(1, "Confirmation code is required").max(12, "Invalid confirmation code"),
+  email: z.string().email("Valid email address is required"),
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
