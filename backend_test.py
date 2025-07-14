@@ -441,6 +441,41 @@ class BackendTester:
             self.print_summary()
             return False
         
+        # Test booking lookup first (since it's working)
+        print("\n🔍 Testing Booking Lookup APIs...")
+        # Create a test booking first
+        print("Creating test booking for lookup tests...")
+        booking_response = self.session.post(
+            f"{self.base_url}/api/bookings",
+            json={
+                "guestFirstName": "Test",
+                "guestLastName": "User", 
+                "guestEmail": "test@example.com",
+                "guestCountry": "Test",
+                "guestPhone": "123456789",
+                "checkInDate": "2025-12-28",
+                "checkOutDate": "2025-12-30",
+                "guests": 2,
+                "paymentMethod": "property",
+                "createdBy": "guest"
+            },
+            headers={"Content-Type": "application/json"}
+        )
+        
+        if booking_response.status_code == 200:
+            booking_data = booking_response.json()
+            confirmation_code = booking_data.get("confirmationCode")
+            print(f"✅ Test booking created with confirmation code: {confirmation_code}")
+            
+            # Test with real booking data
+            self.test_booking_lookup_find_real(confirmation_code, "test@example.com")
+            self.test_booking_lookup_download_real(confirmation_code, "test@example.com")
+        else:
+            print(f"⚠️ Could not create test booking: {booking_response.status_code}")
+            # Fall back to original tests
+            self.test_booking_lookup_find()
+            self.test_booking_lookup_download()
+        
         # Test chat system
         print("\n📱 Testing Chat System APIs...")
         guest_conversation_id = self.test_chat_start_guest()
