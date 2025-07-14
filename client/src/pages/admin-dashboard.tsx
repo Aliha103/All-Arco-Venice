@@ -69,7 +69,8 @@ import {
   Gift,
   Cake,
   Filter,
-  Upload
+  Upload,
+  MessageSquare
 } from "lucide-react";
 
 import SmoobuCalendar from "@/components/SmoobuCalendar";
@@ -80,6 +81,7 @@ import Bookings from "@/components/Bookings";
 import BookingInfo from "@/components/BookingInfo";
 import ReviewsSection from "@/components/reviews-section";
 import AdvancedTeamManagement from "@/components/AdvancedTeamManagement";
+import { AdminChatDashboard } from "@/components/AdminChatDashboard";
 
 
 interface Analytics {
