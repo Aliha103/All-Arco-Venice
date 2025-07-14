@@ -444,6 +444,57 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   }),
 }));
 
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [conversations.userId],
+    references: [users.id],
+  }),
+  assignedAdmin: one(users, {
+    fields: [conversations.assignedTo],
+    references: [users.id],
+  }),
+  messages: many(chatMessages),
+  participants: many(chatParticipants),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
+  conversation: one(conversations, {
+    fields: [chatMessages.conversationId],
+    references: [conversations.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+  replyToMessage: one(chatMessages, {
+    fields: [chatMessages.replyTo],
+    references: [chatMessages.id],
+  }),
+  deliveries: many(messageDelivery),
+}));
+
+export const chatParticipantsRelations = relations(chatParticipants, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [chatParticipants.conversationId],
+    references: [conversations.id],
+  }),
+  user: one(users, {
+    fields: [chatParticipants.userId],
+    references: [users.id],
+  }),
+}));
+
+export const messageDeliveryRelations = relations(messageDelivery, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [messageDelivery.messageId],
+    references: [chatMessages.id],
+  }),
+  recipient: one(users, {
+    fields: [messageDelivery.recipientId],
+    references: [users.id],
+  }),
+}));
+
 export const messagesRelations = relations(messages, ({ one }) => ({
   user: one(users, {
     fields: [messages.userId],
