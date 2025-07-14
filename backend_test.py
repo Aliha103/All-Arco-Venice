@@ -434,6 +434,13 @@ class BackendTester:
         print("🚀 Starting Backend API Tests for Enhanced Chat System & Find Reservation Features")
         print("=" * 80)
         
+        # Test server health first
+        print("\n🏥 Testing Server Health...")
+        if not self.test_server_health():
+            print("❌ Server health check failed. Stopping tests.")
+            self.print_summary()
+            return False
+        
         # Test chat system
         print("\n📱 Testing Chat System APIs...")
         guest_conversation_id = self.test_chat_start_guest()
