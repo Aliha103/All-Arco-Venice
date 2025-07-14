@@ -1542,6 +1542,9 @@ export default function Landing() {
         onClose={closeModal}
       />
 
+      {/* Chat Widget */}
+      <ChatWidget />
+
     </div>
   );
 }
