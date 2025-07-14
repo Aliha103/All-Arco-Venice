@@ -31,6 +31,7 @@ import { FindReservationModal } from "@/components/FindReservationModal";
 export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isFindReservationOpen, setIsFindReservationOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // All hooks must be called unconditionally
