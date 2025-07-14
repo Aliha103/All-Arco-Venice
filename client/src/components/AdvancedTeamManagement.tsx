@@ -350,7 +350,7 @@ const AdvancedTeamManagement: React.FC = () => {
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [systemHealth, setSystemHealth] = useState({
     cpu: 45,
-    memory: 67,
+    memory: { usage: 67, available: 33 },
     disk: 32,
     network: 89
   });
@@ -1181,8 +1181,11 @@ const AdvancedTeamManagement: React.FC = () => {
             </div>
             <div className="health-item">
               <HardDrive className="health-icon" />
-              <span className={getSystemHealthColor(systemHealth.memory)}>
-                {systemHealth.memory}%
+              <span className={getSystemHealthColor(typeof systemHealth.memory === 'object' ? (systemHealth.memory as any)?.usage || 0 : systemHealth.memory)}>
+                {typeof systemHealth.memory === 'object' ? 
+                  `${(systemHealth.memory as any)?.usage || 0}%` : 
+                  `${systemHealth.memory}%`
+                }
               </span>
             </div>
             <div className="health-item">
