@@ -20,6 +20,18 @@ dotenv.config();
 
 
 const app = express();
+
+// CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://code-glimpse-3.preview.emergentagent.com',
+    /\.preview\.emergentagent\.com$/,
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
