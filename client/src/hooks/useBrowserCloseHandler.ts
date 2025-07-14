@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { queryClient } from '@/lib/queryClient';
 import { sessionManager } from '@/lib/sessionManager';
 
