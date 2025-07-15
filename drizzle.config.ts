@@ -8,7 +8,11 @@ export default defineConfig({
   out: "./migrations",
   schema: ["./shared/schema.ts", "./server/db/pms-schema.ts"],
   dialect: "postgresql",
+  driver: "neon-serverless",
   dbCredentials: {
     url: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
   },
 });
