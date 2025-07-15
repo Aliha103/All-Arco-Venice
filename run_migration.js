@@ -1,6 +1,6 @@
-const { Pool } = require('@neondatabase/serverless');
-const fs = require('fs');
-const dotenv = require('dotenv');
+import { Pool } from '@neondatabase/serverless';
+import fs from 'fs';
+import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
