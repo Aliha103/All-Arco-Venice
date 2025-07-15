@@ -74,16 +74,22 @@ export function AdminChatDashboard({ className }: AdminChatDashboardProps) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/chat?isAdmin=true`;
     
+    console.log('🔌 Admin connecting to WebSocket:', wsUrl);
     const websocket = new WebSocket(wsUrl);
     
     websocket.onopen = () => {
-      console.log('🔌 Admin Chat WebSocket connected');
+      console.log('✅ Admin Chat WebSocket connected');
       setWs(websocket);
     };
     
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      handleWebSocketMessage(data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📨 Admin received WebSocket message:', data.type, data);
+        handleWebSocketMessage(data);
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
     };
     
     websocket.onclose = () => {
@@ -91,8 +97,12 @@ export function AdminChatDashboard({ className }: AdminChatDashboardProps) {
       setWs(null);
     };
     
+    websocket.onerror = (error) => {
+      console.error('❌ Admin WebSocket error:', error);
+    };
+    
     return () => {
-      if (websocket) {
+      if (websocket.readyState === WebSocket.OPEN) {
         websocket.close();
       }
     };
@@ -388,6 +398,12 @@ export function AdminChatDashboard({ className }: AdminChatDashboardProps) {
                               : conversation.guestName || 'Guest'
                             }
                           </p>
+                          <Badge 
+                            variant={conversation.user ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {conversation.user ? "Registered" : "Guest"}
+                          </Badge>
                           {conversation.unreadCount > 0 && (
                             <Badge variant="destructive" className="text-xs">
                               {conversation.unreadCount}
@@ -440,12 +456,20 @@ export function AdminChatDashboard({ className }: AdminChatDashboardProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-medium">
-                      {selectedConversation.user 
-                        ? `${selectedConversation.user.firstName} ${selectedConversation.user.lastName}`
-                        : selectedConversation.guestName || 'Guest'
-                      }
-                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-medium">
+                        {selectedConversation.user 
+                          ? `${selectedConversation.user.firstName} ${selectedConversation.user.lastName}`
+                          : selectedConversation.guestName || 'Guest'
+                        }
+                      </h3>
+                      <Badge 
+                        variant={selectedConversation.user ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {selectedConversation.user ? "Registered" : "Guest"}
+                      </Badge>
+                    </div>
                     <p className="text-sm text-gray-500">
                       {selectedConversation.user?.email || selectedConversation.guestEmail}
                     </p>

@@ -14,7 +14,7 @@ export function useAuth() {
       return failureCount < 2;
     },
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes (reduced for better admin checks)
-    refetchOnWindowFocus: true, // Enable refetch on window focus for admin checks
+    refetchOnWindowFocus: false, // Disable refetch on window focus to prevent chat widget re-renders
     refetchInterval: false,
     refetchOnMount: true,
     refetchOnReconnect: true,

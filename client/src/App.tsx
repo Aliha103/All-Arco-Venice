@@ -22,7 +22,7 @@ import NotFound from "@/pages/not-found";
 import OAuthDebug from "@/pages/oauth-debug";
 import { stackClientApp } from "./stack";
 import CelebrationModal from "@/components/CelebrationModal";
-import { WebSocketService, createWebSocketUrl } from "@/services/WebSocketService";
+// DISABLED: import { WebSocketService, createWebSocketUrl } from "@/services/WebSocketService";
 
 const StackHandlerRoutes: React.FC = () => {
   const [location] = useLocation();
@@ -77,26 +77,26 @@ const App: React.FC = () => {
   const [celebrationData, setCelebrationData] = useState<any>(null);
   const [isModalOpen, setModalOpen] = useState(false);
 
-  // WebSocket connection for celebrations
-  useEffect(() => {
-    const webSocketService = new WebSocketService({ url: createWebSocketUrl() });
-    webSocketService.connect();
+  // WebSocket connection for celebrations - DISABLED
+  // useEffect(() => {
+  //   const webSocketService = new WebSocketService({ url: createWebSocketUrl() });
+  //   webSocketService.connect();
 
-    const handleCelebrationMessage = (message: any) => {
-      if (message.type === 'celebration_notification') {
-        console.log('🎉 Received celebration notification:', message.data);
-        setCelebrationData(message.data);
-        setModalOpen(true);
-      }
-    };
+  //   const handleCelebrationMessage = (message: any) => {
+  //     if (message.type === 'celebration_notification') {
+  //       console.log('🎉 Received celebration notification:', message.data);
+  //       setCelebrationData(message.data);
+  //       setModalOpen(true);
+  //     }
+  //   };
 
-    webSocketService.on('celebration_notification', handleCelebrationMessage);
+  //   webSocketService.on('celebration_notification', handleCelebrationMessage);
 
-    return () => {
-      webSocketService.off('celebration_notification', handleCelebrationMessage);
-      webSocketService.disconnect();
-    };
-  }, []);
+  //   return () => {
+  //     webSocketService.off('celebration_notification', handleCelebrationMessage);
+  //     webSocketService.disconnect();
+  //   };
+  // }, []);
 
   // Test celebration event listener for development
   useEffect(() => {

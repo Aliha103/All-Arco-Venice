@@ -33,34 +33,68 @@ export class WebSocketService {
   private config: Required<WebSocketConfig>;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private connectTimer: NodeJS.Timeout | null = null;
   private reconnectAttempts = 0;
   private eventHandlers = new Map<string, WebSocketEventHandler[]>();
   private stateHandlers: ConnectionStateHandler[] = [];
   private currentState: WebSocketState = WebSocketState.DISCONNECTED;
+  private isDestroyed = false;
 
   constructor(config: WebSocketConfig) {
     this.config = {
-      reconnectInterval: 3000,
-      maxReconnectAttempts: 5,
+      reconnectInterval: 2000,
+      maxReconnectAttempts: 10,
       heartbeatInterval: 30000,
       ...config
     };
   }
 
   /**
-   * Connect to WebSocket server
+   * Connect to WebSocket server with a delay
+   */
+  public connectDelayed(delay: number = 0): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    if (this.connectTimer) {
+      clearTimeout(this.connectTimer);
+    }
+
+    this.connectTimer = setTimeout(() => {
+      this.connectImmediately();
+    }, delay);
+  }
+
+  /**
+   * Connect to WebSocket server immediately
    */
   public connect(): void {
+    this.connectImmediately();
+  }
+
+  private connectImmediately(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
 
+    // If we're already connecting, don't start another connection
+    if (this.ws?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
+
+    console.log('🔄 Attempting WebSocket connection to:', this.config.url);
     this.setState(WebSocketState.CONNECTING);
     
     try {
       this.ws = new WebSocket(this.config.url, this.config.protocols);
       this.setupEventListeners();
     } catch (error) {
+      console.error('Failed to create WebSocket:', error);
       this.handleError(error);
     }
   }
@@ -163,9 +197,22 @@ export class WebSocketService {
     this.ws.onclose = (event) => {
       this.clearTimers();
       
+      console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
+      
       if (event.code !== 1000) { // Not a normal closure
         this.setState(WebSocketState.DISCONNECTED);
-        this.scheduleReconnect();
+        // Handle different closure codes
+        if (event.code === 1006) {
+          // 1006 is abnormal closure, often due to network issues
+          console.warn('WebSocket closed abnormally (1006), will retry with delay');
+          setTimeout(() => {
+            if (!this.isDestroyed) {
+              this.scheduleReconnect();
+            }
+          }, 2000);
+        } else if (event.code !== 1001) { // 1001 is going away (page unload)
+          this.scheduleReconnect();
+        }
       } else {
         this.setState(WebSocketState.DISCONNECTED);
       }
@@ -190,6 +237,10 @@ export class WebSocketService {
   }
 
   private scheduleReconnect(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
       this.setState(WebSocketState.ERROR);
       return;
@@ -199,7 +250,7 @@ export class WebSocketService {
     this.reconnectAttempts++;
     
     this.reconnectTimer = setTimeout(() => {
-      this.connect();
+      this.connectImmediately();
     }, this.config.reconnectInterval);
   }
 
@@ -221,6 +272,11 @@ export class WebSocketService {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
+
+    if (this.connectTimer) {
+      clearTimeout(this.connectTimer);
+      this.connectTimer = null;
+    }
   }
 
   private setState(state: WebSocketState): void {
@@ -239,12 +295,18 @@ export class WebSocketService {
   private handleError(error: any): void {
     console.error('WebSocket error:', error);
     this.setState(WebSocketState.ERROR);
+    
+    // If we're not already trying to reconnect, schedule one
+    if (this.reconnectAttempts < this.config.maxReconnectAttempts) {
+      this.scheduleReconnect();
+    }
   }
 
   /**
    * Cleanup and destroy the service
    */
   public destroy(): void {
+    this.isDestroyed = true;
     this.disconnect();
     this.eventHandlers.clear();
     this.stateHandlers.length = 0;
@@ -260,4 +322,22 @@ export function createWebSocketUrl(): string {
   const port = hostname === 'localhost' || hostname === '127.0.0.1' ? '3000' : window.location.port;
   
   return `${protocol}//${hostname}:${port}/ws`;
+}
+
+/**
+ * Check if the server is available before attempting WebSocket connection
+ */
+export async function isServerAvailable(): Promise<boolean> {
+  try {
+    // Try to fetch any API endpoint to check if server is available
+    const response = await fetch('/api/auth/user', { 
+      method: 'GET',
+      timeout: 3000
+    } as RequestInit);
+    // Even if we get 401, it means server is available
+    return response.status !== 0;
+  } catch (error) {
+    console.warn('Server health check failed:', error);
+    return false;
+  }
 }

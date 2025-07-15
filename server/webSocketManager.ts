@@ -177,15 +177,27 @@ export class WebSocketManager {
   // Public methods for sending notifications
   static notifyUser(userId: string, type: string, data: any) {
     const instance = WebSocketManager.getInstance();
+    let delivered = false;
     
+    console.log(`🔔 Looking for user ${userId} among ${instance.connections.size} connections`);
     for (const [connectionId, connection] of instance.connections) {
+      console.log(`🔍 Checking connection ${connectionId}: userId=${connection.userId}, readyState=${connection.ws.readyState}`);
       if (connection.userId === userId && connection.ws.readyState === WebSocket.OPEN) {
+        console.log(`✅ Found matching connection for ${userId}, sending message`);
         connection.ws.send(JSON.stringify({
           type,
           data,
           timestamp: new Date().toISOString()
         }));
+        delivered = true;
       }
+    }
+    
+    // If message was delivered via WebSocket, notify about delivery status
+    if (delivered && type === 'new_message' && data.message?.id) {
+      setTimeout(() => {
+        instance.broadcastStatusUpdate(data.message.id, 'delivered');
+      }, 100);
     }
   }
 
@@ -227,6 +239,19 @@ export class WebSocketManager {
       adminConnections: instance.adminConnections.size,
       userConnections: instance.connections.size - instance.adminConnections.size
     };
+  }
+
+  private broadcastStatusUpdate(messageId: number, status: string) {
+    for (const [connectionId, connection] of this.connections) {
+      if (connection.ws.readyState === WebSocket.OPEN) {
+        connection.ws.send(JSON.stringify({
+          type: 'message_status',
+          messageId,
+          status,
+          timestamp: new Date().toISOString()
+        }));
+      }
+    }
   }
 }
 

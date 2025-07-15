@@ -57,7 +57,8 @@ import {
   type InsertActivityTimeline,
   type ActivityTimeline,
 } from "../shared/schema";
-// PMS imports removed - not available in current schema
+import { teamMembers } from "./db/admin-schema";
+import { pmsIntegrations, pmsBookings, pmsReviews, pmsMessages } from "./db/pms-schema";
 import { db } from "./db";
 import { eq, desc, and, or, gte, lte, lt, gt, count, sql, not, ne } from "drizzle-orm";
 
@@ -2288,9 +2289,9 @@ async getAllTeamMembers(): Promise<any[]> {
         lastAccessAt: teamMemberInfo?.lastAccessAt || user.lastLoginAt,
         expiresAt: teamMemberInfo?.expiresAt || null,
         createdAt: teamMemberInfo?.createdAt || user.createdAt,
-        riskScore: teamMemberInfo?.riskScore || (user.role === 'admin' ? 10 : 25),
-        deviceInfo: teamMemberInfo?.deviceInfo || {},
-        location: teamMemberInfo?.location || {},
+        riskScore: (user.role === 'admin' ? 10 : 25),
+        deviceInfo: {},
+        location: {},
         // Add default values for enhanced properties expected by the frontend
         loginHistory: [],
         securityEvents: [],
@@ -2306,7 +2307,7 @@ async getAllTeamMembers(): Promise<any[]> {
         },
         aiInsights: {
           productivity: 75 + Math.floor(Math.random() * 20),
-          riskPrediction: teamMemberInfo?.riskScore || (user.role === 'admin' ? 10 : 25),
+          riskPrediction: (user.role === 'admin' ? 10 : 25),
           recommendations: [],
           anomalies: []
         }
@@ -2357,6 +2358,7 @@ async createTeamMember(data: any): Promise<any> {
       .insert(teamMembers)
       .values({
         userId: userId,
+        adminId: 'admin', // TODO: get from context
         roleId: role.id,
         customPermissions: data.customPermissions || [],
         restrictions: data.restrictions || [],
@@ -2554,7 +2556,7 @@ async createTeamMember(data: any): Promise<any> {
     return newPassword;
   }
 
-  async updateTeamMemberAccessLevel(id: string, accessLevel: string): Promise<void> {
+  async updateTeamMemberAccessLevel(id: string, accessLevel: "full" | "limited" | "read_only" | "custom"): Promise<void> {
     const [member] = await db.select().from(teamMembers).where(eq(teamMembers.userId, id));
     if (!member) {
       throw new Error('Member not found');

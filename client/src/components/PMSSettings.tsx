@@ -397,76 +397,11 @@ const PMSSettings: React.FC = () => {
 
   // Use main WebSocket connection for real-time updates
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-
-    let ws: WebSocket;
-
-    try {
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log("PMS WebSocket connected for real-time updates");
-      };
-
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        
-        switch (message.type) {
-          case 'pms_sync_progress':
-            const data = message.data;
-            setSyncProgress((prev) => ({
-              ...prev,
-              [data.integrationId]: data,
-            }));
-
-            // Remove progress after completion
-            if (data.progress === 100) {
-              setTimeout(() => {
-                setSyncProgress((prev) => {
-                  const newProgress = { ...prev };
-                  delete newProgress[data.integrationId];
-                  return newProgress;
-                });
-                // Refresh data after sync completion
-                fetchIntegrations();
-                fetchHealthMetrics();
-                fetchBookingStats();
-              }, 2000);
-            }
-            break;
-
-          case 'pms_integration_update':
-            // Refresh PMS data when integrations change
-            fetchIntegrations();
-            fetchHealthMetrics();
-            break;
-
-          case 'database_status_update':
-            // Update database connection status
-            checkDatabaseConnection();
-            break;
-
-          case 'pms_booking_stats_update':
-            // Refresh booking statistics
-            fetchBookingStats();
-            break;
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error("PMS WebSocket error:", error);
-      };
-
-      ws.onclose = () => {
-        console.log("PMS WebSocket disconnected");
-      };
-    } catch (error) {
-      console.error("Failed to connect PMS WebSocket:", error);
-    }
-
+    // DISABLED: PMS WebSocket functionality
+    // WebSocket connections have been disabled to prevent page load interruptions
+    
     return () => {
-      if (ws) ws.close();
+      // No cleanup needed - WebSocket disabled
     };
   }, [fetchIntegrations, fetchHealthMetrics, fetchBookingStats, checkDatabaseConnection]);
 

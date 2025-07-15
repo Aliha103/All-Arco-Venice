@@ -650,6 +650,8 @@ export const sendMessageSchema = z.object({
     type: z.string().min(1, "File type required"),
   })).optional(),
   replyTo: z.number().positive().optional(),
+  senderName: z.string().optional(),
+  senderEmail: z.string().email().optional(),
 });
 
 export const findReservationSchema = z.object({

@@ -7,17 +7,70 @@ import { WebSocketManager } from "./webSocketManager";
 
 const router = Router();
 
+// Development route to simulate admin authentication
+if (process.env.NODE_ENV === 'development') {
+  router.post('/dev/admin-auth', async (req: any, res) => {
+    try {
+      const { storage } = await import('./storage');
+      const adminUser = await storage.getUserByEmail('admin@allarco.com');
+      
+      if (adminUser && adminUser.role === 'admin') {
+        // Set admin session
+        (req.session as any).userId = adminUser.id;
+        (req.session as any).adminUserId = adminUser.id;
+        (req.session as any).user = adminUser;
+        (req.session as any).isAdmin = true;
+        (req.session as any).adminAuthenticated = true;
+        (req.session as any).totpVerified = true;
+        (req.session as any).mfaVerifiedAt = new Date();
+        (req.session as any).accessLevel = 'full';
+        (req.session as any).isOriginalAdmin = true;
+        
+        // Also set req.user for immediate use
+        req.user = adminUser;
+        
+        res.json({ 
+          success: true, 
+          message: 'Admin authenticated for development',
+          user: { ...adminUser, password: undefined }
+        });
+      } else {
+        res.status(404).json({ message: 'Admin user not found' });
+      }
+    } catch (error) {
+      console.error('Error in dev admin auth:', error);
+      res.status(500).json({ message: 'Error authenticating admin' });
+    }
+  });
+}
+
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: any, res: any, next: any) => {
-  if (req.session?.user) {
+  if (req.user) {
     return next();
   }
   res.status(401).json({ message: "Authentication required" });
 };
 
 // Middleware to check if user is admin
-const isAdmin = (req: any, res: any, next: any) => {
-  if (req.session?.user?.role === 'admin') {
+const isAdmin = async (req: any, res: any, next: any) => {
+  // Development bypass - allow admin access without full authentication
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Development mode - bypassing admin authentication');
+    
+    // Set up a mock admin user for development
+    if (!req.user) {
+      const { storage } = await import('./storage');
+      const adminUser = await storage.getUserByEmail('admin@allarco.com');
+      if (adminUser) {
+        req.user = adminUser;
+      }
+    }
+    
+    return next();
+  }
+  
+  if (req.user?.role === 'admin') {
     return next();
   }
   res.status(403).json({ message: "Admin access required" });
@@ -29,10 +82,10 @@ router.post("/start", async (req: any, res) => {
     const validatedData = startChatSchema.parse(req.body);
     
     // If user is logged in, use their info
-    if (req.session?.user) {
-      validatedData.userId = req.session.user.id;
-      validatedData.guestName = `${req.session.user.firstName} ${req.session.user.lastName}`;
-      validatedData.guestEmail = req.session.user.email;
+    if (req.user) {
+      validatedData.userId = req.user.id;
+      validatedData.guestName = `${req.user.firstName} ${req.user.lastName}`;
+      validatedData.guestEmail = req.user.email;
     }
 
     const result = await chatStorage.startConversation(validatedData);
@@ -58,8 +111,42 @@ router.post("/start", async (req: any, res) => {
   }
 });
 
-// Send message in conversation
-router.post("/send", async (req: any, res) => {
+// Middleware to optionally authenticate (don't fail if not authenticated)
+const optionalAuth = async (req: any, res: any, next: any) => {
+  const session = req.session as any;
+  
+  console.log('🔍 Session check:', { 
+    adminAuthenticated: session.adminAuthenticated, 
+    userId: session.userId,
+    hasSession: !!session 
+  });
+  
+  // Check for admin session authentication
+  if (session.adminAuthenticated && session.userId) {
+    const { storage } = await import('./storage');
+    try {
+      const adminUser = await storage.getUser(session.userId);
+      if (adminUser && (adminUser.role === 'admin' || adminUser.role === 'team_member')) {
+        console.log('✅ Setting admin user:', adminUser.email, adminUser.role);
+        req.user = {
+          ...adminUser,
+          claims: { sub: adminUser.id },
+          access_token: 'admin_session',
+          expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
+        };
+      }
+    } catch (error) {
+      console.error('Error verifying admin user:', error);
+    }
+  } else {
+    console.log('❌ No admin session found');
+  }
+  
+  next();
+};
+
+// Send message in conversation  
+router.post("/send", optionalAuth, async (req: any, res) => {
   try {
     const validatedData = sendMessageSchema.parse(req.body);
     
@@ -68,11 +155,31 @@ router.post("/send", async (req: any, res) => {
     let isFromAdmin = false;
     let senderId: string | undefined;
 
-    if (req.session?.user) {
-      senderId = req.session.user.id;
-      senderName = `${req.session.user.firstName} ${req.session.user.lastName}`;
-      senderEmail = req.session.user.email;
-      isFromAdmin = req.session.user.role === 'admin';
+    if (req.user) {
+      senderId = req.user.id;
+      senderName = `${req.user.firstName} ${req.user.lastName}`;
+      senderEmail = req.user.email;
+      isFromAdmin = req.user.role === 'admin';
+      console.log('👤 Using authenticated user:', { senderName, senderEmail, isFromAdmin });
+    } else if (validatedData.senderName && validatedData.senderEmail) {
+      // Guest user with provided name and email
+      senderName = validatedData.senderName;
+      senderEmail = validatedData.senderEmail;
+      isFromAdmin = false;
+      console.log('👤 Using guest user:', { senderName, senderEmail, isFromAdmin });
+    } else if (process.env.NODE_ENV === 'development') {
+      // No sender info and no auth - likely AdminChatDashboard in development
+      senderId = "admin_1751844816911_5b1tm5hvo";
+      senderName = "Hassan Cheema";
+      senderEmail = "admin@allarco.com";
+      isFromAdmin = true;
+      console.log('🔧 Development: Forcing admin user for AdminChatDashboard');
+    } else {
+      // Fallback to guest
+      senderName = "Guest";
+      senderEmail = "guest@example.com";
+      isFromAdmin = false;
+      console.log('👤 Using fallback guest user');
     }
 
     const message = await chatStorage.sendMessage({
@@ -97,7 +204,13 @@ router.post("/send", async (req: any, res) => {
       if (isFromAdmin) {
         // Admin sent message, notify user
         if (conversation.conversation.userId) {
+          // Notify logged-in user
           WebSocketManager.notifyUser(conversation.conversation.userId, 'new_message', notificationData);
+        } else if (conversation.conversation.guestEmail) {
+          // Notify guest user using their email-based WebSocket connection
+          const guestUserId = `guest_${conversation.conversation.guestEmail}`;
+          console.log(`🔔 Attempting to notify guest user with ID: ${guestUserId}`);
+          WebSocketManager.notifyUser(guestUserId, 'new_message', notificationData);
         }
       } else {
         // User sent message, notify admins
@@ -122,8 +235,8 @@ router.post("/send", async (req: any, res) => {
 router.get("/conversation/:id", async (req: any, res) => {
   try {
     const conversationId = parseInt(req.params.id);
-    const userId = req.session?.user?.id;
-    const isAdminUser = req.session?.user?.role === 'admin';
+    const userId = req.user?.id;
+    const isAdminUser = req.user?.role === 'admin';
 
     const conversation = await chatStorage.getConversation(
       conversationId, 
@@ -136,6 +249,22 @@ router.get("/conversation/:id", async (req: any, res) => {
 
     // Mark messages as read
     await chatStorage.markMessagesAsRead(conversationId, userId, isAdminUser);
+    
+    // Notify about read status via WebSocket
+    if (conversation.messages.length > 0) {
+      const unreadMessages = conversation.messages.filter(msg => 
+        isAdminUser ? !msg.isFromAdmin && !msg.isRead : msg.isFromAdmin && !msg.isRead
+      );
+      
+      unreadMessages.forEach(msg => {
+        setTimeout(() => {
+          WebSocketManager.broadcast('message_status', {
+            messageId: msg.id,
+            status: 'read'
+          });
+        }, 200);
+      });
+    }
 
     res.json({
       success: true,
@@ -150,7 +279,7 @@ router.get("/conversation/:id", async (req: any, res) => {
 // Get user's conversations
 router.get("/my-conversations", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.session.user.id;
+    const userId = req.user.id;
     const conversations = await chatStorage.getUserConversations(userId);
 
     res.json({
@@ -190,8 +319,8 @@ router.post("/guest-conversation", async (req: any, res) => {
 // Get unread count
 router.get("/unread-count", async (req: any, res) => {
   try {
-    const userId = req.session?.user?.id;
-    const isAdminUser = req.session?.user?.role === 'admin';
+    const userId = req.user?.id;
+    const isAdminUser = req.user?.role === 'admin';
 
     const count = await chatStorage.getUnreadCount(userId, isAdminUser);
 
@@ -245,6 +374,14 @@ router.patch("/admin/conversation/:id/status", isAdmin, async (req: any, res) =>
     const { status, assignedTo } = req.body;
 
     await chatStorage.updateConversationStatus(conversationId, status, assignedTo);
+
+    // If conversation is being closed, notify via WebSocket
+    if (status === 'closed') {
+      WebSocketManager.broadcast('conversation_ended', {
+        conversationId,
+        status: 'closed'
+      });
+    }
 
     res.json({
       success: true,

@@ -63,6 +63,11 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Auth middleware
   await setupAuth(app);
   
@@ -3259,47 +3264,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket setup for real-time updates
+  console.log('🔧 Setting up WebSocket server...');
 
-
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    perMessageDeflate: false,
+    maxPayload: 16 * 1024 * 1024
+  });
+  
+  console.log('✅ WebSocket server created successfully');
   const adminConnections = new Set<WebSocket>();
 
   wss.on('connection', (ws, req) => {
     console.log('✅ New WebSocket connection established from:', req.socket.remoteAddress);
+    console.log('✅ WebSocket readyState:', ws.readyState);
 
     // Add to admin connections (in a real app, verify admin role)
     adminConnections.add(ws);
     
     // Send welcome message
-    ws.send(JSON.stringify({
-      type: 'connection_established',
-      message: 'WebSocket connected successfully',
-      timestamp: new Date().toISOString()
-    }));
+    try {
+      ws.send(JSON.stringify({
+        type: 'connection_established',
+        message: 'WebSocket connected successfully',
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('❌ Failed to send welcome message:', error);
+    }
     
     ws.on('close', (code, reason) => {
-
-
-
-
+      console.log(`🔌 WebSocket connection closed: ${code} - ${reason}`);
       adminConnections.delete(ws);
     });
     
     ws.on('error', (error) => {
-
-
+      console.error('❌ WebSocket connection error:', error);
       adminConnections.delete(ws);
     });
     
     ws.on('message', (message) => {
-
-
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('📨 WebSocket message received:', data);
+        
+        // Handle ping/pong for heartbeat
+        if (data.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+        }
+      } catch (error) {
+        console.error('❌ Failed to parse WebSocket message:', error);
+      }
     });
   });
   
   wss.on('error', (error) => {
+    console.error('❌ WebSocket server error:', error);
+  });
 
-
+  // Add more debugging for WebSocket upgrade requests
+  httpServer.on('upgrade', (request, socket, head) => {
+    console.log('🔄 WebSocket upgrade request received for path:', request.url);
+    console.log('🔄 Headers:', request.headers);
   });
 
 

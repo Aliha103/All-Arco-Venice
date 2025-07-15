@@ -6,9 +6,8 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
   out: "./migrations",
-  schema: ["./shared/schema.ts", "./server/db/pms-schema.ts"],
+  schema: ["./shared/schema.ts", "./server/db/pms-schema.ts", "./server/db/admin-schema.ts"],
   dialect: "postgresql",
-  driver: "neon-serverless",
   dbCredentials: {
     url: process.env.DATABASE_URL,
     ssl: {

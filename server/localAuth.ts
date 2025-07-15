@@ -76,6 +76,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       if (adminUser && (adminUser.role === 'admin' || adminUser.role === 'team_member')) {
         // Create a user object compatible with existing code
         req.user = {
+          ...adminUser,
           claims: { sub: adminUser.id },
           access_token: 'admin_session',
           expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
